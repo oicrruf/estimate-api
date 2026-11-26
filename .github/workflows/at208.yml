@@ -1,0 +1,58 @@
+name: AT-208 database
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  at208-database:
+    name: AT-208 SQL, OpenSpec and recovery
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.22.3'
+      - name: Install pinned OpenSpec CLI
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix ci/at-206-docs
+      - name: Validate AT-208 contract and evidence
+        env:
+          OPENSPEC_TELEMETRY: '0'
+        run: |
+          for file in \
+            supabase/migrations/20261126124001_at_208_postgres_domain.sql \
+            tests/at208/local_auth_fixture.sql tests/at208/domain_rls.sql \
+            tests/at208/trusted_budget.sql tests/at208/concurrent_membership.sh \
+            docs/evidence/at-208.md \
+            openspec/specs/project-persistence/spec.md \
+            openspec/specs/project-data-isolation/spec.md; do
+            test -s "$file"
+          done
+          if test -s openspec/changes/at-208-postgres-domain/proposal.md; then
+            ci/at-206-docs/node_modules/.bin/openspec validate at-208-postgres-domain --strict
+          else
+            ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
+          fi
+      - name: Verify tenant isolation and recovery on disposable PostgreSQL
+        run: bash tests/at208/run_local.sh
+
+  at208-supabase-postgres:
+    if: github.event_name == 'pull_request' && github.head_ref == 'feature/AT-208-postgres-domain'
+    name: AT-208 official Supabase PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify pinned disposable Supabase PostgreSQL
+        env:
+          AT208_PG_IMAGE: ghcr.io/supabase/postgres:17.6.1.102@sha256:90c82488dc721a2b6516c1634b2cc000633f972c4eb6100b68c5aef23ee9e275
+          AT208_ADMIN_USER: supabase_admin
+        run: |
+          docker pull "$AT208_PG_IMAGE"
+          bash tests/at208/run_local.sh
