@@ -2,10 +2,10 @@
 name = "estimate-api"
 version = "0.1.0"
 requires-python = "==3.12.*"
-dependencies = ["fastapi==0.115.12", "uvicorn==0.34.2"]
+dependencies = ["fastapi==0.115.12", "uvicorn==0.34.2", "jsonschema==4.26.0"]
 
 [project.optional-dependencies]
-dev = ["httpx==0.28.1", "pytest==8.3.5", "ruff==0.11.10", "mypy==1.15.0", "detect-secrets==1.5.0"]
+dev = ["httpx==0.28.1", "pytest==8.3.5", "ruff==0.11.10", "mypy==1.15.0", "detect-secrets==1.5.0", "types-jsonschema==4.26.0.20261006"]
 
 [build-system]
 requires = ["hatchling==1.27.0"]

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectId": "painting:goal",
+  "entities": [
+    {
+      "id": "painting:goal",
+      "kind": "ProjectGoal",
+      "label": "Pintar un inmueble ficticio",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "painting:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "painting:requirement",
+      "kind": "Requirement",
+      "label": "Acabado uniforme",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "painting:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "supports",
+          "targetId": "painting:goal"
+        }
+      ]
+    },
+    {
+      "id": "painting:wall",
+      "kind": "SiteCondition",
+      "label": "Pared con humedad supuesta",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "painting:project"
+      },
+      "revision": 1,
+      "knowledgeState": "assumed"
+    },
+    {
+      "id": "painting:task",
+      "kind": "Task",
+      "label": "Preparar y pintar",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "painting:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "depends-on",
+          "targetId": "painting:wall"
+        }
+      ]
+    },
+    {
+      "id": "painting:paint",
+      "kind": "BOMLine",
+      "label": "Pintura de prueba",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "painting:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "supports",
+          "targetId": "painting:task"
+        }
+      ]
+    },
+    {
+      "id": "painting:finish",
+      "kind": "Deliverable",
+      "label": "Superficie terminada",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "painting:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "produced-by",
+          "targetId": "painting:task"
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "painting:package-wall",
+      "namespace": "example.painting",
+      "version": "1.0.0",
+      "subjectId": "painting:wall",
+      "facts": {
+        "areaSquareMeters": 86.5,
+        "substrate": "plaster",
+        "moisturePercent": null
+      }
+    },
+    {
+      "id": "painting:package-paint",
+      "namespace": "example.painting",
+      "version": "1.0.0",
+      "subjectId": "painting:paint",
+      "facts": {
+        "colorCode": "SYN-001",
+        "volumeLiters": 20,
+        "finish": "matte"
+      }
+    }
+  ]
+}
