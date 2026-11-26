@@ -85,6 +85,7 @@ def test_versioned_candidates_keep_provenance_and_revalidate_counts() -> None:
     lines = {line.key: line for line in evaluated.proposal.lines}
     connector = lines["at247:item:utp-connector"]
     assert connector.quantity == 16
+    assert connector.rule_id == f"{pattern['id']}/{connector.key}"
     assert connector.rule_ids == ("AT247-CAMERA_ENDS",)
     assert "EV-ENDS" in connector.evidence_ids
     assert connector.candidate_paths[0] == (
@@ -112,6 +113,44 @@ def test_versioned_candidates_keep_provenance_and_revalidate_counts() -> None:
         )
     )
     Draft202012Validator(schema).validate(json.loads(json.dumps(updated.payload)))
+
+
+def test_reused_pattern_bindings_keep_distinct_rule_ids_and_shared_quantity_block() -> None:
+    pattern = BY_NAME["poe-camera"]
+    project = replace(
+        intake("camera-zone-a", 2),
+        needs=(Need("camera-zone-a", 2, "each"), Need("camera-zone-b", 3, "each")),
+    )
+    facts = {
+        "application": confirmed(True, "EV-APPLICATION"),
+        "wired_run": confirmed(True, "EV-WIRED"),
+        "mount_required": confirmed(False, "EV-MOUNT"),
+        "poe_source": confirmed(True, "EV-POE"),
+        "utp_ends": confirmed(2, "EV-ENDS"),
+    }
+    bindings = (
+        PatternBinding("camera-zone-a", pattern, facts),
+        PatternBinding("camera-zone-b", pattern, facts),
+    )
+    pattern_plan = build_pattern_plan(
+        project,
+        bindings,
+        registry_package_id="catalog:camera-v1",
+        source="synthetic://at-247/patterns/1.0.0",
+    )
+    ids = [rule.id for rule in pattern_plan.package.rules]
+    assert len(ids) == len(set(ids))
+    assert {json.loads(identifier)[0] for identifier in ids} == {"camera-zone-a", "camera-zone-b"}
+    result = evaluate_pattern_scope(
+        project, pattern_plan, registry_context=registry_context(pattern)
+    )
+    assert {line.key for line in result.proposal.lines} >= {
+        "camera-zone-a",
+        "camera-zone-b",
+        "at247:item:utp-connector",
+    }
+    assert "quantity:at247:item:utp-connector" in result.proposal.blocking_facts
+    assert not result.payload["commercialReady"]
 
 
 def test_confirmed_alternative_changes_scope_but_unknown_does_not() -> None:

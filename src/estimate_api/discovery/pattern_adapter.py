@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 from estimate_api.patterns.v1 import Fact, Pattern, expand
@@ -44,6 +45,11 @@ def build_pattern_plan(
     versions = {binding.pattern["version"] for binding in bindings}
     if len(versions) != 1:
         raise ValueError("Pattern versions must match")
+    repeated_patterns = {
+        binding.pattern["id"]
+        for binding in bindings
+        if sum(other.pattern["id"] == binding.pattern["id"] for other in bindings) > 1
+    }
     for binding in bindings:
         if binding.need_key not in requested:
             raise ValueError(f"Pattern root not requested: {binding.need_key}")
@@ -53,7 +59,15 @@ def build_pattern_plan(
         for candidate in expansion.candidates:
             rules.append(
                 Rule(
-                    id=f"{binding.pattern['id']}/{candidate['itemId']}",
+                    id=(
+                        json.dumps(
+                            [binding.need_key, binding.pattern["id"], candidate["itemId"]],
+                            separators=(",", ":"),
+                            ensure_ascii=False,
+                        )
+                        if binding.pattern["id"] in repeated_patterns
+                        else f"{binding.pattern['id']}/{candidate['itemId']}"
+                    ),
                     source_key=binding.need_key,
                     target_key=candidate["itemId"],
                     kind=None,

@@ -1,11 +1,14 @@
 """Independent review regressions for the AT-240 domain engine."""
 
+import json
 from dataclasses import replace
+from typing import Literal
 
 import pytest
 
 from estimate_api.discovery.engine import diff_proposals, discover, review
 from estimate_api.discovery.models import KnowledgePackage, Need, ProjectIntake, ReviewAction, Rule
+from estimate_api.discovery.service import evaluate_scope
 
 
 def scope(*rules: Rule) -> tuple[ProjectIntake, KnowledgePackage]:
@@ -130,3 +133,46 @@ def test_duplicate_optional_first_preserves_required_target() -> None:
     assert result.evidence_paths.count(("root", "REQUIRES", "target")) == 2
     rejected = review(result, (ReviewAction("target", "reject"),))
     assert rejected.status == "blocked" and not rejected.commercial_ready
+
+
+def test_cross_branch_cycle_is_rejected_before_review() -> None:
+    intake, package = scope(
+        rule("a", "root", "b"),
+        rule("b", "root", "c"),
+        rule("c", "b", "c"),
+        rule("d", "c", "b"),
+    )
+    with pytest.raises(ValueError, match="Pattern cycle"):
+        discover(intake, package)
+
+
+@pytest.mark.parametrize("quantity", [float("nan"), float("inf"), float("-inf")])
+def test_nonfinite_intake_and_review_quantity_are_rejected(quantity: float) -> None:
+    intake, package = scope(rule("a", "root", "child"))
+    invalid = replace(intake, needs=(Need("root", quantity, "each"),))
+    with pytest.raises(ValueError, match="positive or pending quantities"):
+        discover(invalid, package)
+    with pytest.raises(ValueError, match="positive or pending quantities"):
+        evaluate_scope(invalid, None)
+    proposal = discover(intake, package)
+    with pytest.raises(ValueError, match="positive quantity"):
+        review(proposal, (ReviewAction("child", "modify", quantity, "each"),))
+    assert json.dumps({"quantity": proposal.lines[1].quantity}, allow_nan=False)
+
+
+@pytest.mark.parametrize(
+    "mode,factor,parent",
+    [
+        ("fixed", float("nan"), 2),
+        ("fixed", float("inf"), 2),
+        ("multiply", float("inf"), 2),
+        ("multiply", 1e308, 1e308),
+    ],
+)
+def test_nonfinite_or_overflowed_derived_quantity_is_rejected(
+    mode: Literal["fixed", "multiply"], factor: float, parent: float
+) -> None:
+    intake, package = scope(replace(rule("a", "root", "child"), quantity_mode=mode, factor=factor))
+    intake = replace(intake, needs=(Need("root", parent, "each"),))
+    with pytest.raises(ValueError, match="Invalid derived quantity"):
+        discover(intake, package)

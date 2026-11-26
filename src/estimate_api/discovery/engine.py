@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from math import isfinite
 from typing import Literal
 
 from .models import (
@@ -26,6 +27,32 @@ RELATIONS = {
     "REQUIRES_POWER",
     "MOUNTED_ON",
 }
+
+
+def _positive_finite(value: float | None) -> bool:
+    if value is None or isinstance(value, bool) or not isinstance(value, int | float):
+        return False
+    try:
+        return value > 0 and isfinite(value)
+    except OverflowError:
+        return False
+
+
+def _would_cycle(paths: list[tuple[str, str, str]], source: str, target: str) -> bool:
+    """Check the whole discovered graph before adding a cross-branch edge."""
+    adjacency: dict[str, set[str]] = {}
+    for origin, _, destination in paths:
+        adjacency.setdefault(origin, set()).add(destination)
+    pending = [target]
+    visited: set[str] = set()
+    while pending:
+        current = pending.pop()
+        if current == source:
+            return True
+        if current not in visited:
+            visited.add(current)
+            pending.extend(adjacency.get(current, set()) - visited)
+    return False
 
 
 def _package(
@@ -94,7 +121,7 @@ def discover(
     if max_depth < 0 or max_lines < 1 or not intake.project_id or not intake.goal:
         raise ValueError("Invalid discovery bounds or intake")
     if not intake.needs or any(
-        need.quantity is not None and need.quantity <= 0 for need in intake.needs
+        need.quantity is not None and not _positive_finite(need.quantity) for need in intake.needs
     ):
         raise ValueError("Intake needs positive or pending quantities")
     package = _package(intake, provider)
@@ -151,6 +178,8 @@ def discover(
             if depth >= max_depth:
                 raise ValueError("Pattern depth limit")
             if rule.target_key in lines:
+                if _would_cycle(paths, source, rule.target_key):
+                    raise ValueError(f"Pattern cycle at {rule.id}")
                 paths.append((source, rule.relation, rule.target_key))
                 if rule.required and not lines[rule.target_key].required:
                     lines[rule.target_key] = replace(lines[rule.target_key], required=True)
@@ -170,12 +199,15 @@ def discover(
             elif rule.quantity_mode == "fixed":
                 quantity = rule.factor
             else:
-                quantity = (
-                    parent_qty * rule.factor
-                    if parent_qty is not None and rule.factor is not None
-                    else None
-                )
-            if quantity is not None and quantity <= 0:
+                try:
+                    quantity = (
+                        parent_qty * rule.factor
+                        if parent_qty is not None and rule.factor is not None
+                        else None
+                    )
+                except OverflowError as error:
+                    raise ValueError(f"Invalid derived quantity in {rule.id}") from error
+            if quantity is not None and not _positive_finite(quantity):
                 raise ValueError(f"Invalid derived quantity in {rule.id}")
             state: LineState = "pending_measurement" if quantity is None else "agent_proposed"
             lines[rule.target_key] = ProposalLine(
@@ -268,7 +300,7 @@ def review(proposal: Proposal, actions: tuple[ReviewAction, ...]) -> Proposal:
         elif line.state == "user_requested":
             raise ValueError("Change requested needs via project intake")
         elif action.decision == "modify":
-            if action.quantity is None or action.quantity <= 0 or not action.unit:
+            if not _positive_finite(action.quantity) or not action.unit:
                 raise ValueError("Modification needs positive quantity and unit")
             updated.append(
                 replace(line, quantity=action.quantity, unit=action.unit, state="agent_proposed")
