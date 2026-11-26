@@ -2,7 +2,7 @@
 
 ## Context
 
-Véase `proposal.md`. AT-206 está en Backlog, sin `blockedBy`, y bloquea AT-207. Tras la excepción documental aprobada, ambos repositorios tienen `main` y `develop` con un único commit README por repositorio. Supabase informa `estimate-agent` (`ivvwdabsgdajorvxgnpp`, `us-west-2`, `ACTIVE_HEALTHY`). Una prueba local separada reportó Relate 1.3.0 con Python 3.12.14 y un solo escritor; el host, SQL y panel Dockploy no están comprobados. El detalle está en `docs/adr/0001-arquitectura-inicial.md` y `docs/evidence/at-206.md`.
+Véase `proposal.md`. Según consulta del 26/11/2026, AT-206 no tenía `blockedBy` y bloqueaba AT-207. Tras la excepción documental aprobada, ambos repositorios tienen `main` y `develop` con un único commit README por repositorio. La consulta de metadata de Supabase confirmó un proyecto existente en `us-west-2` y estado `ACTIVE_HEALTHY`; no confirmó el plan de la cuenta. Una prueba local separada reportó Relate 1.3.0 con Python 3.12.14 y un solo escritor; el host, SQL y panel Dockploy no están comprobados. El detalle está en `docs/adr/0001-arquitectura-inicial.md` y `docs/evidence/at-206.md`.
 
 ## Goals / Non-Goals
 

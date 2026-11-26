@@ -1,14 +1,14 @@
 # ADR 0001 — Arquitectura inicial de Estimate Agent (AT-206)
 
 - **Fecha:** 2026-11-26
-- **Estado:** propuesta para revisión; decisiones de producto registradas en [AT-206](https://linear.app/oicrruf/issue/AT-206/definir-adr-de-arquitectura-hosting-sql-identidad-y-dos-repositorios), sin merge.
+- **Estado del ADR:** propuesto para integración por el PR de [AT-206](https://linear.app/oicrruf/issue/AT-206/definir-adr-de-arquitectura-hosting-sql-identidad-y-dos-repositorios); decisión de producto previamente registrada, con revisión independiente previa del borrador. La aprobación del PR se comprueba en GitHub.
 - **Alcance:** H0 Relate y arquitectura inicial del MVP; la plataforma multiusuario completa se implementa en issues posteriores.
 
 ## Contexto y evidencia
 
 El [plan de dependencias](https://linear.app/oicrruf/document/estimate-agent-orden-de-ejecucion-y-dependencias-openspec-codex-bebc78949703) coloca AT-206 primero, sin bloqueos, y AT-207 detrás. AT-215 valida Relate y AT-229 prepara la demo independientemente. AT-261 guía la separación del núcleo y el conocimiento; AT-264 detallará el metamodelo.
 
-Consulta de metadata, 26/11/2026: `estimate-api` y `estimate-app` son públicos y se observaron inicialmente vacíos. Tras la excepción de bootstrap documental aprobada por el usuario, `main` y `develop` de `estimate-api` apuntan a `28c7cbc6dfbcaaed85cc8c7193b1bfb5cded3c8e`; las dos ramas de `estimate-app` apuntan a `56dbd168f72ac68aff9057bb960194aeeae711ea`. Cada commit raíz contiene solo `README.md`, con autor y committer Víctor M. Reyes. Supabase confirmó el proyecto existente `estimate-agent`, ID `ivvwdabsgdajorvxgnpp`, región `us-west-2`, estado `ACTIVE_HEALTHY`, PostgreSQL 17. Solo se consultó metadata; no se leyó ni modificó base de datos, Storage, Auth o claves. No se comprobó el plan efectivo de facturación.
+Consulta de metadata, 26/11/2026: `estimate-api` y `estimate-app` son públicos y se observaron inicialmente vacíos. Tras la excepción de bootstrap documental aprobada por el usuario, `main` y `develop` de cada repositorio apuntaban al mismo commit raíz, que contiene solo `README.md` y atribuye autor y committer a Víctor M. Reyes. El conector Supabase confirmó un proyecto existente de Estimate Agent en `us-west-2`, estado `ACTIVE_HEALTHY` y PostgreSQL 17. Solo se consultó metadata; no se leyó ni modificó base de datos, Storage, Auth o claves. No se comprobó el plan efectivo de facturación de la cuenta.
 
 ## Decisión 1 — núcleo universal y paquetes de conocimiento
 
@@ -26,7 +26,7 @@ No se despliegan PostgreSQL propio, D1, MinIO/S3 independiente ni Keycloak. No s
 
 ## Decisión 3 — runtime H0 y despliegue previsto
 
-Supabase no hospeda FastAPI, ADK Python, MCP, Angular ni Relate. Para H0: `compose.yaml` reproducible con un servicio Python y un volumen de datos Relate, fixture sintético y healthcheck. Un perfil demo debe conservar el volumen entre restart y redeploy, y ensayar exportación y restauración. Una prueba local independiente reportó Relate **1.3.0** con Python **3.12.14** y funcionamiento bajo **un solo escritor**; no probó hosting, SQL, despliegue, recuperación ni concurrencia de varios escritores. AT-215 conserva esos gates. La UI puede servirse estática o con Nginx. El destino previsto para runtime es la instancia llamada «Dockploy» por el usuario; proveedor/host real y acceso operativo no están confirmados. No hay despliegue.
+Supabase no hospeda FastAPI, ADK Python, MCP, Angular ni Relate. **Estrategia Docker para H0:** preparar en AT-215 un `compose.yaml` reproducible con servicio Python, volumen de datos Relate, fixture sintético y healthcheck. El perfil demo deberá conservar el volumen entre restart y redeploy, y ensayar exportación y restauración. Este ADR no afirma que exista o se haya probado ese Compose. Una prueba local independiente reportó Relate **1.3.0** con Python **3.12.14** y funcionamiento bajo **un solo escritor**; no probó hosting, SQL, despliegue, recuperación ni concurrencia de varios escritores. AT-215 conserva esos gates. La UI puede servirse estática o con Nginx. El destino previsto para runtime es la instancia llamada «Dockploy» por el usuario; proveedor/host real y acceso operativo no están confirmados. No hay despliegue.
 
 **Checklist de comprobación Dockploy previo a publicar:** identificar URL y proveedor reales, acceso al panel y permisos; método de conexión de ambos repos y refs; soporte de Docker/Compose y recursos CPU/RAM/disco; volumen persistente de Relate, rutas y permisos; supervivencia a restart/redeploy y restauración de backup; inyección y rotación de secretos por entorno; red saliente a Supabase y APIs, puertos entrantes mínimos; dominios, DNS, TLS y renovación; healthchecks, logs, rollback y límites de recursos. MCP debe estar autenticado y restringido por red si no hay necesidad pública. Un solo escritor por dataset de Relate hasta que AT-215 pruebe concurrencia y recuperación; las lecturas concurrentes también requieren evidencia.
 
@@ -70,7 +70,7 @@ Política objetivo: `main` producción, `develop` integración, `feature/AT-XXX-
 
 | Ruta | Ventaja | Coste respecto a gates |
 | --- | --- | --- |
-| **Base mínima documental revisada** en cada `main` (p. ej. README con nombre y enlaces), crear `develop` desde esa ref, después feature AT-206 | Permite PR de AT-206 contra `develop`, revisión y un commit de issue; mantiene AT-207 separado. | Bootstrap sin AT-XXX requiere registrar excepción operativa; CI aún no existe, por lo que el gate «CI verde» no puede declararse cumplido hasta establecer una comprobación mínima o posponer cierre. |
+| **Base mínima documental revisada** en cada `main` (p. ej. README con nombre y enlaces), crear `develop` desde esa ref, después feature AT-206 | Permite PR de AT-206 contra `develop`, revisión y un commit final de issue; mantiene AT-207 separado. | Bootstrap sin AT-XXX requiere registrar excepción operativa; al crear la base no había CI, por lo que AT-206 incorpora solo un gate documental propio. |
 | Primer commit directamente AT-206 en `main`, crear `develop` después | Menos commits y sin bootstrap extra. | No hay PR ni revisión previa del primer commit; contradice el gate de cierre de AT-206 y dificulta corregirlo sin otro commit del mismo issue. |
 
 **Resultado:** el usuario aprobó la excepción de un commit inicial con solo `README.md` por repositorio; se establecieron las refs descritas arriba. AT-206 se propone en una feature de `estimate-api` hacia `develop`. Este PR incorpora un gate documental limitado a comprobar sus propios artefactos con OpenSpec 2.2.0; la CI general, contratos y entornos permanecen en AT-207. El gate no sustituye revisión independiente ni autoriza cierre antes de CI verde, aprobación y merge efectivo. No se crea un tercer repo.
@@ -79,5 +79,5 @@ Política objetivo: `main` producción, `develop` integración, `feature/AT-XXX-
 
 - Linear: [AT-206](https://linear.app/oicrruf/issue/AT-206/definir-adr-de-arquitectura-hosting-sql-identidad-y-dos-repositorios) y [plan](https://linear.app/oicrruf/document/estimate-agent-orden-de-ejecucion-y-dependencias-openspec-codex-bebc78949703), consultados el 26/11/2026.
 - GitHub: metadata de [estimate-api](https://github.com/oicrruf/estimate-api) y [estimate-app](https://github.com/oicrruf/estimate-app), más `git ls-remote`; la única escritura previa a este PR fue el bootstrap documental aprobado.
-- Supabase: `get_project` sobre `ivvwdabsgdajorvxgnpp`, solo metadata; estado de cuotas/plan y esquema no comprobados en esta tarea.
+- Supabase: consulta de metadata del proyecto existente, sin publicar ID/ref; estado de cuotas/plan de la cuenta y esquema no comprobados en esta tarea.
 - Documentación oficial: [precios Supabase](https://supabase.com/pricing), [backups](https://supabase.com/docs/guides/platform/backups), [Storage](https://supabase.com/docs/guides/storage/security/access-control), [JWT](https://supabase.com/docs/guides/auth/jwts), [D1](https://developers.cloudflare.com/d1/platform/limits/), [OpenSpec CLI](https://github.com/Fission-AI/OpenSpec/blob/main/docs/cli.md).

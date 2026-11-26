@@ -1,0 +1,8 @@
+{
+  "name": "estimate-api-at-206-docs-ci",
+  "private": true,
+  "version": "0.0.0",
+  "devDependencies": {
+    "@fission-ai/openspec": "2.2.0"
+  }
+}

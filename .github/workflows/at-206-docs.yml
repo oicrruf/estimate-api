@@ -24,17 +24,28 @@ jobs:
           files=(
             docs/adr/0001-arquitectura-inicial.md
             docs/evidence/at-206.md
-            openspec/changes/at-206-arquitectura-inicial/proposal.md
-            openspec/changes/at-206-arquitectura-inicial/design.md
-            openspec/changes/at-206-arquitectura-inicial/tasks.md
-            openspec/changes/at-206-arquitectura-inicial/specs/platform-data-boundary/spec.md
-            openspec/changes/at-206-arquitectura-inicial/specs/project-knowledge-boundary/spec.md
-            openspec/changes/at-206-arquitectura-inicial/specs/protected-project-operations/spec.md
+            ci/at-206-docs/package.json
+            ci/at-206-docs/package-lock.json
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/proposal.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/design.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/tasks.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/specs/platform-data-boundary/spec.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/specs/project-knowledge-boundary/spec.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/specs/protected-project-operations/spec.md
+            openspec/specs/platform-data-boundary/spec.md
+            openspec/specs/project-knowledge-boundary/spec.md
+            openspec/specs/protected-project-operations/spec.md
           )
           for file in "${files[@]}"; do
             test -s "$file"
           done
-      - name: Validar OpenSpec AT-206
+      - name: Instalar CLI documental fijado
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix ci/at-206-docs
+      - name: Validar specs vigentes y cambio archivado
         env:
           OPENSPEC_TELEMETRY: '0'
-        run: npm exec --yes --package=@fission-ai/openspec@2.2.0 -- openspec validate at-206-arquitectura-inicial --strict
+        shell: bash
+        run: |
+          set -euo pipefail
+          ci/at-206-docs/node_modules/.bin/openspec validate --specs --strict
+          ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
