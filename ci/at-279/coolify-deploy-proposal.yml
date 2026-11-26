@@ -1,0 +1,37 @@
+# OFFLINE PROPOSAL ONLY. Do not move to .github/workflows until owner gates are complete.
+name: Proposed Coolify private demo deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coolify-private-demo
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'oicrruf/estimate-api' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: coolify
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12.14'
+      - name: Verify approved public refs and private package digest
+        run: ci/at-279/assemble.sh
+      - name: Deploy only the approved demo resource and prove status
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_ORIGIN: https://REPLACE_WITH_OWNER_APPROVED_HOST
+          COOLIFY_RESOURCE_UUID: REPLACE_WITH_OWNER_APPROVED_UUID
+          COOLIFY_DEMO_ORIGIN: https://REPLACE_WITH_APPROVED_DEMO_HOST
+          COOLIFY_BRANCH_POLICY_CONFIRMED: 'NO'
+        run: python3 ci/at-279/coolify_deploy_proposal.py
