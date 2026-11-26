@@ -78,3 +78,11 @@ Pruebas: `uv run --frozen --extra dev --extra demo pytest -q
 tests/test_guided_bom.py`. El test siembra el archivo en un proceso, abre
 otro proceso HTTP y compara dos respuestas GET completas con la CLI, además de
 rechazar parámetros extra, duplicados o inválidos.
+
+## Extracción privada opcional AT-211
+
+La [guía del CLI privado](PRIVATE_AI.md) documenta el comando con `gpt-6-luna`,
+los límites de entrada, el store sintético y una prueba offline sin proveedor.
+Este modo no se monta en el servidor HTTP de la demo. Requiere autorización y
+configuración local de OpenAI para ejecutar el comando del modelo; la preview
+determinista anterior no necesita cuenta ni credenciales.
