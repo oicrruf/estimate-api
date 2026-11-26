@@ -157,6 +157,43 @@ def main() -> None:
             assert len(requests) >= 5, requests
             assert all(url.startswith(ORIGIN + "/v1/demo/evaluate?") for url in requests)
             print(f"Browser same-origin API requests: {len(requests)}")
+
+            driver.request(
+                "POST", f"/session/{driver.session}/url", {"url": ORIGIN + "/demo/review"}
+            )
+            for _ in range(80):
+                if driver.execute("return !!document.querySelector('.review-page .lines li')"):
+                    break
+                time.sleep(0.2)
+            else:
+                raise RuntimeError("Angular review fixture did not render")
+            assert (
+                driver.execute("return document.querySelectorAll('.review-page button').length")
+                == 3
+            )
+            notice = driver.execute("return document.querySelector('.notice')?.textContent")
+            assert "No persistido" in notice and "Sin aprobación comercial" in notice
+            assert "8 each" in driver.execute(
+                "return [...document.querySelectorAll('.lines li')]"
+                ".find(li=>li.querySelector('strong')?.textContent==='camera:camera')?.textContent"
+            )
+            driver.execute("document.querySelectorAll('.cases button')[1].click()")
+            assert "Cantidad pendiente" in driver.execute(
+                "return document.querySelector('.lines')?.textContent"
+            )
+            driver.execute("document.querySelectorAll('.cases button')[2].click()")
+            assert "10 each" in driver.execute(
+                "return [...document.querySelectorAll('.lines li')]"
+                ".find(li=>li.querySelector('strong')?.textContent==='camera:camera')?.textContent"
+            )
+            assets = driver.execute(
+                "return performance.getEntriesByType('resource').map(entry=>entry.name)"
+                ".filter(name=>name.includes('/fixtures/at248-review.v1.json'))"
+            )
+            assert assets and all(
+                url == ORIGIN + "/fixtures/at248-review.v1.json" for url in assets
+            )
+            print("Browser /demo/review: 8, missing, 10; same-origin synthetic fixture")
         finally:
             if driver.session:
                 try:

@@ -1,9 +1,46 @@
-# AT-279 — prueba CI del paquete privado
+# AT-279: local validation of a private demo candidate
 
-Este workflow no despliega. Reconstruye los commits API `dac8c64c314bb362c6254825c65640ba732ca168` y app `d8a6d359bf909872ebfe48d52dfe5d8980c2c68b`, comprueba los 321 hashes y el SHA256 de `ARCHIVE-SHA256.txt` contra la copia privada. El paquete público de CI conserva sólo configuración, manifiesto y runtime sintético; las fuentes se obtienen de repos públicos en el runner y las imágenes quedan locales. No requiere secretos, no sube artefactos ni hace push a registros.
+This workflow builds and tests a **candidate**, without deploying it. The portable
+package pins the internal API source to `dac8c64c314bb362c6254825c65640ba732ca168`
+and refreshes only the web source to the clean `estimate-app` `develop` commit
+`1b95205596f50d38ba60254319bb12584bde3a5a`. The package manifest and
+`ARCHIVE-SHA256.txt` identify this refreshed snapshot; it is not the original
+private tar. Sources are reconstructed from public commits during CI and are not
+committed here. No secrets, hosted services, registry push, or artifacts are needed.
 
-Comprobaciones: Compose publica sólo web en `127.0.0.1:8080`, API/seed permanecen sin puertos publicados, red `backplane` interna, store montado en sólo lectura por API, Angular `/demo` y cinco respuestas de Relate reales por mismo origen, seed reutilizado sin cambio de hash y reinicio de API. ChromeDriver del runner pulsa los cinco escenarios en la pantalla y comprueba que el navegador llama a la API por el mismo origen. La limpieza limitada a `at279-final-preview` se ejecuta incluso al fallar.
+## Run the portable candidate locally
 
-El [README del paquete](package/README.md) ofrece el arranque local y el fallback Python/Node. La propuesta Coolify se documenta en [coolify-manual-proposal.md](coolify-manual-proposal.md), con una plantilla YAML [no instalada](coolify-deploy-proposal.yml) y un cliente que falla cerrado hasta que el dueño apruebe HTTPS, el recurso y la política de rama del Environment `coolify`. No hay workflow de despliegue en este PR.
+From the repository root, `ci/at-279/assemble.sh` reconstructs the pinned sources
+and checks the exact package hash. From `ci/at-279/package`:
 
-El [candidato Coolify desde Git](coolify-git-setup.md) usa [Compose sin puertos host](coolify-compose.yaml), construye las imágenes a partir de los dos commits públicos fijos y expone sólo `web:8080` al proxy. La UI real de Coolify y su Compose transformado siguen pendientes de inspección del dueño.
+```sh
+docker compose config --quiet
+python3 runtime/verify_compose.py
+docker compose up --build -d
+python3 ../verify_runtime.py
+python3 ../verify_browser.py
+```
+
+The package [README](package/README.md) has prerequisites, cleanup, and a local
+Python/Node fallback. Compose exposes only the web service on
+`127.0.0.1:8080`; API and seed have no host ports. The API reopens a synthetic
+Relate store mounted read-only, while the seed remains a one-shot writer on the
+internal `backplane` network. The checks exercise five `/demo` scenarios through
+the same-origin proxy, then load `/demo/review` and its static
+`/fixtures/at248-review.v1.json` asset. The review screen shows requested,
+proposed, and pending synthetic lines for eight cameras, missing measurements,
+and a change to ten. It does not approve, persist, price, or submit a project.
+The browser check needs ChromeDriver and Chrome/Chromium; CI supplies them.
+
+The immutable Git-based fallback remains at API commit
+`dac8c64c314bb362c6254825c65640ba732ca168`, web commit
+`d8a6d359bf909872ebfe48d52dfe5d8980c2c68b`, and repository Compose
+commit `46e97c160963bf094f04d3d9eb4319b61c435441`. Its
+[`coolify-compose.yaml`](coolify-compose.yaml) and Dockerfiles are unchanged by
+this candidate. The separate [Git candidate notes](coolify-git-setup.md) describe
+that older fallback, not the refreshed `/demo/review` snapshot.
+
+No VPS or Coolify deployment has been performed. Before any private deployment,
+its owner must inspect the actual generated Compose, access control, TLS, volume,
+and proxy configuration. The workflow only verifies disposable local containers;
+it does not prove the behavior of a particular hosting panel or public route.
