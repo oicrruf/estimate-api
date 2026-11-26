@@ -6,7 +6,8 @@ on:
     paths:
       - '.github/workflows/at-279-private-compose.yml'
       - 'ci/at-279/**'
-      - 'openspec/changes/*at-279-private-compose-validation/**'
+      - 'openspec/changes/archive/*at-279-private-compose-validation/**'
+      - 'openspec/specs/private-demo-package/**'
 
 permissions:
   contents: read
