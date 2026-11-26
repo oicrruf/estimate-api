@@ -372,17 +372,12 @@ def evaluate_scope(
     )
     coverage = resolve_pattern_coverage(intake, package, registry_context)
     # A catalog match alone does not validate arbitrary rules carried in a package.
-    if (
-        package is not None
-        and package.registry_package_id is not None
-        and not _attested_pattern
-        and coverage.status == "cataloged"
-    ):
+    if package is not None and package.registry_package_id is not None and not _attested_pattern:
         coverage = CoverageResult(
             "pending_specialist",
             coverage.package_ids,
             coverage.conflicts,
-            ("rule_provenance_unverified",),
+            tuple(dict.fromkeys((*coverage.reasons, "rule_provenance_unverified"))),
         )
         package = None
     if _attested_pattern and registry_context is not None and coverage.status != "cataloged":

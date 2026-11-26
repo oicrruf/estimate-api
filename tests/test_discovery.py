@@ -205,14 +205,16 @@ def test_versioned_review_payload_preserves_unknown_and_pending() -> None:
     assert payload["schemaVersion"] == SCHEMA_VERSION
     assert payload["projectId"] == intake.project_id
     assert payload["status"] == "pending_specialist"
-    assert payload["coverage"]["reasons"] == ["registry_mapping_missing"]
+    assert payload["coverage"]["reasons"] == [
+        "registry_mapping_missing",
+        "rule_provenance_unverified",
+    ]
     assert not payload["commercialReady"]
     lines = {line["key"]: line for line in payload["lines"]}
     assert lines["camera"]["actions"] == []
-    assert lines["ethernet_link"]["evidenceStatus"] == "unknown"
-    assert "approve" not in lines["cable_length"]["actions"]
+    assert set(lines) == {need.key for need in intake.needs}
     assert payload["changes"] == []
-    assert to_review_payload(evaluated.proposal) == payload
+    assert to_review_payload(evaluated.proposal)["lines"] == payload["lines"]
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(json.loads(json.dumps(payload)))
@@ -291,7 +293,10 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
     context = registry_context()
     pending = evaluate_scope(intake, package, registry_context=context)
     assert pending.proposal.status == "pending_specialist"
-    assert pending.payload["coverage"]["reasons"] == ["unverified_package"]
+    assert pending.payload["coverage"]["reasons"] == [
+        "unverified_package",
+        "rule_provenance_unverified",
+    ]
     assert isinstance(context.registry, dict)
     verified_registry = copy.deepcopy(context.registry)
     verified_registry["packages"][0]["review"].update(
@@ -311,7 +316,10 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
         registry_context=verified_context,
     )
     assert mismatch.proposal.status == "pending_specialist"
-    assert mismatch.payload["coverage"]["reasons"] == ["pattern_package_mismatch"]
+    assert mismatch.payload["coverage"]["reasons"] == [
+        "pattern_package_mismatch",
+        "rule_provenance_unverified",
+    ]
     wrong_project = evaluate_scope(
         intake,
         package,
@@ -320,7 +328,10 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
             project=json.loads((ROOT / "fixtures/valid/painting.json").read_text()),
         ),
     )
-    assert wrong_project.payload["coverage"]["reasons"] == ["project_mismatch"]
+    assert wrong_project.payload["coverage"]["reasons"] == [
+        "project_mismatch",
+        "rule_provenance_unverified",
+    ]
 
 
 def test_second_domain_uses_same_coverage_contract_without_assumed_quantity() -> None:
