@@ -79,10 +79,9 @@ tests/test_guided_bom.py`. El test siembra el archivo en un proceso, abre
 otro proceso HTTP y compara dos respuestas GET completas con la CLI, además de
 rechazar parámetros extra, duplicados o inválidos.
 
-## Extracción privada opcional AT-211
+## Optional private extraction (AT-211)
 
-La [guía del CLI privado](PRIVATE_AI.md) documenta el comando con `gpt-6-luna`,
-los límites de entrada, el store sintético y una prueba offline sin proveedor.
-Este modo no se monta en el servidor HTTP de la demo. Requiere autorización y
-configuración local de OpenAI para ejecutar el comando del modelo; la preview
-determinista anterior no necesita cuenta ni credenciales.
+The [private CLI guide](PRIVATE_AI.md) documents the `gpt-6-luna` command, input
+limits, synthetic store, and an offline test without a provider. This mode is not
+mounted on the demo HTTP server. Running the model command requires an authorized
+private OpenAI configuration; the deterministic preview above needs no account.
