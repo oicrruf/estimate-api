@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Verify pinned disposable Supabase PostgreSQL
         env:
-          AT208_PG_IMAGE: ghcr.io/supabase/postgres:17.6.1.102@sha256:90c82488dc721a2b6516c1634b2cc000633f972c4eb6100b68c5aef23ee9e275
+          AT208_PG_IMAGE: ghcr.io/supabase/postgres:17.6.1.156@sha256:665efa7e234a3c324718fd2b7fbbaaaf7263f2565bc2e8fce8555c4def4c4985
           AT208_ADMIN_USER: supabase_admin
         run: |
           docker pull "$AT208_PG_IMAGE"
