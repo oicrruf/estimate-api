@@ -8,8 +8,8 @@ from typing import Any, cast
 
 import pytest
 
-from estimate_api.discovery.engine import revalidate
-from estimate_api.discovery.models import KnowledgePackage, Need, ProjectIntake
+from estimate_api.discovery.engine import revalidate, review
+from estimate_api.discovery.models import KnowledgePackage, Need, ProjectIntake, ReviewAction
 from estimate_api.discovery.registry_adapter import RegistryContext
 from estimate_api.discovery.service import evaluate_scope
 from estimate_api.discovery.trusted import reviewed_package
@@ -116,6 +116,62 @@ def test_actual_service_keeps_reviewed_lines_and_quantities(name: str) -> None:
     assert (
         next(line.quantity for line in after.lines if line.key == changed_key) == changed_quantity
     )
+
+
+def test_explicit_derived_need_has_reachable_consistent_quantity() -> None:
+    base, package, context = setup("cameras")
+    registry = cast(dict[str, Any], copy.deepcopy(context.registry))
+    registry["packages"][0]["review"].update(
+        state="verified",
+        reviewerRef="synthetic://reviewer",
+        evidenceRefs=["synthetic://review"],
+    )
+    context = replace(context, registry=registry)
+    matching = replace(
+        base,
+        needs=(
+            *base.needs,
+            Need("camera:link", 8, "each"),
+            Need("camera:mount", 8, "each"),
+        ),
+    )
+    scoped = evaluate_scope(matching, package, registry_context=context)
+    assert "quantity:camera:link" not in scoped.proposal.blocking_facts
+    link = next(line for line in scoped.proposal.lines if line.key == "camera:link")
+    assert link.state == "user_requested" and link.quantity == 8
+    assert {origin.rule_id for origin in link.rule_provenance} == {"camera:camera-to-link"}
+    approved = review(
+        scoped.proposal,
+        tuple(
+            ReviewAction(line.key, "approve")
+            for line in scoped.proposal.lines
+            if line.state == "agent_proposed"
+        ),
+    )
+    assert approved.status == "approved" and approved.commercial_ready
+    assert not scoped.payload["commercialReady"]  # specialist evidence remains unverified
+    uncovered = evaluate_scope(
+        replace(base, needs=(*base.needs, Need("camera:unknown", 1, "each"))),
+        package,
+        registry_context=context,
+    )
+    assert uncovered.proposal.status == "pending_specialist"
+    assert "camera:unknown" in {line.key for line in uncovered.proposal.lines}
+
+    for conflicting in (Need("camera:link", 7, "each"), Need("camera:link", 8, "m")):
+        changed = replace(base, needs=(*base.needs, conflicting))
+        mismatch = evaluate_scope(changed, package, registry_context=context)
+        assert "quantity:camera:link" in mismatch.proposal.blocking_facts
+        assert mismatch.proposal.status == "proposed" and not mismatch.proposal.commercial_ready
+        reviewed = review(
+            mismatch.proposal,
+            tuple(
+                ReviewAction(line.key, "approve")
+                for line in mismatch.proposal.lines
+                if line.state == "agent_proposed"
+            ),
+        )
+        assert reviewed.status == "proposed" and not reviewed.commercial_ready
 
 
 @pytest.mark.parametrize(

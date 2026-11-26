@@ -151,6 +151,8 @@ def attach_topology_links(proposal: Proposal, topology: TopologyScope) -> Propos
         for material in topology.materials
     )
     additions = (*link_additions, *material_additions)
+    if len(proposal.lines) + len(additions) > 100:
+        raise ValueError("Topology line limit")
     if len({line.key for line in additions}) != len(additions):
         raise ValueError("Duplicate topology line")
     if any(line.key in existing for line in additions):

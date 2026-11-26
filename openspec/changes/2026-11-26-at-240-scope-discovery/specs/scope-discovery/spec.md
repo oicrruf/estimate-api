@@ -51,6 +51,11 @@ El sistema SHALL producir una salida de servicio versionada que distinga solicit
 - **WHEN** se produce el contrato de revisión con un lector limitado a cien IDs por consulta
 - **THEN** se consultan lotes acotados, se conserva el orden y la procedencia completa y una evidencia no disponible sigue bloqueando la preparación comercial.
 
+#### Scenario: Evidencia solicitada fuera de un prefijo global
+- **GIVEN** un grafo sintético con más de doscientas evidencias y quinientas rutas, de varios datasets
+- **WHEN** se consulta una evidencia solicitada fuera de esos prefijos
+- **THEN** Relate filtra por ID y dataset antes de paginar, conserva todas sus rutas y no confunde una evidencia de otro dataset con la solicitada.
+
 ### Requirement: Cobertura de paquete fail-closed
 El servicio SHALL consumir el resultado de cobertura del registro versionado y SHALL mantener `pending_specialist` si falta revisión, hay incompatibilidad de identidad, existe una necesidad raíz sin reglas o la cobertura es insuficiente. Un paquete catalogado SHALL no equivaler a validación técnica.
 
@@ -71,6 +76,16 @@ El sistema SHALL conservar como candidatos revisables las rutas, reglas, fuentes
 - **GIVEN** dos necesidades con bindings del mismo patrón y evidencias distintas
 - **WHEN** se propone y luego se confirma la cantidad del candidato compartido
 - **THEN** la línea conserva regla, fuente, evidencia y ruta de ambas necesidades; una evidencia ausente y otros bloqueos permanecen pendientes.
+
+#### Scenario: Dependencia declarada como necesidad
+- **GIVEN** ocho cámaras y ocho enlaces declarados explícitamente, con una única regla revisada que deriva ocho enlaces
+- **WHEN** se descubre y revisa el alcance
+- **THEN** la necesidad conserva su estado solicitado y no queda bloqueada por una cantidad ya coherente, aun si es terminal; una cantidad o unidad incompatible mantiene la pregunta y el bloqueo sin aprobación comercial.
+
+#### Scenario: Cambia el padre de una necesidad explícita
+- **GIVEN** una necesidad declarada cuya cantidad era coherente con la dependencia de un padre aprobado
+- **WHEN** la cantidad o unidad del padre se modifica
+- **THEN** la necesidad conserva el valor declarado, aparece un bloqueo de cantidad y no se reaplica aprobación hasta corregir y redescubrir el intake.
 
 #### Scenario: Longitud Decimal fuera del rango de revisión
 - **GIVEN** una ruta confirmada con longitud Decimal que desborda a infinito o subdesborda a cero al convertirse a float

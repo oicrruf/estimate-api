@@ -59,6 +59,27 @@ def test_parent_change_invalidates_transitive_quantities_and_approvals() -> None
         )
 
 
+def test_parent_change_preserves_explicit_descendant_and_requires_new_intake() -> None:
+    intake, package = scope(rule("a", "root", "parent"), rule("b", "parent", "child"))
+    intake = replace(intake, needs=(*intake.needs, Need("child", 2, "each")))
+    proposed = discover(intake, package)
+    assert proposed.status == "proposed" and not proposed.blocking_facts
+    approved = review(proposed, (ReviewAction("parent", "approve"),))
+    assert approved.status == "approved"
+    changed = review(approved, (ReviewAction("parent", "modify", 3, "each"),))
+    child = next(line for line in changed.lines if line.key == "child")
+    assert child.state == "user_requested" and child.quantity == 2
+    assert changed.blocking_facts == ("quantity:child",)
+    reapproved = review(changed, (ReviewAction("parent", "approve"),))
+    assert reapproved.status == "proposed" and not reapproved.commercial_ready
+    revised_intake = replace(intake, needs=(Need("root", 3, "each"), Need("child", 3, "each")))
+    rediscovered = discover(revised_intake, package)
+    assert not rediscovered.blocking_facts
+    assert next(line for line in rediscovered.lines if line.key == "child").state == (
+        "user_requested"
+    )
+
+
 def test_shared_quantity_confirmation_keeps_other_blocks_and_stale_review() -> None:
     intake, package = scope(
         rule("a", "root", "shared"),

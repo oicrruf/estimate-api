@@ -2,7 +2,7 @@
 
 ## Reconciliación con la base integrada
 
-La rama incorpora `develop` `3cd1e27cee6f096777848dbcd2b79844032f8f78`
+La rama incorpora `develop` `1c4dcec5e22eaaa5a6bfd2e0e2f1e66fb444a402`
 sin conflictos. Con los extras `dev` y `demo` fijados por CI tras integrar
 AT-232, se comprueban la suite completa, Ruff, mypy, OpenAPI, el escaneo de
 secretos y OpenSpec estricto. Esta comprobación cubre los puntos
@@ -76,9 +76,23 @@ topología es incompatible; sin bloqueo técnico sigue `proposed`. Si varios
 bindings comparten un candidato, el servicio consulta evidencias únicas en
 lotes de hasta 100 IDs y conserva su orden y procedencia. Un lector que omite
 referencias falla cerrado, y evidencia `unknown` mantiene `commercialReady`
-desactivado. La regresión integra 34 bindings, 38 líneas y 102 evidencias
+desactivado. La regresión integra 68 bindings, 72 líneas y 204 evidencias
 distintas en el conector compartido, también con el lector Relate real; una
 línea sin IDs no provoca consultas.
+
+El lector filtra IDs y dataset dentro de cada consulta Relate antes de aplicar
+páginas de hasta 200 filas. Conserva todas las rutas de capacidad, regla y
+topología de las referencias solicitadas, aun si existen más de 200 nodos o
+500 rutas ajenos. Una prueba en store temporal ejercita esos límites y un ID
+igual en otro dataset. El servicio conserva el límite global de 100 líneas al
+anexar topología. Para una dependencia ya declarada como necesidad, una sola
+derivación de cantidad y unidad idénticas no crea un bloqueo imposible, incluso
+si la necesidad es terminal y no origina otras reglas. Un valor o unidad
+incompatible sí permanece pendiente hasta corregir el intake; una necesidad
+sin regla entrante ni saliente sigue requiriendo cobertura especializada.
+Al modificar un padre, una necesidad descendiente conserva su cantidad y estado
+declarados; se añade un bloqueo hasta corregir y redescubrir el intake, sin
+restaurar aprobaciones previas.
 
 El adaptador AT-267 evalúa documentos de proyecto sintéticos con el evaluador integrado y conserva cada check, estado, motivo, revisión y cadena de evidencia en `constraints`. El llamador declara IDs de checks aplicables: documento ausente, check omitido, evidencia obsoleta o contradicción bloquean la revisión y `commercialReady`. Puertos totales, puertos PoE y potencia PoE se prueban por separado. Revalidar sin documento exige de nuevo la evidencia; no hereda un pase anterior.
 

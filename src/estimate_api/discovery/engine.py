@@ -39,6 +39,27 @@ def _positive_finite(value: float | None) -> bool:
         return False
 
 
+def _derived_quantity(parent_qty: float | None, rule: Rule) -> float | None:
+    if rule.quantity_mode == "pending":
+        quantity = None
+    elif rule.quantity_mode == "same":
+        quantity = parent_qty
+    elif rule.quantity_mode == "fixed":
+        quantity = rule.factor
+    else:
+        try:
+            quantity = (
+                parent_qty * rule.factor
+                if parent_qty is not None and rule.factor is not None
+                else None
+            )
+        except OverflowError as error:
+            raise ValueError(f"Invalid derived quantity in {rule.id}") from error
+    if quantity is not None and not _positive_finite(quantity):
+        raise ValueError(f"Invalid derived quantity in {rule.id}")
+    return quantity
+
+
 def _would_cycle(paths: list[tuple[str, str, str]], source: str, target: str) -> bool:
     """Check the whole discovered graph before adding a cross-branch edge."""
     adjacency: dict[str, set[str]] = {}
@@ -176,11 +197,11 @@ def discover(
     rules_by_source: dict[str, list[Rule]] = {}
     for rule in package.rules:
         rules_by_source.setdefault(rule.source_key, []).append(rule)
-    uncovered_needs = tuple(need.key for need in intake.needs if not rules_by_source.get(need.key))
     queue: list[tuple[str, int, tuple[str, ...]]] = [(key, 0, (key,)) for key in lines]
     paths: list[tuple[str, str, str]] = []
     questions: list[str] = []
     blocking_facts: set[str] = set()
+    requested_incoming: dict[str, int] = {}
     while queue:
         source, depth, ancestors = queue.pop(0)
         for rule in sorted(rules_by_source.get(source, []), key=lambda item: item.id):
@@ -202,6 +223,7 @@ def discover(
                 rule.source_refs,
                 rule.candidate_paths,
             )
+            quantity = _derived_quantity(lines[source].quantity, rule)
             if rule.target_key in lines:
                 if _would_cycle(paths, source, rule.target_key):
                     raise ValueError(f"Pattern cycle at {rule.id}")
@@ -218,7 +240,19 @@ def discover(
                     ),
                     rule_provenance=(*prior.rule_provenance, origin),
                 )
-                if lines[rule.target_key].parent_key != source:
+                if prior.state == "user_requested":
+                    requested_incoming[rule.target_key] = (
+                        requested_incoming.get(rule.target_key, 0) + 1
+                    )
+                    quantity_conflict = requested_incoming[rule.target_key] > 1
+                else:
+                    quantity_conflict = prior.parent_key != source
+                if (
+                    quantity_conflict
+                    or quantity is None
+                    or prior.quantity != quantity
+                    or prior.unit != rule.unit
+                ):
                     blocking_facts.add(f"quantity:{rule.target_key}")
                     questions.append(
                         f"¿Qué cantidad total de {rule.target_key} cubre todas las dependencias?"
@@ -226,24 +260,6 @@ def discover(
                 continue
             if len(lines) >= max_lines:
                 raise ValueError("Pattern line limit")
-            parent_qty = lines[source].quantity
-            if rule.quantity_mode == "pending":
-                quantity = None
-            elif rule.quantity_mode == "same":
-                quantity = parent_qty
-            elif rule.quantity_mode == "fixed":
-                quantity = rule.factor
-            else:
-                try:
-                    quantity = (
-                        parent_qty * rule.factor
-                        if parent_qty is not None and rule.factor is not None
-                        else None
-                    )
-                except OverflowError as error:
-                    raise ValueError(f"Invalid derived quantity in {rule.id}") from error
-            if quantity is not None and not _positive_finite(quantity):
-                raise ValueError(f"Invalid derived quantity in {rule.id}")
             state: LineState = "pending_measurement" if quantity is None else "agent_proposed"
             lines[rule.target_key] = ProposalLine(
                 rule.target_key,
@@ -274,6 +290,12 @@ def discover(
                 )
             queue.append((rule.target_key, depth + 1, (*ancestors, rule.target_key)))
     result_lines = tuple(lines.values())
+    reached = {target for _, _, target in paths}
+    uncovered_needs = tuple(
+        need.key
+        for need in intake.needs
+        if not rules_by_source.get(need.key) and need.key not in reached
+    )
     questions.extend(
         f"¿Cuál es el valor confirmado de {fact}?"
         for fact in sorted(blocking_facts)
@@ -324,13 +346,22 @@ def review(proposal: Proposal, actions: tuple[ReviewAction, ...]) -> Proposal:
         }
         descendants.update(children)
         frontier = children
+    requested_descendants = {
+        line.key
+        for line in proposal.lines
+        if line.key in descendants and line.state == "user_requested"
+    }
     updated = []
     for line in proposal.lines:
         action = decisions.get(line.key)
         if line.key in descendants:
             if action is not None:
                 raise ValueError("Review descendants after parent quantity or unit changes")
-            updated.append(replace(line, quantity=None, state="pending_measurement"))
+            updated.append(
+                line
+                if line.key in requested_descendants
+                else replace(line, quantity=None, state="pending_measurement")
+            )
         elif action is None:
             updated.append(line)
         elif line.state == "user_requested":
@@ -349,9 +380,18 @@ def review(proposal: Proposal, actions: tuple[ReviewAction, ...]) -> Proposal:
             )
     result_lines = tuple(updated)
     blocking_facts = tuple(
-        fact
-        for fact in proposal.blocking_facts
-        if not (fact.startswith("quantity:") and fact.removeprefix("quantity:") in modified)
+        dict.fromkeys(
+            (
+                *(
+                    fact
+                    for fact in proposal.blocking_facts
+                    if not (
+                        fact.startswith("quantity:") and fact.removeprefix("quantity:") in modified
+                    )
+                ),
+                *(f"quantity:{key}" for key in sorted(requested_descendants)),
+            )
+        )
     )
     confirmed_questions = {
         f"¿Qué cantidad total de {key} cubre todas las dependencias?"

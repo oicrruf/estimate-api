@@ -12,6 +12,7 @@ from jsonschema import Draft202012Validator
 
 from estimate_api.discovery.engine import review
 from estimate_api.discovery.ethernet_adapter import (
+    TopologyLink,
     TopologyScope,
     attach_topology_links,
     evaluate_ethernet_scope,
@@ -208,11 +209,28 @@ def test_pending_pattern_facts_do_not_hide_technical_blockers() -> None:
     assert still_blocked.technical_blockers == missing_check.proposal.technical_blockers
 
 
+def test_topology_additions_obey_discovery_line_limit() -> None:
+    topology = TopologyScope(
+        "PENDING",
+        tuple(
+            TopologyLink(f"LINK-{index:03}", "PENDING", "measurement", None, ())
+            for index in range(100)
+        ),
+        (),
+        (),
+        (),
+        True,
+        False,
+    )
+    with pytest.raises(ValueError, match="Topology line limit"):
+        evaluate_scope(intake("camera", 1), None, ethernet_scope=topology)
+
+
 def test_many_shared_evidence_ids_are_batched_without_losing_provenance() -> None:
     pattern = BY_NAME["poe-camera"]
     project = replace(
         intake("camera-00", 1),
-        needs=tuple(Need(f"camera-{index:02}", 1, "each") for index in range(34)),
+        needs=tuple(Need(f"camera-{index:02}", 1, "each") for index in range(68)),
     )
     bindings = tuple(
         PatternBinding(
@@ -276,12 +294,12 @@ def test_many_shared_evidence_ids_are_batched_without_losing_provenance() -> Non
         line for line in result.proposal.lines if line.key == "at247:item:utp-connector"
     )
     rendered = next(line for line in result.payload["lines"] if line["key"] == connector.key)
-    assert len(result.proposal.lines) == 38
-    assert len(connector.evidence_ids) == len(rendered["evidence"]) == 102
+    assert len(result.proposal.lines) == 72
+    assert len(connector.evidence_ids) == len(rendered["evidence"]) == 204
     assert [item["id"] for item in rendered["evidence"]] == list(connector.evidence_ids)
-    assert len(rendered["ruleProvenance"]) == 34
+    assert len(rendered["ruleProvenance"]) == 68
     assert any(len(call) == 100 for call in reader.calls)
-    assert any(len(call) == 2 for call in reader.calls)
+    assert any(len(call) == 4 for call in reader.calls)
     assert rendered["evidenceStatus"] == "unknown"
     assert not result.payload["commercialReady"]
 
@@ -295,7 +313,7 @@ def test_many_shared_evidence_ids_are_batched_without_losing_provenance() -> Non
         real_line = next(
             line for line in real_result.payload["lines"] if line["key"] == connector.key
         )
-        assert len(real_line["evidence"]) == 102
+        assert len(real_line["evidence"]) == 204
         assert real_line["evidenceStatus"] == "unknown"
         connection.close()
 
