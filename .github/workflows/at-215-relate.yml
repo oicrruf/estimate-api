@@ -1,0 +1,34 @@
+name: AT-215 Relate local
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'spikes/relate/**'
+      - 'ci/at-215-relate/**'
+      - '.github/workflows/at-215-relate.yml'
+      - 'openspec/changes/archive/2026-11-26-at-215-relate-persistence/**'
+      - 'openspec/specs/technical-graph/**'
+      - 'docs/evidence/at-215.md'
+      - 'docs/adr/0015-relate-runtime-local.md'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.14'
+      - name: Validar OpenSpec AT-215
+        env:
+          OPENSPEC_TELEMETRY: '0'
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix ci/at-206-docs
+          ci/at-206-docs/node_modules/.bin/openspec validate --specs --strict
+          ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
+      - name: Probar Relate y volúmenes sintéticos
+        run: bash ci/at-215-relate/run.sh

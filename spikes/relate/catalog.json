@@ -1,0 +1,12 @@
+{
+  "products": [{"id": "prod:solar-a", "name": "Panel A"}, {"id": "prod:solar-b", "name": "Panel B"}, {"id": "prod:inverter-a", "name": "Inversor A"}],
+  "capabilities": [{"id": "cap:solar", "name": "Generación solar"}, {"id": "cap:hybrid", "name": "Modo híbrido"}],
+  "evidence": [{"id": "ev:datasheet-a", "revision": 2, "claim": "Potencia corregida: 420 W"}],
+  "evidence_revisions": [{"id": "ev:datasheet-a:r1", "evidence": "ev:datasheet-a", "revision": 1, "claim": "Potencia: 400 W", "reason": "lectura inicial"}, {"id": "ev:datasheet-a:r2", "evidence": "ev:datasheet-a", "revision": 2, "claim": "Potencia corregida: 420 W", "reason": "rectificación de ficha"}],
+  "product_capabilities": [{"product": "prod:solar-a", "capability": "cap:solar", "evidence": "ev:datasheet-a"}, {"product": "prod:solar-b", "capability": "cap:solar", "evidence": "ev:datasheet-a"}, {"product": "prod:inverter-a", "capability": "cap:hybrid", "evidence": "ev:datasheet-a"}],
+  "compatibilities": [{"from": "prod:solar-a", "to": "prod:inverter-a", "status": "compatible"}],
+  "alternatives": [{"from": "prod:solar-a", "to": "prod:solar-b"}],
+  "projects": [{"id": "project:north"}, {"id": "project:south"}],
+  "requirements": [{"id": "req:north-solar", "project": "project:north", "capability": "cap:solar"}],
+  "candidates": [{"project": "project:north", "product": "prod:solar-a", "status": "discarded"}, {"project": "project:south", "product": "prod:solar-a", "status": "eligible"}]
+}

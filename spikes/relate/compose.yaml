@@ -1,0 +1,19 @@
+services:
+  probe:
+    build: .
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - graph_data:/data
+      - graph_backup:/backup
+      - graph_restored:/restored
+volumes:
+  graph_data:
+  graph_backup:
+  graph_restored:

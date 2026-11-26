@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!requirements-container.txt
+!catalog.json
+!spike.py
+!container_probe.py
+!wheelhouse/
+!wheelhouse/*.whl
