@@ -55,12 +55,22 @@ El servicio SHALL consumir el resultado de cobertura del registro versionado y S
 - **THEN** la necesidad permanece visible, aparece una pregunta de cobertura y no se habilita cotización.
 
 ### Requirement: Candidatos versionados y topología medible
-El sistema SHALL conservar como candidatos revisables las rutas, reglas, fuentes y evidencias de patrones versionados. SHALL mantener cada enlace requerido aunque falte su medida, y SHALL no publicar totales comerciales de cable de una topología parcialmente medida.
+El sistema SHALL conservar como candidatos revisables las rutas, reglas, fuentes y evidencias de patrones versionados, asociadas a cada regla y necesidad de origen aun cuando varias rutas comparten una línea. SHALL mantener cada enlace requerido aunque falte su medida, y SHALL no publicar totales comerciales de cable de una topología parcialmente medida. Una longitud Decimal SHALL ser positiva y representable como número JSON finito antes de incorporarse a una línea.
 
 #### Scenario: Patrón y enlace sintéticos
 - **GIVEN** una necesidad declarada con hechos confirmados AT-247 y topología AT-239 parcialmente medida
 - **WHEN** se descubre el alcance
 - **THEN** aparecen candidatos con procedencia, todos los enlaces exigidos y cable pendiente sin metraje total inventado.
+
+#### Scenario: Dos rutas comparten un candidato
+- **GIVEN** dos necesidades con bindings del mismo patrón y evidencias distintas
+- **WHEN** se propone y luego se confirma la cantidad del candidato compartido
+- **THEN** la línea conserva regla, fuente, evidencia y ruta de ambas necesidades; una evidencia ausente y otros bloqueos permanecen pendientes.
+
+#### Scenario: Longitud Decimal fuera del rango de revisión
+- **GIVEN** una ruta confirmada con longitud Decimal que desborda a infinito o subdesborda a cero al convertirse a float
+- **WHEN** se evalúa o anexa su topología
+- **THEN** el servicio rechaza el valor antes de producir una cantidad o JSON no finitos.
 
 ### Requirement: Alternativa condicionada y revalidación
 El sistema SHALL bloquear rechazo de una pieza imprescindible y SHALL mostrar una alternativa únicamente cuando la arquitectura y los hechos que activan el patrón alternativo estén confirmados; SHALL invalidar aprobación anterior y señalar altas y bajas.
