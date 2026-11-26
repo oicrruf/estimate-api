@@ -33,7 +33,7 @@ Referencias de semántica RLS: [Supabase RLS](https://supabase.com/docs/guides/d
 - [Restore puede perder datos posteriores al backup] → probar recuperación con fixtures, documentar RPO/RTO antes de producción.
 - [Compatibilidad no probada del hosting] → roles NOLOGIN, pertenencia del migrador, pools/conexión SQL y grants deben probarse en Supabase local compatible; PostgreSQL 17 con fixture no demuestra la topología alojada. Mantener PR draft y AT-208 In Progress hasta revisión independiente y CI final.
 - [Espacio Docker insuficiente en el ensayo oficial] → el pull de `ghcr.io/supabase/postgres:17.6.1.102` fijado por digest falló al registrar una capa con `no space left on device`; no limpiar imágenes o volúmenes de otros proyectos. Repetir el ensayo en un Docker aislado con capacidad suficiente antes de integrar.
-- [Crash en imagen oficial del CI] → el runner estándar sí descargó e inició la imagen fijada y aplicó la migración, pero PostgreSQL recibió `SIGSEGV` en una prueba de aislamiento como `authenticated`. Mantener el job rojo como gate; investigar upstream o probar una revisión corregida sin eliminar pruebas negativas.
+- [Regresión de Supabase Postgres .102] → el runner recibió `SIGSEGV` en un caso negativo como `authenticated`. El issue supabase/postgres#2112 documenta una corrección posterior; el mismo ensayo pasó con la imagen oficial .156 fijada por digest, sin eliminar pruebas negativas. Mantener el pin y revisar versiones antes de actualizarlo.
 
 ## Migration Plan
 

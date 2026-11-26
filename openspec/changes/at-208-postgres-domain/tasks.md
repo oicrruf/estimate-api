@@ -27,6 +27,7 @@
 - [x] 4.5b Conservar evaluación adversa posterior a selección, superseder la selección activa y ordenar evaluaciones de una transacción por secuencia monotónica; probar reintento y selección vigente.
 - [x] 4.5c Probar preflight con un segundo LOGIN SUPERUSER de plataforma sin GRANT y con un migrador ordinario sin `SET ROLE`; conservar fallo cerrado de cliente/backend.
 - [ ] 4.6 Probar topología exacta de conexión SQL, membresía del migrador, grants y roles en un stack Supabase local compatible; no atribuir compatibilidad a la base PostgreSQL simulada.
+- [x] 4.6a Probar migración con `SET ROLE at208_owner`, roles/grants, aislamiento y restauración en la imagen oficial Supabase PostgreSQL 17.6.1.156 fijada por digest; conservar la prueba negativa que expuso el fallo de .102.
 - [ ] 4.7 Revisar independientemente SQL, roles, evidencia fijada, modelo de autorización/idempotencia y tests; verificar CI del SHA final antes de integrar.
 
 ## Workflow follow-up
