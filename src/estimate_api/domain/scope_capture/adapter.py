@@ -23,6 +23,10 @@ class ScopeAdapterError(ValueError):
 
 def attach_scope_draft(value: object, draft: ScopeDraft, package_id: str) -> ProjectDocument:
     """Return a new validated document with one scope package; never mutate input."""
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError) as error:
+        raise ScopeAdapterError("source document is not strict JSON") from error
     baseline = validate_project_document(value)
     if not baseline.valid or baseline.document is None:
         details = "; ".join(f"{issue.path}: {issue.message}" for issue in baseline.issues)
@@ -31,7 +35,10 @@ def attach_scope_draft(value: object, draft: ScopeDraft, package_id: str) -> Pro
         raise ScopeAdapterError("unsupported scope draft version")
 
     document = deepcopy(baseline.document)
-    facts = cast(dict[str, JsonValue], json.loads(json.dumps(asdict(draft))))
+    try:
+        facts = cast(dict[str, JsonValue], json.loads(json.dumps(asdict(draft), allow_nan=False)))
+    except (TypeError, ValueError) as error:
+        raise ScopeAdapterError("scope draft is not strict JSON") from error
     facts["purchaseItems"] = list(draft.purchase_items)
     package: DomainPackage = {
         "id": package_id,

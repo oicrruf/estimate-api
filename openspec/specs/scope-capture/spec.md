@@ -24,13 +24,17 @@ El sistema SHALL diferenciar hechos confirmados e inferidos. Un hecho confirmado
 ### Requirement: Activos aportados por el cliente
 El sistema SHALL registrar disponibilidad y validación del activo por separado. Un activo del cliente MUST quedar fuera de la lista de compra.
 
+#### Scenario: Ausencia confirmada
+- **WHEN** el cliente confirma con evidencia que no hay activos existentes ni suministros
+- **THEN** las colecciones permanecen vacías y no se generan preguntas para ellas
+
 #### Scenario: Gabinete disponible sin validar
 - **WHEN** un gabinete aportado por el cliente está disponible pero sin validar
 - **THEN** el borrador pregunta por su estado, dimensiones y compatibilidad
 - **AND** el gabinete no aparece entre los artículos de compra
 
 ### Requirement: Adaptación y fallo cerrado
-El sistema SHALL generar un paquete de dominio del documento universal v1 sin mutar el documento de entrada. SHALL rechazar documentos inválidos, sujetos inexistentes e identificadores duplicados antes de devolver un resultado.
+El sistema SHALL generar un paquete de dominio del documento universal v1 sin mutar el documento de entrada. SHALL rechazar documentos inválidos, sujetos inexistentes, identificadores duplicados y medidas no finitas antes de devolver un resultado.
 
 #### Scenario: Documento inválido
 - **WHEN** la entrada al adaptador viola el contrato universal

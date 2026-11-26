@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Generic, TypeVar
@@ -52,8 +53,13 @@ class Measurement:
     unit: str
 
     def __post_init__(self) -> None:
-        if not self.label.strip() or not self.unit.strip() or self.value <= 0:
-            raise ValueError("measurement needs a label, positive value, and unit")
+        if (
+            not self.label.strip()
+            or not self.unit.strip()
+            or not math.isfinite(self.value)
+            or self.value <= 0
+        ):
+            raise ValueError("measurement needs a label, finite positive value, and unit")
 
 
 @dataclass(frozen=True)
@@ -114,10 +120,18 @@ class ScopeIntake:
     exclusions: Fact[tuple[str, ...]] | None = None
     client_assets: tuple[ClientAsset, ...] = ()
     supplies: tuple[SupplyItem, ...] = ()
+    client_assets_absence_evidence: str | None = None
+    supplies_absence_evidence: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.client_assets, tuple) or not isinstance(self.supplies, tuple):
             raise ValueError("client_assets and supplies must be tuples")
+        for name, values, evidence in (
+            ("client_assets", self.client_assets, self.client_assets_absence_evidence),
+            ("supplies", self.supplies, self.supplies_absence_evidence),
+        ):
+            if evidence is not None and (values or not evidence.strip()):
+                raise ValueError(f"{name} absence evidence requires an empty collection")
         if not self.description.strip():
             raise ValueError("description is required")
         for name in ("objective", "location", "environment", "sketch"):
@@ -159,6 +173,8 @@ class ScopeDraft:
     exclusions: Fact[tuple[str, ...]] | None
     client_assets: tuple[ClientAsset, ...]
     supplies: tuple[SupplyItem, ...]
+    client_assets_absence_evidence: str | None
+    supplies_absence_evidence: str | None
     blocking_questions: tuple[BlockingQuestion, ...]
 
     @property
@@ -191,7 +207,7 @@ def build_scope_draft(intake: ScopeIntake) -> ScopeDraft:
             questions.append(
                 BlockingQuestion(field, f"Please confirm the inferred {field}: {fact.value}.")
             )
-    if not intake.client_assets:
+    if not intake.client_assets and intake.client_assets_absence_evidence is None:
         questions.append(
             BlockingQuestion(
                 "client_assets",
@@ -214,7 +230,7 @@ def build_scope_draft(intake: ScopeIntake) -> ScopeDraft:
                     "and compatibility?",
                 )
             )
-    if not intake.supplies:
+    if not intake.supplies and intake.supplies_absence_evidence is None:
         questions.append(
             BlockingQuestion(
                 "supplies",
@@ -233,5 +249,7 @@ def build_scope_draft(intake: ScopeIntake) -> ScopeDraft:
         exclusions=intake.exclusions,
         client_assets=intake.client_assets,
         supplies=intake.supplies,
+        client_assets_absence_evidence=intake.client_assets_absence_evidence,
+        supplies_absence_evidence=intake.supplies_absence_evidence,
         blocking_questions=tuple(questions),
     )

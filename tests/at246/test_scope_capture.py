@@ -93,6 +93,21 @@ def test_complete_explicit_intake_has_no_blocking_questions() -> None:
     assert build_scope_draft(intake).blocking_questions == ()
 
 
+def test_confirmed_empty_assets_and_supplies_clear_questions() -> None:
+    draft = build_scope_draft(
+        ScopeIntake(
+            description="Inspect a fictional empty room.",
+            client_assets_absence_evidence="client confirmed no existing assets",
+            supplies_absence_evidence="client confirmed no supplied items",
+        )
+    )
+    fields = {question.field for question in draft.blocking_questions}
+    assert "client_assets" not in fields
+    assert "supplies" not in fields
+    assert draft.client_assets_absence_evidence is not None
+    assert draft.supplies_absence_evidence is not None
+
+
 def test_adapter_validates_and_preserves_source(
     unconfirmed_cabinet: ScopeIntake, source_document: object
 ) -> None:
@@ -141,6 +156,19 @@ def test_invalid_confirmation_and_purchase_claims_are_rejected() -> None:
         )
     with pytest.raises(ValueError, match="SupplyOwner"):
         SupplyItem("cabinet", "vendor")  # type: ignore[arg-type]
+    for invalid in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(ValueError, match="finite positive"):
+            Measurement("width", invalid, "m")
+    with pytest.raises(ValueError, match="absence evidence"):
+        ScopeIntake("fictional request", client_assets_absence_evidence=" ")
+    with pytest.raises(ValueError, match="absence evidence"):
+        ScopeIntake(
+            "fictional request",
+            client_assets=(
+                ClientAsset("cabinet", AssetAvailability.AVAILABLE, AssetValidation.UNKNOWN),
+            ),
+            client_assets_absence_evidence="client confirmed none",
+        )
     with pytest.raises(ValueError, match="unique"):
         ScopeIntake(
             "fictional request",
