@@ -174,7 +174,7 @@ def attach_topology_links(proposal: Proposal, topology: TopologyScope) -> Propos
     )
     status: Literal["blocked", "proposed", "pending_specialist"] = (
         "blocked"
-        if topology.incompatible
+        if topology.incompatible or proposal.status == "blocked"
         else (proposal.status if proposal.status == "pending_specialist" else "proposed")
     )
     return replace(

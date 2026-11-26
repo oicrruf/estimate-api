@@ -2,13 +2,10 @@
 
 ## Reconciliación con la base integrada
 
-La comprobación descartable de `develop` `3cd1e27cee6f096777848dbcd2b79844032f8f78`
-y el head AT-240 anterior produjo el árbol `46fcbe570316a21c409a90f9ddfcc220dc97b05f`
-sin conflictos. La rama incorpora ahora esa base; el único cambio posterior es
-esta nota de evidencia.
-Con los extras `dev` y `demo` fijados por CI tras integrar AT-232, la suite
-completa registra 206 pruebas aprobadas; también pasan Ruff, mypy, OpenAPI,
-el escaneo de secretos y OpenSpec estricto. Esta comprobación cubre los puntos
+La rama incorpora `develop` `3cd1e27cee6f096777848dbcd2b79844032f8f78`
+sin conflictos. Con los extras `dev` y `demo` fijados por CI tras integrar
+AT-232, se comprueban la suite completa, Ruff, mypy, OpenAPI, el escaneo de
+secretos y OpenSpec estricto. Esta comprobación cubre los puntos
 de entrada locales `evaluate_scope` y `evaluate_pattern_scope`; no constituye
 una prueba del chat/API ni de la aprobación A2UI persistida.
 
@@ -73,6 +70,15 @@ descendientes al modificar un padre. Sus cantidades AT-247 ya están calculadas;
 agregar esas aristas no vuelve a multiplicarlas. La evidencia repetida por un
 endpoint y su recorrido se consolida antes de la consulta Relate en ambas
 entradas del servicio; la prueba comprueba el patrón PoE y un enlace solapado.
+
+Un hecho pendiente no degrada `blocked` cuando falta un check AT-267 o la
+topología es incompatible; sin bloqueo técnico sigue `proposed`. Si varios
+bindings comparten un candidato, el servicio consulta evidencias únicas en
+lotes de hasta 100 IDs y conserva su orden y procedencia. Un lector que omite
+referencias falla cerrado, y evidencia `unknown` mantiene `commercialReady`
+desactivado. La regresión integra 34 bindings, 38 líneas y 102 evidencias
+distintas en el conector compartido, también con el lector Relate real; una
+línea sin IDs no provoca consultas.
 
 El adaptador AT-267 evalúa documentos de proyecto sintéticos con el evaluador integrado y conserva cada check, estado, motivo, revisión y cadena de evidencia en `constraints`. El llamador declara IDs de checks aplicables: documento ausente, check omitido, evidencia obsoleta o contradicción bloquean la revisión y `commercialReady`. Puertos totales, puertos PoE y potencia PoE se prueban por separado. Revalidar sin documento exige de nuevo la evidencia; no hereda un pase anterior.
 

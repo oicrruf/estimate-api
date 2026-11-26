@@ -11,7 +11,11 @@ import relate
 from jsonschema import Draft202012Validator
 
 from estimate_api.discovery.engine import review
-from estimate_api.discovery.ethernet_adapter import evaluate_ethernet_scope
+from estimate_api.discovery.ethernet_adapter import (
+    TopologyScope,
+    attach_topology_links,
+    evaluate_ethernet_scope,
+)
 from estimate_api.discovery.evidence import (
     EvidenceReference,
     PatternRuleReference,
@@ -160,6 +164,151 @@ def test_reviewing_real_utp_candidate_invalidates_its_precomputed_descendants() 
     assert changed_lines["at247:item:poe-power"].state == "user_approved"
     reapproved_utp = review(changed, (ReviewAction("at247:item:utp", "approve"),))
     assert reapproved_utp.status == "proposed" and not reapproved_utp.commercial_ready
+
+
+def test_pending_pattern_facts_do_not_hide_technical_blockers() -> None:
+    pattern = BY_NAME["poe-camera"]
+    project = intake("camera", 2)
+    facts = {
+        "application": confirmed(True, "EV-APPLICATION"),
+        "wired_run": confirmed(True, "EV-WIRED"),
+        "mount_required": confirmed(False, "EV-MOUNT"),
+        "poe_source": confirmed(True, "EV-POE"),
+    }
+    binding = PatternBinding("camera", pattern, facts)
+    pattern_plan = plan(project, binding)
+    context = registry_context(pattern)
+    ordinary = evaluate_pattern_scope(project, pattern_plan, registry_context=context)
+    assert ordinary.proposal.status == ordinary.payload["status"] == "proposed"
+    assert "camera:utp_ends" in ordinary.proposal.blocking_facts
+    missing_check = evaluate_pattern_scope(
+        project,
+        pattern_plan,
+        registry_context=context,
+        required_constraint_ids=("global:total-ports",),
+    )
+    assert missing_check.proposal.status == missing_check.payload["status"] == "blocked"
+    assert "constraint:document_missing" in missing_check.proposal.technical_blockers
+    incompatible = evaluate_pattern_scope(
+        project,
+        pattern_plan,
+        registry_context=context,
+        ethernet_scope=TopologyScope(
+            "REVIEW_REQUIRED", (), (), (), ("incompatible-route",), True, False
+        ),
+    )
+    assert incompatible.proposal.status == incompatible.payload["status"] == "blocked"
+    assert "incompatible-route" in incompatible.proposal.technical_blockers
+    assert not missing_check.payload["commercialReady"]
+    assert not incompatible.payload["commercialReady"]
+    still_blocked = attach_topology_links(
+        missing_check.proposal, TopologyScope("PENDING", (), (), (), (), True, False)
+    )
+    assert still_blocked.status == "blocked"
+    assert still_blocked.technical_blockers == missing_check.proposal.technical_blockers
+
+
+def test_many_shared_evidence_ids_are_batched_without_losing_provenance() -> None:
+    pattern = BY_NAME["poe-camera"]
+    project = replace(
+        intake("camera-00", 1),
+        needs=tuple(Need(f"camera-{index:02}", 1, "each") for index in range(34)),
+    )
+    bindings = tuple(
+        PatternBinding(
+            need.key,
+            pattern,
+            {
+                "application": confirmed(True, f"EV-APP-{index:02}"),
+                "wired_run": confirmed(True, f"EV-RUN-{index:02}"),
+                "mount_required": confirmed(False, f"EV-MOUNT-{index:02}"),
+                "poe_source": confirmed(True, f"EV-POE-{index:02}"),
+                "utp_ends": confirmed(
+                    2, "EV-ENDS-unavailable" if index == 33 else f"EV-ENDS-{index:02}"
+                ),
+            },
+        )
+        for index, need in enumerate(project.needs)
+    )
+    pattern_plan = build_pattern_plan(
+        project,
+        bindings,
+        registry_package_id="catalog:camera-v1",
+        source="synthetic://at-247/patterns/1.0.0",
+    )
+
+    class BoundedReader:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, ...]] = []
+
+        def resolve(self, evidence_ids: tuple[str, ...]) -> tuple[EvidenceReference, ...]:
+            assert 0 < len(evidence_ids) <= 100
+            assert len(evidence_ids) == len(set(evidence_ids))
+            self.calls.append(evidence_ids)
+            return tuple(
+                EvidenceReference(
+                    identifier,
+                    "unknown" if identifier.endswith("-unavailable") else "capability_context",
+                    None,
+                    () if identifier.endswith("-unavailable") else (("p", "c", identifier),),
+                )
+                for identifier in evidence_ids
+            )
+
+        def resolve_pattern_rules(
+            self, pattern_id: str, rule_ids: tuple[str, ...]
+        ) -> tuple[PatternRuleReference, ...]:
+            return tuple(
+                PatternRuleReference(pattern_id, rule_id, "synthetic://source", "rule_context")
+                for rule_id in rule_ids
+            )
+
+        def resolve_topology_links(
+            self, link_ids: tuple[str, ...], dataset_id: str
+        ) -> tuple[TopologyLinkReference, ...]:
+            return ()
+
+    reader = BoundedReader()
+    result = evaluate_pattern_scope(
+        project, pattern_plan, reader, registry_context=registry_context(pattern)
+    )
+    connector = next(
+        line for line in result.proposal.lines if line.key == "at247:item:utp-connector"
+    )
+    rendered = next(line for line in result.payload["lines"] if line["key"] == connector.key)
+    assert len(result.proposal.lines) == 38
+    assert len(connector.evidence_ids) == len(rendered["evidence"]) == 102
+    assert [item["id"] for item in rendered["evidence"]] == list(connector.evidence_ids)
+    assert len(rendered["ruleProvenance"]) == 34
+    assert any(len(call) == 100 for call in reader.calls)
+    assert any(len(call) == 2 for call in reader.calls)
+    assert rendered["evidenceStatus"] == "unknown"
+    assert not result.payload["commercialReady"]
+
+    with tempfile.TemporaryDirectory(prefix="at240-many-evidence-") as directory:
+        connection = relate.connect(str(Path(directory) / "patterns.db"))
+        seed_patterns(connection, [pattern])
+        real_reader = RelateEvidenceReader(connection, "estimate-hackathon-v1")
+        real_result = evaluate_pattern_scope(
+            project, pattern_plan, real_reader, registry_context=registry_context(pattern)
+        )
+        real_line = next(
+            line for line in real_result.payload["lines"] if line["key"] == connector.key
+        )
+        assert len(real_line["evidence"]) == 102
+        assert real_line["evidenceStatus"] == "unknown"
+        connection.close()
+
+    class TruncatedReader(BoundedReader):
+        def resolve(self, evidence_ids: tuple[str, ...]) -> tuple[EvidenceReference, ...]:
+            return super().resolve(evidence_ids[:-1])
+
+    with pytest.raises(ValueError, match="incomplete or reordered"):
+        to_review_payload(result.proposal, TruncatedReader())
+
+    empty_reader = BoundedReader()
+    to_review_payload(evaluate_scope(intake("uncovered", None), None).proposal, empty_reader)
+    assert empty_reader.calls == []
 
 
 def test_reused_pattern_bindings_keep_distinct_rule_ids_and_shared_quantity_block() -> None:

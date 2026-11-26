@@ -46,6 +46,11 @@ El sistema SHALL producir una salida de servicio versionada que distinga solicit
 - **WHEN** el servicio evalúa un proyecto y consulta referencias de evidencia
 - **THEN** muestra la ruta de capacidad presente, mantiene desconocidas las dependencias sin evidencia y no habilita cotización comercial.
 
+#### Scenario: Evidencia compartida excede el límite por consulta
+- **GIVEN** varios bindings válidos que aportan más de cien evidencias distintas a una línea compartida
+- **WHEN** se produce el contrato de revisión con un lector limitado a cien IDs por consulta
+- **THEN** se consultan lotes acotados, se conserva el orden y la procedencia completa y una evidencia no disponible sigue bloqueando la preparación comercial.
+
 ### Requirement: Cobertura de paquete fail-closed
 El servicio SHALL consumir el resultado de cobertura del registro versionado y SHALL mantener `pending_specialist` si falta revisión, hay incompatibilidad de identidad, existe una necesidad raíz sin reglas o la cobertura es insuficiente. Un paquete catalogado SHALL no equivaler a validación técnica.
 
@@ -87,6 +92,11 @@ El servicio SHALL ejecutar los checks AT-267 aplicables contra el documento del 
 - **GIVEN** demandas y límites confirmados con evidencia sintética
 - **WHEN** falla solo el límite de puertos totales, puertos PoE o potencia PoE
 - **THEN** el hallazgo correspondiente bloquea la propuesta sin cambiar los otros hallazgos.
+
+#### Scenario: Hecho de patrón pendiente junto a bloqueo técnico
+- **GIVEN** un hecho de patrón sin confirmar y una restricción ausente o topología incompatible
+- **WHEN** el servicio combina sus resultados
+- **THEN** mantiene `blocked` y los bloqueos técnicos; si solo falta el hecho, conserva `proposed`.
 
 ### Requirement: Procedencia de reglas y cobertura persistente
 El servicio y su revalidación SHALL resolver reglas únicamente contra contenido sintético versionado y revisado en el repositorio. SHALL verificar identidad, versión, ámbito, reglas y fuentes declaradas; SHALL rechazar líneas derivadas de paquetes o reglas ajenas. SHALL reconstruir una expansión AT-247 y comprobar el digest del patrón al consumirla. Revalidar de forma autónoma SHALL conservar el bloqueo de especialista hasta una verificación nueva de cobertura.

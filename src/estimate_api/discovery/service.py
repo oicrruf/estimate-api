@@ -135,6 +135,23 @@ class ScopeEvaluation:
     payload: ScopeReviewPayload
 
 
+def _resolve_evidence(
+    reader: EvidenceReader | None, evidence_ids: tuple[str, ...]
+) -> tuple[EvidenceReference, ...]:
+    """Keep each reader call bounded without dropping shared-line provenance."""
+    if reader is None or not evidence_ids:
+        return ()
+    unique = tuple(dict.fromkeys(evidence_ids))
+    references = tuple(
+        ref
+        for offset in range(0, len(unique), 100)
+        for ref in reader.resolve(unique[offset : offset + 100])
+    )
+    if tuple(ref.id for ref in references) != unique:
+        raise ValueError("Evidence reader returned incomplete or reordered references")
+    return references
+
+
 def to_review_payload(
     proposal: Proposal,
     evidence_reader: EvidenceReader | None = None,
@@ -152,11 +169,7 @@ def to_review_payload(
     rendered: list[LinePayload] = []
     evidence_complete = True
     for line in proposal.lines:
-        references = (
-            evidence_reader.resolve(tuple(dict.fromkeys(line.evidence_ids)))
-            if evidence_reader is not None and line.evidence_ids
-            else ()
-        )
+        references = _resolve_evidence(evidence_reader, line.evidence_ids)
         rule_references = (
             tuple(
                 ref
@@ -516,9 +529,13 @@ def evaluate_pattern_scope(
             proposal,
             blocking_facts=pending,
             questions=questions,
-            status="pending_specialist"
-            if plan.limit_reached or proposal.status == "pending_specialist"
-            else "proposed",
+            status=(
+                proposal.status
+                if proposal.status in ("blocked", "pending_specialist")
+                else "pending_specialist"
+                if plan.limit_reached
+                else "proposed"
+            ),
             commercial_ready=False,
         )
     if previous is not None:
