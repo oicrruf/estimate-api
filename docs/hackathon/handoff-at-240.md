@@ -1,5 +1,17 @@
 # AT-240: preparación local de descubrimiento
 
+## Reconciliación con la base integrada
+
+La comprobación descartable de `develop` `3cd1e27cee6f096777848dbcd2b79844032f8f78`
+y el head AT-240 anterior produjo el árbol `46fcbe570316a21c409a90f9ddfcc220dc97b05f`
+sin conflictos. La rama incorpora ahora esa base; el único cambio posterior es
+esta nota de evidencia.
+Con los extras `dev` y `demo` fijados por CI tras integrar AT-232, la suite
+completa registra 206 pruebas aprobadas; también pasan Ruff, mypy, OpenAPI,
+el escaneo de secretos y OpenSpec estricto. Esta comprobación cubre los puntos
+de entrada locales `evaluate_scope` y `evaluate_pattern_scope`; no constituye
+una prueba del chat/API ni de la aprobación A2UI persistida.
+
 ## Revisión de cantidades y procedencia (head de noviembre de 2026)
 
 `tests/test_discovery_review_regressions.py` recorre cuatro correcciones del motor:
