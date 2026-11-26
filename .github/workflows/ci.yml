@@ -63,6 +63,20 @@ jobs:
           docker compose logs
           docker compose down
           exit 1
+      - name: Verify AT-208 database isolation and recovery
+        run: |
+          for file in \
+            supabase/migrations/20261126124001_at_208_postgres_domain.sql \
+            tests/at208/local_auth_fixture.sql tests/at208/domain_rls.sql \
+            docs/evidence/at-208.md \
+            openspec/specs/project-persistence/spec.md \
+            openspec/specs/project-data-isolation/spec.md \
+            openspec/changes/archive/2026-11-26-at-208-postgres-domain/proposal.md \
+            openspec/changes/archive/2026-11-26-at-208-postgres-domain/design.md \
+            openspec/changes/archive/2026-11-26-at-208-postgres-domain/tasks.md; do
+            test -s "$file"
+          done
+          bash tests/at208/run_local.sh
       - name: Verify PR metadata
         if: github.event_name == 'pull_request'
         env:
