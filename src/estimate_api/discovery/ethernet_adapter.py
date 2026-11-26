@@ -3,12 +3,25 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+from math import isfinite
 from typing import Any, Literal, cast
 
 from estimate_api.ethernet.evaluate import evaluate_topology
 
 from .models import Proposal, ProposalLine
+
+
+def _reviewable_length(value: str) -> float:
+    """Reject finite Decimal lengths that cannot be represented as positive JSON numbers."""
+    try:
+        decimal = Decimal(value)
+        quantity = float(decimal)
+    except (InvalidOperation, OverflowError, ValueError) as error:
+        raise ValueError("Topology length is not reviewable") from error
+    if not decimal.is_finite() or decimal <= 0 or not isfinite(quantity) or quantity <= 0:
+        raise ValueError("Topology length is not reviewable")
+    return quantity
 
 
 @dataclass(frozen=True)
@@ -44,6 +57,11 @@ def evaluate_ethernet_scope(catalog: dict[str, Any], topology: dict[str, Any]) -
     raw = evaluate_topology(catalog, topology)
     if raw["status"] not in ("PENDING", "REVIEW_REQUIRED", "DERIVED"):
         raise ValueError("Unknown AT-239 status")
+    for link in raw["links"]:
+        if link["requiredLengthM"] is not None:
+            _reviewable_length(str(link["requiredLengthM"]))
+    for material in raw["materials"]:
+        _reviewable_length(str(material["requiredLengthM"]))
     totals_complete = all(item["requiredLengthM"] is not None for item in raw["links"])
     return TopologyScope(
         status=cast(Literal["PENDING", "REVIEW_REQUIRED", "DERIVED"], raw["status"]),
@@ -76,6 +94,11 @@ def evaluate_ethernet_scope(catalog: dict[str, Any], topology: dict[str, Any]) -
 
 def attach_topology_links(proposal: Proposal, topology: TopologyScope) -> Proposal:
     """Add all required links to review, including links with unknown lengths."""
+    for link in topology.links:
+        if link.required_length_m is not None:
+            _reviewable_length(link.required_length_m)
+    for material in topology.materials:
+        _reviewable_length(material.required_length_m)
     existing = {line.key for line in proposal.lines}
     if any(link.id in existing for link in topology.links):
         raise ValueError("Topology link collides with existing proposal line")
@@ -106,7 +129,7 @@ def attach_topology_links(proposal: Proposal, topology: TopologyScope) -> Propos
             key=f"at239:cable:{material.cable_id}",
             kind="material",
             work_package="ethernet",
-            quantity=float(Decimal(material.required_length_m))
+            quantity=_reviewable_length(material.required_length_m)
             if topology.material_totals_complete
             else None,
             unit="m",

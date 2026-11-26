@@ -71,6 +71,17 @@ class PatternProvider(Protocol):
 
 
 @dataclass(frozen=True)
+class RuleOrigin:
+    parent_key: str
+    rule_id: str
+    pattern_id: str | None
+    evidence_ids: tuple[str, ...]
+    rule_ids: tuple[str, ...]
+    source_refs: tuple[str, ...]
+    candidate_paths: tuple[tuple[str, ...], ...]
+
+
+@dataclass(frozen=True)
 class ProposalLine:
     key: str
     kind: LineKind | None
@@ -91,6 +102,7 @@ class ProposalLine:
     source_refs: tuple[str, ...] = ()
     candidate_paths: tuple[tuple[str, ...], ...] = ()
     pattern_id: str | None = None
+    rule_provenance: tuple[RuleOrigin, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -40,6 +40,16 @@ class EvidencePayload(TypedDict):
     capabilityPaths: list[list[str]]
 
 
+class RuleProvenancePayload(TypedDict):
+    parentKey: str
+    ruleId: str
+    patternId: str | None
+    evidenceIds: list[str]
+    ruleIds: list[str]
+    sourceRefs: list[str]
+    candidatePaths: list[list[str]]
+
+
 class LinePayload(TypedDict):
     key: str
     kind: str | None
@@ -63,6 +73,7 @@ class LinePayload(TypedDict):
     candidatePaths: list[list[str]]
     patternId: str | None
     graphRulePaths: list[dict[str, str | None]]
+    ruleProvenance: list[RuleProvenancePayload]
 
 
 class ScopeReviewPayload(TypedDict):
@@ -147,9 +158,18 @@ def to_review_payload(
             else ()
         )
         rule_references = (
-            evidence_reader.resolve_pattern_rules(line.pattern_id, line.rule_ids)
-            if evidence_reader is not None and line.pattern_id is not None and line.rule_ids
-            else ()
+            tuple(
+                ref
+                for origin in line.rule_provenance
+                if origin.pattern_id is not None and origin.rule_ids
+                for ref in evidence_reader.resolve_pattern_rules(origin.pattern_id, origin.rule_ids)
+            )
+            if evidence_reader is not None and line.rule_provenance
+            else (
+                evidence_reader.resolve_pattern_rules(line.pattern_id, line.rule_ids)
+                if evidence_reader is not None and line.pattern_id is not None and line.rule_ids
+                else ()
+            )
         )
         status: Literal["capability_context", "unknown"] = (
             "capability_context"
@@ -158,9 +178,12 @@ def to_review_payload(
         )
         if line.rule_id is not None and status == "unknown":
             evidence_complete = False
-        if line.pattern_id is not None and (
-            not rule_references or any(ref.status != "rule_context" for ref in rule_references)
-        ):
+        if any(not origin.evidence_ids for origin in line.rule_provenance):
+            evidence_complete = False
+        if (
+            line.pattern_id is not None
+            or any(origin.pattern_id is not None for origin in line.rule_provenance)
+        ) and (not rule_references or any(ref.status != "rule_context" for ref in rule_references)):
             evidence_complete = False
         actions = [] if line.state == "user_requested" else ["approve", "reject", "modify"]
         if line.quantity is None and "approve" in actions:
@@ -204,6 +227,18 @@ def to_review_payload(
                         "status": ref.status,
                     }
                     for ref in rule_references
+                ],
+                ruleProvenance=[
+                    RuleProvenancePayload(
+                        parentKey=origin.parent_key,
+                        ruleId=origin.rule_id,
+                        patternId=origin.pattern_id,
+                        evidenceIds=list(origin.evidence_ids),
+                        ruleIds=list(origin.rule_ids),
+                        sourceRefs=list(origin.source_refs),
+                        candidatePaths=[list(path) for path in origin.candidate_paths],
+                    )
+                    for origin in line.rule_provenance
                 ],
             )
         )

@@ -63,7 +63,7 @@
     },
     "line": {
       "type": "object", "additionalProperties": false,
-      "required": ["key", "kind", "workPackage", "quantity", "unit", "state", "required", "justification", "ruleId", "packageVersion", "jurisdiction", "source", "parentKey", "relation", "evidence", "evidenceStatus", "actions", "ruleIds", "sourceRefs", "candidatePaths", "patternId", "graphRulePaths"],
+      "required": ["key", "kind", "workPackage", "quantity", "unit", "state", "required", "justification", "ruleId", "packageVersion", "jurisdiction", "source", "parentKey", "relation", "evidence", "evidenceStatus", "actions", "ruleIds", "sourceRefs", "candidatePaths", "patternId", "graphRulePaths", "ruleProvenance"],
       "properties": {
         "key": {"type": "string"},
         "kind": {"enum": ["equipment", "material", "accessory", "consumable", "service", null]},
@@ -86,7 +86,8 @@
         "sourceRefs": {"type": "array", "items": {"type": "string"}},
         "candidatePaths": {"type": "array", "items": {"type": "array", "minItems": 2, "items": {"type": "string"}}},
         "patternId": {"type": ["string", "null"]},
-        "graphRulePaths": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["patternId", "ruleId", "sourceRef", "status"], "properties": {"patternId": {"type": "string"}, "ruleId": {"type": "string"}, "sourceRef": {"type": ["string", "null"]}, "status": {"enum": ["rule_context", "unknown"]}}}}
+        "graphRulePaths": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["patternId", "ruleId", "sourceRef", "status"], "properties": {"patternId": {"type": "string"}, "ruleId": {"type": "string"}, "sourceRef": {"type": ["string", "null"]}, "status": {"enum": ["rule_context", "unknown"]}}}},
+        "ruleProvenance": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["parentKey", "ruleId", "patternId", "evidenceIds", "ruleIds", "sourceRefs", "candidatePaths"], "properties": {"parentKey": {"type": "string"}, "ruleId": {"type": "string"}, "patternId": {"type": ["string", "null"]}, "evidenceIds": {"type": "array", "items": {"type": "string"}}, "ruleIds": {"type": "array", "items": {"type": "string"}}, "sourceRefs": {"type": "array", "items": {"type": "string"}}, "candidatePaths": {"type": "array", "items": {"type": "array", "minItems": 2, "items": {"type": "string"}}}}}}
       }
     }
   }

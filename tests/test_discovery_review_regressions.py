@@ -135,6 +135,69 @@ def test_duplicate_optional_first_preserves_required_target() -> None:
     assert rejected.status == "blocked" and not rejected.commercial_ready
 
 
+def test_shared_line_retains_each_rules_provenance_and_other_blockers() -> None:
+    intake, package = scope(
+        replace(
+            rule("a", "root", "shared"),
+            evidence_ids=("EV-A",),
+            rule_ids=("RULE-A",),
+            source_refs=("SOURCE-A",),
+            candidate_paths=(("root", "route-a", "shared"),),
+            pattern_id="PATTERN-A",
+        ),
+        rule("b", "root", "other"),
+        replace(
+            rule("c", "other", "shared"),
+            evidence_ids=("EV-B",),
+            rule_ids=("RULE-B",),
+            source_refs=("SOURCE-B",),
+            candidate_paths=(("other", "route-b", "shared"),),
+            pattern_id="PATTERN-B",
+        ),
+        replace(rule("d", "root", "conditional"), when_fact="site_fact", when_value=True),
+    )
+    proposed = discover(intake, package)
+    shared = next(line for line in proposed.lines if line.key == "shared")
+    assert shared.evidence_ids == ("EV-A", "EV-B")
+    assert shared.rule_ids == ("RULE-A", "RULE-B")
+    assert shared.source_refs == ("SOURCE-A", "SOURCE-B")
+    assert shared.candidate_paths == (
+        ("root", "route-a", "shared"),
+        ("other", "route-b", "shared"),
+    )
+    assert {
+        origin.parent_key: (
+            origin.pattern_id,
+            origin.evidence_ids,
+            origin.rule_ids,
+            origin.source_refs,
+            origin.candidate_paths,
+        )
+        for origin in shared.rule_provenance
+    } == {
+        "root": (
+            "PATTERN-A",
+            ("EV-A",),
+            ("RULE-A",),
+            ("SOURCE-A",),
+            (("root", "route-a", "shared"),),
+        ),
+        "other": (
+            "PATTERN-B",
+            ("EV-B",),
+            ("RULE-B",),
+            ("SOURCE-B",),
+            (("other", "route-b", "shared"),),
+        ),
+    }
+    confirmed = review(proposed, (ReviewAction("shared", "modify", 4, "each"),))
+    assert confirmed.blocking_facts == ("site_fact",)
+    assert (
+        next(line for line in confirmed.lines if line.key == "shared").rule_provenance
+        == shared.rule_provenance
+    )
+
+
 def test_cross_branch_cycle_is_rejected_before_review() -> None:
     intake, package = scope(
         rule("a", "root", "b"),

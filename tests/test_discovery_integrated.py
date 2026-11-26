@@ -12,11 +12,16 @@ from jsonschema import Draft202012Validator
 
 from estimate_api.discovery.engine import review
 from estimate_api.discovery.ethernet_adapter import evaluate_ethernet_scope
-from estimate_api.discovery.evidence import RelateEvidenceReader
+from estimate_api.discovery.evidence import (
+    EvidenceReference,
+    PatternRuleReference,
+    RelateEvidenceReader,
+    TopologyLinkReference,
+)
 from estimate_api.discovery.models import Need, ProjectIntake, ReviewAction
 from estimate_api.discovery.pattern_adapter import PatternBinding, PatternPlan, build_pattern_plan
 from estimate_api.discovery.registry_adapter import RegistryContext
-from estimate_api.discovery.service import evaluate_pattern_scope, evaluate_scope
+from estimate_api.discovery.service import evaluate_pattern_scope, evaluate_scope, to_review_payload
 from estimate_api.patterns.relate_seed import seed_patterns
 from estimate_api.patterns.v1 import Fact, Pattern, registry_reference
 
@@ -128,9 +133,17 @@ def test_reused_pattern_bindings_keep_distinct_rule_ids_and_shared_quantity_bloc
         "poe_source": confirmed(True, "EV-POE"),
         "utp_ends": confirmed(2, "EV-ENDS"),
     }
+    facts_b: dict[str, Fact] = {
+        key: {
+            "state": fact["state"],
+            "value": fact["value"],
+            "evidenceId": f"{fact['evidenceId']}-B",
+        }
+        for key, fact in facts.items()
+    }
     bindings = (
         PatternBinding("camera-zone-a", pattern, facts),
-        PatternBinding("camera-zone-b", pattern, facts),
+        PatternBinding("camera-zone-b", pattern, facts_b),
     )
     pattern_plan = build_pattern_plan(
         project,
@@ -151,6 +164,73 @@ def test_reused_pattern_bindings_keep_distinct_rule_ids_and_shared_quantity_bloc
     }
     assert "quantity:at247:item:utp-connector" in result.proposal.blocking_facts
     assert not result.payload["commercialReady"]
+    connector = next(
+        line for line in result.proposal.lines if line.key == "at247:item:utp-connector"
+    )
+    assert {origin.parent_key for origin in connector.rule_provenance} == {
+        "camera-zone-a",
+        "camera-zone-b",
+    }
+    assert {origin.rule_id for origin in connector.rule_provenance} == {
+        rule.id for rule in pattern_plan.package.rules if rule.target_key == connector.key
+    }
+    assert all(
+        origin.rule_ids and origin.source_refs and origin.candidate_paths
+        for origin in connector.rule_provenance
+    )
+    assert "EV-ENDS" in connector.evidence_ids and "EV-ENDS-B" in connector.evidence_ids
+    assert "EV-ENDS" in connector.rule_provenance[0].evidence_ids
+    assert "EV-ENDS-B" in connector.rule_provenance[1].evidence_ids
+
+    class MissingSecondEvidence:
+        def resolve(self, evidence_ids: tuple[str, ...]) -> tuple[EvidenceReference, ...]:
+            return tuple(
+                EvidenceReference(
+                    identifier,
+                    "unknown" if identifier.endswith("-B") else "capability_context",
+                    None,
+                    () if identifier.endswith("-B") else (("product", "capability", identifier),),
+                )
+                for identifier in evidence_ids
+            )
+
+        def resolve_pattern_rules(
+            self, pattern_id: str, rule_ids: tuple[str, ...]
+        ) -> tuple[PatternRuleReference, ...]:
+            return tuple(
+                PatternRuleReference(pattern_id, rule_id, "synthetic://source", "rule_context")
+                for rule_id in rule_ids
+            )
+
+        def resolve_topology_links(
+            self, link_ids: tuple[str, ...], dataset_id: str
+        ) -> tuple[TopologyLinkReference, ...]:
+            return ()
+
+    reader = MissingSecondEvidence()
+    before = to_review_payload(result.proposal, reader)
+    rendered = next(line for line in before["lines"] if line["key"] == connector.key)
+    assert rendered["evidenceStatus"] == "unknown"
+    assert {origin["parentKey"] for origin in rendered["ruleProvenance"]} == {
+        "camera-zone-a",
+        "camera-zone-b",
+    }
+    confirmed_scope = review(
+        result.proposal, (ReviewAction(connector.key, "modify", 10, connector.unit),)
+    )
+    assert "quantity:at247:item:utp-connector" not in confirmed_scope.blocking_facts
+    assert "quantity:at247:item:link-test" in confirmed_scope.blocking_facts
+    after = to_review_payload(confirmed_scope, reader)
+    confirmed_line = next(line for line in after["lines"] if line["key"] == connector.key)
+    assert confirmed_line["evidenceStatus"] == "unknown"
+    assert confirmed_line["ruleProvenance"] == rendered["ruleProvenance"]
+    assert not after["commercialReady"]
+    schema = json.loads(
+        (ROOT / "src/estimate_api/discovery/schemas/scope-review.v1.schema.json").read_text()
+    )
+    validator = Draft202012Validator(schema)
+    validator.validate(json.loads(json.dumps(before, allow_nan=False)))
+    validator.validate(json.loads(json.dumps(after, allow_nan=False)))
 
 
 def test_confirmed_alternative_changes_scope_but_unknown_does_not() -> None:
@@ -250,6 +330,31 @@ def test_topology_preserves_all_required_links_and_unknown_lengths() -> None:
             registry_context=registry_context(pattern),
             previous=rejected,
         )
+
+
+@pytest.mark.parametrize("length", ["1e309", "1e-999"])
+def test_topology_decimal_range_fails_closed_before_json_payload(length: str) -> None:
+    fixture = json.loads((ROOT / "demo/ethernet/fixture.json").read_text(encoding="utf-8"))
+    altered = copy.deepcopy(fixture["topology"])
+    altered["runs"][0]["sectionLengthsM"] = [length]
+    altered["runs"][0]["slackPerEndM"] = "0"
+    altered["runs"][0]["wasteFraction"] = "0"
+    with pytest.raises(ValueError, match="Topology length is not reviewable"):
+        evaluate_ethernet_scope(fixture["catalog"], altered)
+
+    valid = evaluate_ethernet_scope(fixture["catalog"], fixture["topology"])
+    injected = replace(
+        valid,
+        material_totals_complete=True,
+        materials=(replace(valid.materials[0], required_length_m=length),),
+    )
+    with pytest.raises(ValueError, match="Topology length is not reviewable"):
+        evaluate_scope(intake("camera", 1), None, ethernet_scope=injected)
+
+    reviewable = replace(valid, material_totals_complete=True)
+    payload = evaluate_scope(intake("camera", 1), None, ethernet_scope=reviewable).payload
+    json.dumps(payload, allow_nan=False)
+    assert all(line["quantity"] is None or line["quantity"] > 0 for line in payload["lines"])
 
 
 def test_read_only_relate_pattern_rule_paths() -> None:

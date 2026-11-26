@@ -15,6 +15,7 @@ from .models import (
     ProposalLine,
     ReviewAction,
     Rule,
+    RuleOrigin,
     WorkState,
 )
 
@@ -177,12 +178,31 @@ def discover(
                 raise ValueError(f"Pattern cycle at {rule.id}")
             if depth >= max_depth:
                 raise ValueError("Pattern depth limit")
+            origin = RuleOrigin(
+                source,
+                rule.id,
+                rule.pattern_id,
+                rule.evidence_ids,
+                rule.rule_ids,
+                rule.source_refs,
+                rule.candidate_paths,
+            )
             if rule.target_key in lines:
                 if _would_cycle(paths, source, rule.target_key):
                     raise ValueError(f"Pattern cycle at {rule.id}")
                 paths.append((source, rule.relation, rule.target_key))
-                if rule.required and not lines[rule.target_key].required:
-                    lines[rule.target_key] = replace(lines[rule.target_key], required=True)
+                prior = lines[rule.target_key]
+                lines[rule.target_key] = replace(
+                    prior,
+                    required=prior.required or rule.required,
+                    evidence_ids=tuple(dict.fromkeys((*prior.evidence_ids, *rule.evidence_ids))),
+                    rule_ids=tuple(dict.fromkeys((*prior.rule_ids, *rule.rule_ids))),
+                    source_refs=tuple(dict.fromkeys((*prior.source_refs, *rule.source_refs))),
+                    candidate_paths=tuple(
+                        dict.fromkeys((*prior.candidate_paths, *rule.candidate_paths))
+                    ),
+                    rule_provenance=(*prior.rule_provenance, origin),
+                )
                 if lines[rule.target_key].parent_key != source:
                     blocking_facts.add(f"quantity:{rule.target_key}")
                     questions.append(
@@ -230,6 +250,7 @@ def discover(
                 rule.source_refs,
                 rule.candidate_paths,
                 rule.pattern_id,
+                (origin,),
             )
             paths.append((source, rule.relation, rule.target_key))
             if quantity is None:

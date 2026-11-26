@@ -24,6 +24,18 @@ NaN, infinito y productos desbordados. `tests/test_discovery_integrated.py`
 comprueba el servicio con dos bindings sintéticos del mismo patrón y mantiene
 la cantidad compartida pendiente de confirmación.
 
+La ruta AT-239 valida que cada longitud Decimal siga siendo positiva y finita
+al representarla como número JSON antes de adjuntarla a una línea. Rechaza
+desbordamiento a infinito y subdesbordamiento a cero tanto desde
+`evaluate_ethernet_scope` como al recibir un `TopologyScope` directamente.
+Las líneas compartidas conservan los arreglos planos del contrato y añaden
+`ruleProvenance`, que agrupa por regla y necesidad sus IDs de evidencia,
+reglas, fuentes y rutas candidatas. La evidencia faltante de cualquiera de
+esas rutas sigue visible y bloquea `commercialReady` después de confirmar
+la cantidad. Hardware solo transporta conteos enteros y el adaptador de
+restricciones no añade cantidades a las líneas; Ethernet es la conversión
+Decimal→float anexa identificada en este paquete.
+
 La base integrada probada es `develop` en `c130fda08dd7ae8b69ea45474925bdc0acc1e67f` (AT-247/239/267/246 más AT-265/238/264/229). El contrato vive en `src/estimate_api/discovery`, sin modificar rutas existentes. El fixture `demo/fixtures/at-240-discovery.json` es enteramente ficticio. `evaluate_scope` y `evaluate_pattern_scope` son entradas de backend locales; `scope-review.v1` es el contrato JSON para la futura API/A2UI/escenarios. Todavía no existe ruta HTTP ni pantalla.
 
 ## Recorrido reproducible
