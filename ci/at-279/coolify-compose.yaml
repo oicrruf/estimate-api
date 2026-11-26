@@ -1,0 +1,80 @@
+# Git-based Coolify Application, not Docker Compose Empty. No published host ports.
+# Base Directory: /ci/at-279
+# Docker Compose Location (relative to Base Directory): /coolify-compose.yaml
+services:
+  seed:
+    build:
+      context: .
+      dockerfile: coolify/Dockerfile.api
+    user: "10001:10001"
+    entrypoint: ["/app/.venv/bin/python", "/app/container_seed.py"]
+    volumes:
+      - synthetic_store:/data
+    networks: [backplane]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 1g
+    cpus: 1.5
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: coolify/Dockerfile.api
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    environment:
+      AT279_INTERNAL_CONTAINER_MODE: "1"
+    volumes:
+      - synthetic_store:/data:ro
+    networks: [backplane]
+    expose: ["8001"]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 1g
+    cpus: 1.5
+    healthcheck:
+      test:
+        - CMD
+        - /app/.venv/bin/python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/openapi.json', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: coolify/Dockerfile.web
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [edge, backplane]
+    expose: ["8080"]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+
+volumes:
+  synthetic_store:
+
+networks:
+  edge: {}
+  backplane:
+    internal: true
