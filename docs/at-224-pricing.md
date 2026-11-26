@@ -8,7 +8,7 @@
 | `tax_included` | `included` | Contingencia y descuento sobre el importe incluido; impuesto agregado cero. |
 | `confirmed_final` | `included`, `not_applicable`, `unknown` | Importe de paso, sin contingencia, descuento ni impuesto agregado. |
 
-El envío documentado exige `confirmed_final` y referencia de precio. Se redondea cada unitario con la precisión y modo indicados por `CurrencyPolicy`, luego se multiplica la cantidad y se suman los totales de línea. No hay conversión implícita entre códigos, precisiones ni modos de redondeo. El descuento puede ser porcentaje o importe por unidad, nunca ambos, y requiere referencia. La salida conserva entrada, contingencia, descuento, impuesto agregado, unitario antes y después de redondear, y total.
+El envío documentado exige `confirmed_final` y referencia de precio. Un importe final debe caber ya en la precisión declarada; no se cambia silenciosamente por redondeo. Para bases calculadas se redondea cada unitario con la precisión y modo indicados por `CurrencyPolicy`, luego se multiplica la cantidad y se suman los totales de línea. No hay conversión implícita entre códigos, precisiones ni modos de redondeo. El descuento puede ser porcentaje o importe por unidad, nunca ambos, y requiere referencia. La salida conserva entrada, contingencia, descuento, impuesto agregado, unitario antes y después de redondear, y total.
 
 Una línea `import` de base sin política fiscal o sin tasa necesaria devuelve `pending` con `tax_policy` o `tax_rate` faltante y sin total. La cotización con alguna línea pendiente tampoco tiene total final. Un precio final confirmado puede conservar tratamiento tributario `unknown` porque no se añade impuesto; esto no afirma qué parte del precio es tributo.
 

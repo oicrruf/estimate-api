@@ -157,6 +157,10 @@ class PriceLine:
                 raise ValueError("confirmed final prices cannot receive another adjustment")
             if self.tax.treatment == TaxTreatment.EXCLUDED:
                 raise ValueError("confirmed final price cannot require added tax")
+            if self.unit_price.amount != self.unit_price.amount.quantize(
+                self.unit_price.currency.quantum
+            ):
+                raise ValueError("confirmed final price exceeds currency precision")
         elif self.basis == PriceBasis.TAX_INCLUDED:
             if self.tax.treatment != TaxTreatment.INCLUDED:
                 raise ValueError("tax-included price requires included treatment")

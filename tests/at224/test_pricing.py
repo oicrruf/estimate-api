@@ -112,6 +112,8 @@ def test_final_price_and_documented_shipping_are_passthrough() -> None:
         replace(final, contingency_rate=Decimal("0.05"))
     with pytest.raises(ValueError, match="shipping"):
         replace(shipping, basis=PriceBasis.NET)
+    with pytest.raises(ValueError, match="currency precision"):
+        replace(shipping, unit_price=Money(Decimal("12.345"), USD))
 
 
 def test_documented_percentage_and_fixed_discounts_before_excluded_tax() -> None:
