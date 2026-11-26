@@ -1,0 +1,9 @@
+# AT-267 — evidencia local
+
+Base: `estimate-api/develop` en `f0b0e55`; contiene AT-264 `2033345`, AT-238 `80b404c` y AT-265 `f0b0e55`. El registro AT-265 no se modificó. Linear AT-264 y AT-238: Done; AT-267: In Progress. No se consultaron servicios externos para evaluar la fixture.
+
+La fixture `tests/at267/global_constraints.json` entra por el validador AT-264 y el evaluador de paquetes globales. Hallazgos esperados: puertos totales fail (9 > 8), puertos PoE pass (8 = 8), potencia PoE fail (96 W > 60 W), modelo EMT fail, cobertura de tareas fail y permiso unknown pending. Una variante con nueve puertos totales y 120 W demuestra que los tres controles de capacidad pasan; bajar sólo puertos totales, puertos PoE o potencia hace fallar sólo su control. Una variante del proyecto sintético de pintura usa la misma cobertura genérica y alterna entre fail y pass. Pruebas adicionales fuerzan revisión obsoleta, evidencia ausente, relación evidencia-fuente ausente y regla desconocida; ninguna pasa.
+
+Comprobación local sobre la base actual: `ruff check .`, `ruff format --check .`, `mypy src scripts tests`, `pytest -q` (32 passed), `python scripts/openapi.py --check`, `python scripts/check_secrets.py`, `openspec validate --specs --strict` (9 passed), `openspec validate --archived --strict` (8 passed), `git diff --check`. Una advertencia deprecada de Starlette viene de una dependencia de tests.
+
+Límites: no se integró un endpoint, propuesta, cotización ni servicio externo. El fixture no prueba una instalación real ni conformidad eléctrica. Los valores, modelos y evidencia son sintéticos. La elegibilidad de accesorios y las cantidades físicas continúan en AT-238; la validación de normativa, permisos y seguridad real requiere fuentes aplicables y revisión experta. AT-267 sólo evalúa checks explícitos: no descubre automáticamente todos los checks que una solución real debería tener.

@@ -1,0 +1,7 @@
+# Diseño
+
+Cada paquete `estimate.constraints` v1 se vincula a una entidad `Constraint` conocida y contiene `facts.check` con id, kind e inputs. Los operandos son claims `{value, source:{entityId, revision, evidenceIds}}`. El evaluador comprueba la forma del documento AT-264, la revisión exacta de la entidad fuente, su estado `known`, y al menos una entidad `Evidence` conocida con relación `supports` hacia la fuente por claim. Un claim incompleto, fuente no conocida, revisión desactualizada, versión desconocida o regla malformada produce `pending` bloqueante.
+
+`cardinality` compara enteros no negativos; `capacity` compara cantidades no negativas de la misma unidad declarada; `compatibility` comprueba pertenencia a modelos admitidos; `coverage` compara conjuntos de claves requeridas y provistas. La regla no deriva medidas ni decide qué modelos son seguros. `Finding` devuelve id, tipo, estado, bloqueo, razón, sujeto, paquete y fuentes con revisión y evidencia. Una violación comprobada produce `fail` bloqueante.
+
+La fixture separa 9 conexiones (8 cámaras y un uplink) de 8 puertos totales, 8 dispositivos PoE de 8 puertos PoE, y 96 W de 60 W de presupuesto. La lista de modelos EMT sintética es sólo un dato de prueba, no un estándar. Cobertura genérica muestra tareas faltantes y permiso desconocido; inspección profesional es obligatoria antes de usar datos de seguridad o normativa en una solución real.
