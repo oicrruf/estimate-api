@@ -79,6 +79,19 @@ def test_missing_inputs_do_not_create_quantities() -> None:
             "slim",
             "GEN-EMT-1",
         ),
+        (
+            "Tres cámaras Wi-Fi y seis UTP de OD 0.278 in; tramos de 2 m y 1.5 m.",
+            6,
+            "thick",
+            "GEN-EMT-1-1-4",
+        ),
+        (
+            "Three cameras and six UTP cables with outer diameter 0.224 inches; "
+            "segments of 2 m and 1.5 m.",
+            6,
+            "slim",
+            "GEN-EMT-1",
+        ),
     ],
 )
 def test_complete_es_en_measurements_use_relate(
@@ -121,6 +134,15 @@ def test_fail_closed_on_unsupported_model_claims() -> None:
         "Seis UTP 10GXS32; tramos de 2 m y 1.5 m.",
         "Six UTP cables with outer diameter 0.278 mm; segments of 2 m and 1.5 m.",
         "Six UTP cables with outer diameter 0.278 inches; segments of 12 m and 11.5 m.",
+        "Tres o seis UTP de OD 0.278 in; tramos de 2 m y 1.5 m.",
+        "3/6 UTP de OD 0.278 in; tramos de 2 m y 1.5 m.",
+        "3-6 UTP de OD 0.278 in; tramos de 2 m y 1.5 m.",
+        "Tres o siete UTP de OD 0.278 in; tramos de 2 m y 1.5 m.",
+        "3,5 UTP de OD 0.278 in; tramos de 2 m y 1.5 m.",
+        "Unas seis UTP de OD 0.278 in; tramos de 2 m y 1.5 m.",
+        "Three or six UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
+        "5/6 UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
+        "About six UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
     ],
 )
 def test_mismatched_or_conflicting_measurements_fail_before_graph(

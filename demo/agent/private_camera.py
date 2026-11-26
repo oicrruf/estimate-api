@@ -22,6 +22,7 @@ from pydantic import Field
 
 from demo.agent.agent import EvaluationRequest, _camera_result
 from demo.agent.graph import camera_stock_evidence
+from demo.private_counts import COUNT_SERIES, has_qualifier, parse_series
 from demo.private_model import DEFAULT_MODEL, MAX_DESCRIPTION_CHARS, OpenAIJsonExtractor
 
 PROMPT = (
@@ -36,6 +37,11 @@ SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 QUESTION = "¿Cuántas cámaras se solicitan: dos o cuatro?"
+CAMERA_NOUN = r"(?:c[aá]maras?|cameras?)"
+CAMERA_COUNT = re.compile(
+    rf"(?<![\w.,+-])(?:(?P<before>{COUNT_SERIES})\s+{CAMERA_NOUN}\b"
+    rf"|{CAMERA_NOUN}\s+(?P<after>{COUNT_SERIES})(?![\w.,]))"
+)
 
 
 class CameraExtractor(Protocol):
@@ -53,18 +59,15 @@ def _validated_quantity(description: str, raw: dict[str, Any]) -> int | None:
     quantity = raw["requested_quantity"]
     if type(quantity) not in (int, type(None)) or quantity not in (2, 4, None):
         raise ValueError("Cantidad no permitida")
-    normalized = description.lower()
-    matches = set()
-    for number, literal in ((2, "dos"), (4, "cuatro")):
-        if re.search(rf"\b(?:{number}|{literal})\s+c[aá]maras?\b", normalized):
-            matches.add(number)
-        if re.search(rf"\bc[aá]maras?\s+(?:{number}|{literal})\b", normalized):
-            matches.add(number)
-    if re.search(r"\b(?:2|dos)\s*(?:o|/|y)\s*(?:4|cuatro)\s+c[aá]maras?\b", normalized):
-        matches.update((2, 4))
-    if re.search(r"\b(?:4|cuatro)\s*(?:o|/|y)\s*(?:2|dos)\s+c[aá]maras?\b", normalized):
-        matches.update((2, 4))
-    if quantity is not None and matches != {quantity}:
+    normalized = description.casefold().replace(",", ".")
+    matches = []
+    for match in CAMERA_COUNT.finditer(normalized):
+        if has_qualifier(normalized, match.start()):
+            if quantity is not None:
+                raise ValueError("Cantidad sin respaldo inequívoco")
+            return None
+        matches.extend(parse_series(match.group("before") or match.group("after")))
+    if quantity is not None and matches != [quantity]:
         raise ValueError("Cantidad sin respaldo inequívoco")
     # Un null ante texto inequívoco es conservador: pide confirmación al usuario.
     return cast(int | None, quantity)

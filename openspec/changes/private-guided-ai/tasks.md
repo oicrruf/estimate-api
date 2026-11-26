@@ -3,5 +3,6 @@
 - [x] Fijar Luna/none, modelo explícito, respuesta SDK tipada y métricas saneadas.
 - [x] Probar 4/2/ambiguo con extractor falso y Relate real, sin proveedor.
 - [x] Corregir límites numéricos y unidades ES/EN, contradicciones y perfiles dev-only.
+- [x] Rechazar alternativas, rangos y decimales completos de UTP/cámaras antes del grafo.
 - [ ] Verificar una consulta privada real desde esta rama en el entorno autorizado.
 - [ ] Revisar, sincronizar y archivar OpenSpec tras la prueba real.

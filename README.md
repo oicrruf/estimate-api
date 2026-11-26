@@ -63,6 +63,8 @@ It accepts at most 700 description characters, makes one bounded extraction requ
 with at most 500 output tokens, a 15-second timeout, no retries, and `store=false`.
 Python checks complete measurements and units against the fixture before ADK queries
 Relate. Missing UTP count or cable diameter returns questions without a graph call;
+alternative, approximate, fractional, or conflicting item counts fail closed before
+stock or BOM evaluation. Independent camera and UTP counts stay separate;
 any preview remains pending review. For an offline test without a provider, run
 `uv run --frozen --extra dev --extra demo --extra private-ai pytest -q tests/test_private_guided_ai.py tests/test_private_model.py tests/test_private_camera_ai.py`.
 

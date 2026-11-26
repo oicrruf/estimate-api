@@ -40,7 +40,14 @@ con consulta fija para evaluar el pool común.
 #### Scenario: Cantidad ambigua
 
 - **WHEN** falta una cantidad inequívoca de cámaras
-- **THEN** el agente SHALL preguntar por ella y no llamar a Relate ni calcular stock
+- **THEN** el agente SHALL preguntar o fallar cerrado, sin llamar a Relate ni calcular stock
+
+#### Scenario: Alternativas y decimales de cámaras
+
+- **WHEN** el texto ES/EN expresa dos cantidades alternativas, un rango, un
+  decimal completo o un conteo incompatible junto a una cantidad permitida
+- **THEN** el agente SHALL rechazar la selección o preguntar sin consultar Relate;
+  un conteo UTP independiente SHALL no alterar el conteo de cámaras
 
 ### Requirement: BOM guiada separada
 
@@ -63,7 +70,8 @@ incompatibles o contradictorios antes de llamar al grafo.
 
 #### Scenario: Afirmaciones contradictorias
 
-- **WHEN** el texto mezcla cantidades UTP u OD incompatibles
+- **WHEN** el texto mezcla cantidades UTP u OD incompatibles, alternativas,
+  rangos o cantidades aproximadas
 - **THEN** el corte SHALL fallar antes de usar Relate
 
 #### Scenario: Falta OD o longitud

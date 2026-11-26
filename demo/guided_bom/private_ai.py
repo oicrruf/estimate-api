@@ -22,6 +22,7 @@ from google.genai import types
 from pydantic import Field
 
 from demo.guided_bom.cli import evaluate, graph_evidence
+from demo.private_counts import COUNT_SERIES, has_qualifier, parse_series
 from demo.private_model import DEFAULT_MODEL, MAX_DESCRIPTION_CHARS, OpenAIJsonExtractor
 
 MODEL = DEFAULT_MODEL
@@ -31,6 +32,7 @@ PROMPT = (
     "cable_variant es thick solo con OD 0.278 in explícito; slim solo con "
     "OD 0.224 in explícito; un código de producto no reemplaza la unidad. "
     "route_length es known solo si constan tramos de 2 m y 1.5 m; de otro modo unknown. "
+    "Si la cantidad UTP es alternativa, rango o aproximada, cable_count es null. "
     "Nunca inventes cantidades, precios, compatibilidades, mediciones ni evidencia. "
     "Devuelve preguntas faltantes como IDs cable_count, cable_od o route_length."
 )
@@ -54,10 +56,9 @@ QUESTIONS = {
     "route_length": "¿Cuáles son las longitudes medidas de los tramos?",
 }
 NUMBER = r"\d+(?:\.\d+)?"
-COUNT_TOKEN = rf"(?:{NUMBER}|tres|seis|three|six)"
 UTP_COUNT = re.compile(
-    rf"\b(?:(?P<before>{COUNT_TOKEN})\s+(?:cables?\s+)?utp(?:\s+cables?)?"
-    rf"|utp\s+(?P<after>{COUNT_TOKEN}))\b"
+    rf"(?<![\w.,+-])(?:(?P<before>{COUNT_SERIES})\s+(?:cables?\s+)?utp(?:\s+cables?)?\b"
+    rf"|utp\s+(?P<after>{COUNT_SERIES})(?![\w.,]))"
 )
 OD_MEASUREMENT = re.compile(
     rf"(?<![\w.+-])(?P<value>{NUMBER})\s*"
@@ -69,10 +70,13 @@ ROUTE_MEASUREMENT = re.compile(
 )
 
 
-def _utp_counts(text: str) -> set[Decimal]:
-    words = {"tres": 3, "seis": 6, "three": 3, "six": 6}
-    tokens = (match.group("before") or match.group("after") for match in UTP_COUNT.finditer(text))
-    return {Decimal(words[token] if token in words else token) for token in tokens}
+def _utp_counts(text: str) -> list[int]:
+    values = []
+    for match in UTP_COUNT.finditer(text):
+        if has_qualifier(text, match.start()):
+            raise ValueError("Cantidad UTP aproximada o condicionada")
+        values.extend(parse_series(match.group("before") or match.group("after")))
+    return values
 
 
 def _od_values(text: str) -> set[tuple[Decimal, str]]:
@@ -112,7 +116,7 @@ def _validated_scope(description: str, raw: dict[str, Any]) -> dict[str, Any]:
     counts = _utp_counts(normalized)
     if len(counts) > 1 or any(value not in (3, 6) for value in counts):
         raise ValueError("Cantidad UTP incompatible con el fixture")
-    if count is not None and counts != {Decimal(count)}:
+    if count is not None and counts != [count]:
         raise ValueError("Cantidad UTP sin respaldo literal completo")
     od_values = _od_values(normalized)
     if len(od_values) > 1:
