@@ -442,6 +442,106 @@ def test_one_hold_referenced_by_two_offers_is_counted_once() -> None:
     assert result.claims[1].usable_confirmed_quantity is None
 
 
+def test_one_hold_cannot_back_a_pool_cap_and_an_unpooled_offer() -> None:
+    confirmed_pool_offer = StockClaim(
+        "OFF-POOL-FICT",
+        "SUP-POOL-FICT",
+        None,
+        StockState.SUPPLIER_CONFIRMED,
+        2,
+        NOW,
+        NOW + timedelta(days=1),
+        "confirmación ficticia",
+        "EV-POOL-OFFER-FICT",
+        "POOL-FICT",
+    )
+    held_other_offer = StockClaim(
+        "OFF-OTHER-FICT",
+        "SUP-OTHER-FICT",
+        None,
+        StockState.RESERVED,
+        2,
+        NOW,
+        NOW + timedelta(days=1),
+        "reserva ficticia",
+        "EV-OTHER-HOLD-FICT",
+        reservation_id="HOLD-FICT-SHARED",
+        reservation_project_id=SCOPE.project_id,
+        reservation_quote_id=SCOPE.quote_id,
+        reservation_expires_at=NOW + timedelta(hours=1),
+    )
+    held_pool = PoolClaim(
+        "POOL-FICT",
+        StockState.RESERVED,
+        2,
+        NOW,
+        NOW + timedelta(days=1),
+        "reserva ficticia pool",
+        "EV-POOL-HOLD-FICT",
+        reservation_id="HOLD-FICT-SHARED",
+        reservation_project_id=SCOPE.project_id,
+        reservation_quote_id=SCOPE.quote_id,
+        reservation_expires_at=NOW + timedelta(hours=1),
+    )
+    conflict = evaluate_inventory(
+        4, (confirmed_pool_offer, held_other_offer), (held_pool,), (), now=NOW, scope=SCOPE
+    )
+    assert (conflict.confirmed_quantity, conflict.coverage, conflict.shortage) == (
+        None,
+        None,
+        None,
+    )
+    assert conflict.risk == RiskLevel.UNKNOWN
+    assert conflict.claims[0].usable_confirmed_quantity == 2
+    assert conflict.claims[1].reason == "CONFLICTING_RESERVATION"
+    assert "CONFLICTING_RESERVATION" in conflict.reasons
+    same_pool_hold = replace(held_other_offer, pool_id="POOL-FICT", offer_id="OFF-SAME-POOL-FICT")
+    same_pool = evaluate_inventory(
+        4, (confirmed_pool_offer, same_pool_hold), (held_pool,), (), now=NOW, scope=SCOPE
+    )
+    assert (same_pool.confirmed_quantity, same_pool.coverage, same_pool.shortage) == (2, 0.5, 2)
+
+
+def test_one_hold_cannot_cap_two_different_pools() -> None:
+    first = StockClaim(
+        "OFF-POOL-A",
+        "SUP-FICT-A",
+        None,
+        StockState.SUPPLIER_CONFIRMED,
+        2,
+        NOW,
+        NOW + timedelta(days=1),
+        "confirmación ficticia",
+        "EV-FICT-A",
+        "POOL-A",
+    )
+    second = replace(first, offer_id="OFF-POOL-B", pool_id="POOL-B", evidence_id="EV-FICT-B")
+    cap = PoolClaim(
+        "POOL-A",
+        StockState.RESERVED,
+        2,
+        NOW,
+        NOW + timedelta(days=1),
+        "reserva ficticia pool",
+        "EV-CAP-A",
+        reservation_id="HOLD-FICT-SHARED",
+        reservation_project_id=SCOPE.project_id,
+        reservation_quote_id=SCOPE.quote_id,
+        reservation_expires_at=NOW + timedelta(hours=1),
+    )
+    result = evaluate_inventory(
+        4,
+        (first, second),
+        (cap, replace(cap, pool_id="POOL-B", evidence_id="EV-CAP-B")),
+        (),
+        now=NOW,
+        scope=SCOPE,
+    )
+    assert result.risk == RiskLevel.UNKNOWN
+    assert (result.confirmed_quantity, result.coverage, result.shortage) == (None, None, None)
+    assert "CONFLICTING_RESERVATION" in result.reasons
+
+
 def test_graph_offer_and_pool_holds_require_quote_scope(tmp_path: Path) -> None:
     path = str(tmp_path / "held.db")
     connection = relate.connect(path)

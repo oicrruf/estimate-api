@@ -201,8 +201,16 @@ def evaluate_inventory(
     if len(pool_ids) != len(set(pool_ids)):
         raise ValueError("multiple current claims for one pool")
     pools = {pool.pool_id: pool for pool in pool_caps}
+    reserved_cap_pools: dict[str, str] = {}
+    conflicting_cap_reservations: set[str] = set()
     for pool_claim in pool_caps:
         _check_quantity(pool_claim.quantity)
+        if pool_claim.state == StockState.RESERVED and pool_claim.reservation_id:
+            previous_pool = reserved_cap_pools.setdefault(
+                pool_claim.reservation_id, pool_claim.pool_id
+            )
+            if previous_pool != pool_claim.pool_id:
+                conflicting_cap_reservations.add(pool_claim.reservation_id)
     assessed: list[ClaimAssessment] = []
     unpooled_total = 0
     pooled: dict[str, int] = {}
@@ -246,8 +254,14 @@ def evaluate_inventory(
         usable = claim.quantity if reason in ("CONFIRMED", "RESERVED") else None
         if reason == "RESERVED":
             assert claim.reservation_id is not None
-            previous = seen_reservations.get(claim.reservation_id)
-            if previous is not None:
+            reserved_cap_pool = reserved_cap_pools.get(claim.reservation_id)
+            if claim.reservation_id in conflicting_cap_reservations or (
+                reserved_cap_pool is not None and claim.pool_id != reserved_cap_pool
+            ):
+                unresolved = True
+                reason = "CONFLICTING_RESERVATION"
+                usable = None
+            elif (previous := seen_reservations.get(claim.reservation_id)) is not None:
                 if previous != (claim.quantity, claim.pool_id):
                     unresolved = True
                     reason = "CONFLICTING_RESERVATION"
@@ -270,6 +284,14 @@ def evaluate_inventory(
     total = unpooled_total
     for pool_id, offer_total in pooled.items():
         pool = pools.get(pool_id)
+        if (
+            pool is not None
+            and pool.state == StockState.RESERVED
+            and pool.reservation_id in conflicting_cap_reservations
+        ):
+            unresolved = True
+            reasons.add("CONFLICTING_RESERVATION")
+            continue
         pool_reservation_issue = (
             _reservation_reason(
                 pool.reservation_id,

@@ -57,7 +57,7 @@ Una dependencia de pool SHALL identificar el mismo pool que ambas ofertas vincul
 
 ### Requirement: Reservas vinculadas a la cotización
 
-El dominio SHALL contar reservas de oferta y pool sólo con ID, evidencia, fuente, proyecto, cotización y vencimiento explícitos. El proyecto y la cotización SHALL coincidir exactamente con el contexto; el vencimiento es exclusivo. Una reserva inválida SHALL conservar evidencia sin afirmar capacidad ni inventario cero. Un mismo ID de hold SHALL contarse una sola vez entre ofertas.
+El dominio SHALL contar reservas de oferta y pool sólo con ID, evidencia, fuente, proyecto, cotización y vencimiento explícitos. El proyecto y la cotización SHALL coincidir exactamente con el contexto; el vencimiento es exclusivo. Una reserva inválida SHALL conservar evidencia sin afirmar capacidad ni inventario cero. Un mismo ID de hold SHALL contarse una sola vez entre ofertas y SHALL NOT respaldar a la vez ofertas o límites de pools físicos distintos.
 
 #### Scenario: Hold válido para cuatro unidades
 - **GIVEN** dos unidades confirmadas independientes y un hold de dos para el proyecto y la cotización actual
@@ -73,6 +73,11 @@ El dominio SHALL contar reservas de oferta y pool sólo con ID, evidencia, fuent
 - **GIVEN** un hold del pool con referencia correcta
 - **WHEN** se evalúa exactamente en su vencimiento
 - **THEN** el límite reservado no respalda capacidad y la evaluación informa `POOL_EXPIRED_RESERVATION`.
+
+#### Scenario: Hold duplicado entre pool y oferta independiente
+- **GIVEN** dos unidades confirmadas en un pool con límite reservado de dos y una oferta fuera del pool que cita el mismo hold de dos
+- **WHEN** se evalúan cuatro unidades
+- **THEN** la cobertura total es desconocida, la oferta independiente se marca `CONFLICTING_RESERVATION` y no se declara cobertura completa.
 
 ### Requirement: Separación de decisiones
 
