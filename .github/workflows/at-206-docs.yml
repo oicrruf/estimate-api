@@ -1,0 +1,51 @@
+name: AT-206 documentación de arquitectura
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  validate-at-206:
+    name: Validar ADR y OpenSpec AT-206
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Comprobar artefactos del cambio
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            docs/adr/0001-arquitectura-inicial.md
+            docs/evidence/at-206.md
+            ci/at-206-docs/package.json
+            ci/at-206-docs/package-lock.json
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/proposal.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/design.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/tasks.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/specs/platform-data-boundary/spec.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/specs/project-knowledge-boundary/spec.md
+            openspec/changes/archive/2026-11-26-at-206-arquitectura-inicial/specs/protected-project-operations/spec.md
+            openspec/specs/platform-data-boundary/spec.md
+            openspec/specs/project-knowledge-boundary/spec.md
+            openspec/specs/protected-project-operations/spec.md
+          )
+          for file in "${files[@]}"; do
+            test -s "$file"
+          done
+      - name: Instalar CLI documental fijado
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix ci/at-206-docs
+      - name: Validar specs vigentes y cambio archivado
+        env:
+          OPENSPEC_TELEMETRY: '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ci/at-206-docs/node_modules/.bin/openspec validate --specs --strict
+          ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
