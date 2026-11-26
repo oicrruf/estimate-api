@@ -1,0 +1,7 @@
+# Diseño
+
+`guided-bom.v1` es un objeto JSON único con `assumptions`, `requirements`, `bom`, `candidates`, `evidence` y `status`. La entrada HTTP está limitada a 3 o 6 UTP y variante `thick`, `slim` o `unknown`. El cálculo compara áreas circulares: `n × π × (d_cable/2)²` contra `0.40 × π × (d_interior/2)²`. Los OD nominales de cable y los OD/espesores nominales de EMT vienen de las fichas primarias citadas en README. El 0.40 es un umbral **ilustrativo**, no una norma universal ni una aprobación de instalación. La comparación Decimal precede al redondeo de porcentajes.
+
+Una consulta fija de Relate devuelve familias, diámetros y evidencia de los artículos genéricos de AT-238; otra devuelve relaciones del requisito del tramo. La decisión matemática ocurre en Python y deja tanto candidatos rechazados como aceptados con rutas. El evaluador AT-238 agrega cantidades de tramo sólo después de escoger un diámetro preliminar. AT-247 genera opciones de red inalámbrica y preguntas pendientes. ADK `InMemoryRunner` ejecuta un agente personalizado con `FunctionTool`; no se instancia proveedor de modelos.
+
+El store es un archivo local dedicado al fixture. El seed es idempotente. El GET local se ejecuta en un servidor separado del API productivo, sin CORS ni red saliente, con validación estricta de query. Si falta OD, la compatibilidad queda pendiente; si falta longitud, se mantiene la compatibilidad transversal preliminar pero sin cantidades. El resultado nunca convierte candidatos en compras aprobadas; `status` permanece `PENDING_REVIEW`.
