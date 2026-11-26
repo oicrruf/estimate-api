@@ -16,7 +16,8 @@ consultas; longitud ausente permite sólo selección preliminar, sin BOM.
 Alternativas como `tres o seis UTP`, rangos, cantidades aproximadas y conteos
 fraccionarios fallan antes del grafo. En cámaras, `2.4` o `2,4` no se interpreta
 como cuatro; `dos cámaras o seis cámaras` deja la cantidad pendiente o falla
-cerrado. Un conteo independiente de UTP no cambia el de cámaras.
+cerrado. También se rechazan compuestos no soportados como `twenty two cameras`
+o `twenty six UTP`. Un conteo independiente de UTP no cambia el de cámaras.
 
 Con Python 3.12, desde la raíz del repo:
 

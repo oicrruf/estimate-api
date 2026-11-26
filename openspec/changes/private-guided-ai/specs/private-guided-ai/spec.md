@@ -45,7 +45,7 @@ con consulta fija para evaluar el pool común.
 #### Scenario: Alternativas y decimales de cámaras
 
 - **WHEN** el texto ES/EN expresa dos cantidades alternativas, un rango, un
-  decimal completo o un conteo incompatible junto a una cantidad permitida
+  decimal completo o un número compuesto no soportado junto a un conteo válido
 - **THEN** el agente SHALL rechazar la selección o preguntar sin consultar Relate;
   un conteo UTP independiente SHALL no alterar el conteo de cámaras
 

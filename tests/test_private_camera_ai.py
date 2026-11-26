@@ -35,6 +35,7 @@ class FakeCameraExtractor:
         ("Solicito dos cámaras PoE ficticias.", 2, "COMPATIBLE", "CAM-POE"),
         ("Dos cámaras y seis UTP ficticios.", 2, "COMPATIBLE", "CAM-POE"),
         ("Two cameras and six UTP cables.", 2, "COMPATIBLE", "CAM-POE"),
+        ("Cámaras 2 y UTP 6.", 2, "COMPATIBLE", "CAM-POE"),
     ],
 )
 def test_camera_quantity_uses_real_relate(
@@ -127,6 +128,10 @@ def test_ambiguous_quantity_skips_relate_and_stock(monkeypatch: pytest.MonkeyPat
         "Request two or six cameras.",
         "Request two/four cameras.",
         "Request about two cameras.",
+        "Cámaras 2 o 4.",
+        "Cameras 2 or 4.",
+        "Request twenty two cameras.",
+        "Request twenty-two cameras.",
     ],
 )
 def test_invalid_camera_quantity_fails_before_graph(

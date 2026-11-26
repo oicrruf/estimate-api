@@ -22,7 +22,7 @@ from pydantic import Field
 
 from demo.agent.agent import EvaluationRequest, _camera_result
 from demo.agent.graph import camera_stock_evidence
-from demo.private_counts import COUNT_SERIES, has_qualifier, parse_series
+from demo.private_counts import COUNT_SERIES, has_adjacent_count, has_qualifier, parse_series
 from demo.private_model import DEFAULT_MODEL, MAX_DESCRIPTION_CHARS, OpenAIJsonExtractor
 
 PROMPT = (
@@ -40,7 +40,7 @@ QUESTION = "¿Cuántas cámaras se solicitan: dos o cuatro?"
 CAMERA_NOUN = r"(?:c[aá]maras?|cameras?)"
 CAMERA_COUNT = re.compile(
     rf"(?<![\w.,+-])(?:(?P<before>{COUNT_SERIES})\s+{CAMERA_NOUN}\b"
-    rf"|{CAMERA_NOUN}\s+(?P<after>{COUNT_SERIES})(?![\w.,]))"
+    rf"|{CAMERA_NOUN}\s+(?P<after>{COUNT_SERIES})(?![\w,]|\.\d))"
 )
 
 
@@ -62,6 +62,8 @@ def _validated_quantity(description: str, raw: dict[str, Any]) -> int | None:
     normalized = description.casefold().replace(",", ".")
     matches = []
     for match in CAMERA_COUNT.finditer(normalized):
+        if has_adjacent_count(normalized, match.start()):
+            raise ValueError("Cantidad compuesta sin respaldo inequívoco")
         if has_qualifier(normalized, match.start()):
             if quantity is not None:
                 raise ValueError("Cantidad sin respaldo inequívoco")

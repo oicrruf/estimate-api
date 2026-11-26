@@ -47,8 +47,9 @@ NUMBER = r"\d+(?:\.\d+)?"
 WORD_PATTERN = "|".join(re.escape(word) for word in sorted(WORDS, key=len, reverse=True))
 COUNT_TOKEN = rf"(?:{NUMBER}|{WORD_PATTERN})"
 JOIN = r"(?:o|or|y|and|a|to|/|[-–])"
-COUNT_SERIES = rf"{COUNT_TOKEN}(?:\s*{JOIN}\s*{COUNT_TOKEN})*"
+COUNT_SERIES = rf"(?>{COUNT_TOKEN}(?:\s*{JOIN}\s*{COUNT_TOKEN})*)"
 TOKEN = re.compile(rf"\b(?:{COUNT_TOKEN})\b")
+ADJACENT_COUNT = re.compile(rf"\b{COUNT_TOKEN}\s+$")
 QUALIFIER = re.compile(
     r"(?:\bal\s+menos|\bhasta|\bentre|\bm[aá]s\s+de|\bmenos\s+de|"
     r"\baprox(?:imadamente)?\.?|\bunos?|\bunas?|\bquiz[aá]s|\btal\s+vez|"
@@ -74,3 +75,8 @@ def parse_series(series: str) -> list[int]:
 def has_qualifier(text: str, start: int) -> bool:
     """A nearby uncertainty or range qualifier prevents a fixed count."""
     return bool(QUALIFIER.search(text[max(0, start - 35) : start]))
+
+
+def has_adjacent_count(text: str, start: int) -> bool:
+    """A preceding unjoined number word cannot be silently discarded."""
+    return bool(ADJACENT_COUNT.search(text[max(0, start - 35) : start]))

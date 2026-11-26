@@ -22,7 +22,7 @@ from google.genai import types
 from pydantic import Field
 
 from demo.guided_bom.cli import evaluate, graph_evidence
-from demo.private_counts import COUNT_SERIES, has_qualifier, parse_series
+from demo.private_counts import COUNT_SERIES, has_adjacent_count, has_qualifier, parse_series
 from demo.private_model import DEFAULT_MODEL, MAX_DESCRIPTION_CHARS, OpenAIJsonExtractor
 
 MODEL = DEFAULT_MODEL
@@ -58,7 +58,7 @@ QUESTIONS = {
 NUMBER = r"\d+(?:\.\d+)?"
 UTP_COUNT = re.compile(
     rf"(?<![\w.,+-])(?:(?P<before>{COUNT_SERIES})\s+(?:cables?\s+)?utp(?:\s+cables?)?\b"
-    rf"|utp\s+(?P<after>{COUNT_SERIES})(?![\w.,]))"
+    rf"|utp\s+(?P<after>{COUNT_SERIES})(?![\w,]|\.\d))"
 )
 OD_MEASUREMENT = re.compile(
     rf"(?<![\w.+-])(?P<value>{NUMBER})\s*"
@@ -73,6 +73,8 @@ ROUTE_MEASUREMENT = re.compile(
 def _utp_counts(text: str) -> list[int]:
     values = []
     for match in UTP_COUNT.finditer(text):
+        if has_adjacent_count(text, match.start()):
+            raise ValueError("Cantidad UTP compuesta sin respaldo")
         if has_qualifier(text, match.start()):
             raise ValueError("Cantidad UTP aproximada o condicionada")
         values.extend(parse_series(match.group("before") or match.group("after")))

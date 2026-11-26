@@ -92,6 +92,12 @@ def test_missing_inputs_do_not_create_quantities() -> None:
             "slim",
             "GEN-EMT-1",
         ),
+        (
+            "UTP 6 de OD 0.278 in; tramos de 2 m y 1.5 m.",
+            6,
+            "thick",
+            "GEN-EMT-1-1-4",
+        ),
     ],
 )
 def test_complete_es_en_measurements_use_relate(
@@ -143,6 +149,10 @@ def test_fail_closed_on_unsupported_model_claims() -> None:
         "Three or six UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
         "5/6 UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
         "About six UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
+        "UTP 3 o 6. OD 0.278 in; tramos de 2 m y 1.5 m.",
+        "UTP 3 or 6. OD 0.278 in; segments of 2 m and 1.5 m.",
+        "Twenty six UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
+        "Twenty-two UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
     ],
 )
 def test_mismatched_or_conflicting_measurements_fail_before_graph(
