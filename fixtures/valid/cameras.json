@@ -1,0 +1,289 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectId": "camera:goal",
+  "entities": [
+    {
+      "id": "camera:goal",
+      "kind": "ProjectGoal",
+      "label": "Cubrir accesos de un sitio ficticio",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "camera:requirement",
+      "kind": "Requirement",
+      "label": "Registrar entradas",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "supports",
+          "targetId": "camera:goal"
+        }
+      ]
+    },
+    {
+      "id": "camera:capability",
+      "kind": "Capability",
+      "label": "Captura de vídeo",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "satisfies",
+          "targetId": "camera:requirement"
+        }
+      ]
+    },
+    {
+      "id": "camera:resource",
+      "kind": "Resource",
+      "label": "Equipo de instalación",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "camera:task",
+      "kind": "Task",
+      "label": "Instalar dispositivos",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "uses",
+          "targetId": "camera:resource"
+        }
+      ]
+    },
+    {
+      "id": "camera:deliverable",
+      "kind": "Deliverable",
+      "label": "Sistema de prueba",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "produced-by",
+          "targetId": "camera:task"
+        }
+      ]
+    },
+    {
+      "id": "camera:constraint",
+      "kind": "Constraint",
+      "label": "Sin perforar fachada",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "camera:site-condition",
+      "kind": "SiteCondition",
+      "label": "Acceso a energía por confirmar",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "unknown"
+    },
+    {
+      "id": "camera:evidence",
+      "kind": "Evidence",
+      "label": "Plano sintético",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "supports",
+          "targetId": "camera:site-condition"
+        }
+      ]
+    },
+    {
+      "id": "camera:dependency",
+      "kind": "Dependency",
+      "label": "Permiso interno",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "blocks",
+          "targetId": "camera:task"
+        }
+      ]
+    },
+    {
+      "id": "camera:bom-line",
+      "kind": "BOMLine",
+      "label": "Dispositivo de prueba",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "supports",
+          "targetId": "camera:task"
+        }
+      ]
+    },
+    {
+      "id": "camera:rule",
+      "kind": "Rule",
+      "label": "Aprobación previa a compra",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "governs",
+          "targetId": "camera:bom-line"
+        }
+      ]
+    },
+    {
+      "id": "camera:approval",
+      "kind": "Approval",
+      "label": "Conformidad pendiente",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "revision": 1,
+      "knowledgeState": "unknown",
+      "relations": [
+        {
+          "predicate": "applies-to",
+          "targetId": "camera:deliverable"
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "camera:package-capability",
+      "namespace": "example.camera",
+      "version": "1.0.0",
+      "subjectId": "camera:capability",
+      "facts": {
+        "resolutionPixels": [
+          1920,
+          1080
+        ],
+        "nightVision": true
+      }
+    },
+    {
+      "id": "camera:package-bom",
+      "namespace": "example.camera",
+      "version": "1.0.0",
+      "subjectId": "camera:bom-line",
+      "facts": {
+        "quantity": 4,
+        "unit": "each"
+      }
+    },
+    {
+      "id": "camera:package-site",
+      "namespace": "example.camera",
+      "version": "1.0.0",
+      "subjectId": "camera:site-condition",
+      "facts": {
+        "powerOutletDistanceMeters": null
+      }
+    }
+  ]
+}

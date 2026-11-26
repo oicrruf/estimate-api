@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectId": "event:goal",
+  "entities": [
+    {
+      "id": "event:goal",
+      "kind": "ProjectGoal",
+      "label": "Montar un evento ficticio",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "event:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "event:requirement",
+      "kind": "Requirement",
+      "label": "Aforo previsto",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "event:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "supports",
+          "targetId": "event:goal"
+        }
+      ]
+    },
+    {
+      "id": "event:crew",
+      "kind": "Resource",
+      "label": "Cuadrilla de montaje",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "event:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "event:setup",
+      "kind": "Task",
+      "label": "Armar escenario",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "event:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "uses",
+          "targetId": "event:crew"
+        }
+      ]
+    },
+    {
+      "id": "event:venue",
+      "kind": "Constraint",
+      "label": "Horario de recinto",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "event:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "limits",
+          "targetId": "event:setup"
+        }
+      ]
+    },
+    {
+      "id": "event:permit",
+      "kind": "Approval",
+      "label": "Permiso supuesto",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-brief-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "event:project"
+      },
+      "revision": 1,
+      "knowledgeState": "assumed",
+      "relations": [
+        {
+          "predicate": "applies-to",
+          "targetId": "event:setup"
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "event:package-venue",
+      "namespace": "example.event",
+      "version": "1.0.0",
+      "subjectId": "event:venue",
+      "facts": {
+        "doorsOpen": "18:00",
+        "capacityPersons": 120
+      }
+    },
+    {
+      "id": "event:package-setup",
+      "namespace": "example.event",
+      "version": "1.0.0",
+      "subjectId": "event:setup",
+      "facts": {
+        "stageWidthMeters": 6,
+        "audioChannels": 8
+      }
+    }
+  ]
+}
