@@ -1,0 +1,73 @@
+{
+  "fixtureVersion": "1.0.0",
+  "synthetic": true,
+  "projectFile": "fixtures/valid/event.json",
+  "jurisdiction": "TEST-ZONE-A",
+  "category": "fictional-event",
+  "scope": {
+    "kind": "project",
+    "id": "event:project"
+  },
+  "seed": {
+    "item": "event:speaker",
+    "quantity": 4,
+    "unit": "each"
+  },
+  "changedSeedQuantity": 6,
+  "rules": [
+    {
+      "id": "event:speaker-to-cable",
+      "packageId": "catalog:event-at266-v1",
+      "trigger": "event:speaker",
+      "output": "event:cable",
+      "factor": 1,
+      "unit": "each",
+      "mode": "per_unit"
+    },
+    {
+      "id": "event:speaker-to-stand",
+      "packageId": "catalog:event-at266-v1",
+      "trigger": "event:speaker",
+      "output": "event:stand",
+      "factor": 1,
+      "unit": "each",
+      "mode": "per_unit"
+    },
+    {
+      "id": "event:speaker-to-mixer",
+      "packageId": "catalog:event-at266-v1",
+      "trigger": "event:speaker",
+      "output": "event:mixer",
+      "factor": 1,
+      "unit": "each",
+      "mode": "fixed"
+    },
+    {
+      "id": "event:mixer-to-technician",
+      "packageId": "catalog:event-at266-v1",
+      "trigger": "event:mixer",
+      "output": "event:technician",
+      "factor": 2,
+      "unit": "person",
+      "mode": "fixed"
+    },
+    {
+      "id": "event:speaker-to-power-load",
+      "packageId": "catalog:event-at266-v1",
+      "trigger": "event:speaker",
+      "output": "event:power-load",
+      "factor": 100,
+      "unit": "W",
+      "mode": "per_unit"
+    }
+  ],
+  "brief": "Evento audiovisual ficticio: 4 altavoces, cable, soportes, mezclador y 2 recursos de montaje. Cantidades declaradas solo para el fixture. Carga ficticia declarada: 100 W por altavoz.",
+  "itemLabels": {
+    "event:speaker": "altavoz",
+    "event:cable": "cable de audio",
+    "event:stand": "soporte",
+    "event:mixer": "mezclador",
+    "event:technician": "recurso de montaje",
+    "event:power-load": "carga eléctrica ficticia"
+  }
+}
