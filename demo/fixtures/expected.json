@@ -1,0 +1,15 @@
+{
+  "notice":"Resultados esperados para datos y precios ficticios",
+  "Q1":[
+    {"productId":"SW-8","offerId":"OFF-SW8","fictitiousPriceUsd":80,"status":"INCOMPATIBLE","reasonCode":"TOTAL_PORTS_8_LT_9","evidenceEnd":"EV-SW8"},
+    {"productId":"SW-16","offerId":"OFF-SW16","fictitiousPriceUsd":160,"status":"COMPATIBLE","reasonCode":"MEETS_SWITCH_REQUIREMENT","evidenceEnd":"EV-SW16"}
+  ],
+  "Q2":{"productId":"CAM-POE","offerIds":["OFF-CAM-A","OFF-CAM-B"],"requestedQuantity":4,"availableQuantity":2,"status":"INSUFFICIENT_STOCK","reasonCode":"SHARED_POOL_CAPACITY","evidenceEnd":"EV-POOL-CAM"},
+  "Q3":{"productId":"CAM-POE","requestedQuantity":2,"availableQuantity":2,"status":"COMPATIBLE","evidenceEnd":"EV-POOL-CAM"},
+  "Q4":{"productId":"CAM-12V","accessoryId":"AD-12V","accessoryOfferIds":[],"status":"MISSING_ACCESSORY_OFFER"},
+  "Q5":{"productId":"CAM-UNKNOWN","drawW":null,"status":"UNKNOWN","missingFields":["drawW"]},
+  "Q6":{"productId":"SW-16","changedPoePortsMin":12,"measuredPoePorts":8,"status":"INCOMPATIBLE"},
+  "Q7":{"requirementId":"REQ-UPS-SMOKE","productId":"UPS-1500","status":"COMPATIBLE","evidenceEnd":"EV-UPS-1500"},
+  "Q8":{"requirementId":"REQ-NVR","productId":"NVR-8","status":"TECHNICALLY_COMPATIBLE_NO_OFFER","evidenceEnd":"EV-NVR-8"},
+  "Q9":{"requirementId":"REQ-CAMERA","productId":"CAM-ALT","offerIds":[],"status":"TECHNICALLY_COMPATIBLE_NO_OFFER","evidenceEnd":"EV-CAM-ALT"}
+}

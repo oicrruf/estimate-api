@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Estimate Agent — ejemplo planificado de evidencia (demo ficticia)
+  version: 0.1.0
+  description: Ejemplo planificado para la demo AT-229. No es el contrato canónico de ejecución; AT-227 implementará y probará el endpoint real.
+paths:
+  /v1/evidence/evaluations:
+    post:
+      summary: Evaluar una oferta contra una necesidad con rutas de evidencia
+      operationId: evaluateEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+            example:
+              requirementId: REQ-SWITCH
+              productId: SW-8
+              offerIds: [OFF-SW8]
+              requestedQuantity: 1
+      responses:
+        '200':
+          description: Evaluación reproducible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+              example:
+                requirementId: REQ-SWITCH
+                productId: SW-8
+                offerIds: [OFF-SW8]
+                status: INCOMPATIBLE
+                reasonCodes: [TOTAL_PORTS_8_LT_9]
+                requestedQuantity: 1
+                availableQuantity: 5
+                evidencePaths:
+                  - nodes:
+                      - {id: SW-8, type: PRODUCT}
+                      - {id: 'SW-8:totalPorts', type: CAPABILITY}
+                      - {id: EV-SW8, type: EVIDENCE}
+                    relations: [SUPPORTS, SUPPORTED_BY]
+        '400':
+          description: IDs o cantidad inválidos
+        '404':
+          description: Necesidad o producto inexistente
+components:
+  schemas:
+    EvaluationRequest:
+      type: object
+      additionalProperties: false
+      required: [requirementId, productId, requestedQuantity]
+      properties:
+        requirementId: {type: string}
+        productId: {type: string}
+        offerIds: {type: array, items: {type: string}, default: []}
+        requestedQuantity: {type: integer, minimum: 1}
+        changedConstraints:
+          type: object
+          description: Sobrescritura de escenario sin modificar el seed.
+          additionalProperties: {oneOf: [{type: number}, {type: string}, {type: boolean}]}
+    Evaluation:
+      type: object
+      additionalProperties: false
+      required: [requirementId, productId, offerIds, status, reasonCodes, requestedQuantity, availableQuantity, evidencePaths]
+      properties:
+        requirementId: {type: string}
+        productId: {type: string}
+        offerIds: {type: array, items: {type: string}}
+        status:
+          enum: [COMPATIBLE, INCOMPATIBLE, INSUFFICIENT_STOCK, MISSING_ACCESSORY_OFFER, UNKNOWN, TECHNICALLY_COMPATIBLE_NO_OFFER]
+        reasonCodes: {type: array, items: {type: string}}
+        requestedQuantity: {type: integer, minimum: 1}
+        availableQuantity: {type: integer, minimum: 0}
+        missingFields: {type: array, items: {type: string}, default: []}
+        evidencePaths:
+          type: array
+          items: {$ref: '#/components/schemas/EvidencePath'}
+    EvidencePath:
+      type: object
+      additionalProperties: false
+      required: [nodes, relations]
+      properties:
+        nodes:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, type]
+            properties:
+              id: {type: string}
+              type: {enum: [REQUIREMENT, PRODUCT, CAPABILITY, OFFER, EVIDENCE, ACCESSORY]}
+        relations:
+          type: array
+          minItems: 1
+          items:
+            enum: [REQUIRES, SUPPORTS, REQUIRES_ACCESSORY, SUPPORTED_BY, INCOMPATIBLE_WITH, SELLS]
+      description: La longitud de relations debe ser la longitud de nodes menos uno.
