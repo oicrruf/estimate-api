@@ -647,6 +647,11 @@ begin
      length(btrim(p_command_key)) not between 1 and 200 then
     raise exception 'project, actor and command key required' using errcode = '23514';
   end if;
+  -- A new project has no row to lock. Serialize retries on its stable ID
+  -- before consulting the receipt; unrelated IDs may share a hash lock but
+  -- cannot affect one another's data.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(p_project_id::text, 0));
   input_payload := jsonb_build_object('name', p_name);
   select * into prior from private.project_command_receipts
   where project_id = p_project_id and command_key = p_command_key;
@@ -1163,9 +1168,11 @@ declare
   current_revision bigint;
   previous_claim text := current_setting('request.jwt.claim.sub', true);
 begin
-  if p_actor is null or p_project_id is null or p_command_key is null or
+  if p_actor is null or p_project_id is null or p_budget_id is null or
+     p_expected_revision is null or p_status is null or p_command_key is null or
      length(btrim(p_command_key)) not between 1 and 200 then
-    raise exception 'actor, project and command key required' using errcode = '23514'; end if;
+    raise exception 'actor, project, budget, revision, status and command key required'
+      using errcode = '23514'; end if;
   perform 1 from public.projects where id = p_project_id for update;
   if not found or not (
     exists (select 1 from public.projects where id = p_project_id and owner_user_id = p_actor)
@@ -1184,6 +1191,9 @@ begin
   end if;
   select status, revision into current_status, current_revision
   from public.project_budgets where project_id = p_project_id and id = p_budget_id for update;
+  if not found then
+    raise exception 'budget in project required' using errcode = '23514';
+  end if;
   if current_revision is distinct from p_expected_revision or
      not ((current_status = 'draft' and p_status = 'active') or
           (current_status = 'active' and p_status = 'closed')) then

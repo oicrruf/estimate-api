@@ -4,7 +4,7 @@
 
 Restringe cada lectura y escritura a la identidad autenticada y al proyecto autorizado, manteniendo los datos de otro tenant invisibles incluso cuando se conoce un identificador ajeno.
 
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Acceso de mínimo privilegio
 Las tablas de aplicación SHALL aplicar RLS y permisos de columna para que propietario, editor y lector obtengan únicamente las operaciones definidas para su proyecto.
@@ -48,6 +48,16 @@ Las operaciones de usuario SHALL ejecutarse bajo contexto de identidad autentica
 - **GIVEN** un actor validado por FastAPI con permiso de edición y una clave idempotente
 - **WHEN** la conexión de servicio registra una oferta con evidencia y precio finito
 - **THEN** la operación se autoriza por proyecto, audita y aumenta la revisión una sola vez; un reintento idéntico devuelve el mismo ID.
+
+#### Scenario: Dos reintentos simultáneos crean un proyecto
+- **GIVEN** dos transacciones con el mismo ID de proyecto, actor, clave y contenido
+- **WHEN** llaman simultáneamente al comando de creación
+- **THEN** ambas reciben el mismo ID y persisten exactamente un proyecto y un recibo.
+
+#### Scenario: Transición de presupuesto sin objetivo válido
+- **GIVEN** un editor autorizado y un presupuesto inexistente o una revisión esperada nula
+- **WHEN** solicita una transición de estado
+- **THEN** la base rechaza el comando y no guarda un recibo exitoso.
 
 #### Scenario: Servicio selecciona candidato
 - **GIVEN** un candidato y la evaluación aceptada más reciente con evidencia del mismo proyecto

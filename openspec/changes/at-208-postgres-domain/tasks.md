@@ -29,6 +29,7 @@
 - [ ] 4.6 Probar topología exacta de conexión SQL, membresía del migrador, grants y roles en un stack Supabase local compatible; no atribuir compatibilidad a la base PostgreSQL simulada.
 - [x] 4.6a Probar migración con `SET ROLE at208_owner`, roles/grants, aislamiento y restauración en la imagen oficial Supabase PostgreSQL 17.6.1.156 fijada por digest; conservar la prueba negativa que expuso el fallo de .102.
 - [x] 4.6b Probar una conexión TCP/SCRAM con LOGIN efímero separado de `at208_backend`, `SET LOCAL ROLE` transaccional, procedimiento autorizado, denegación antes de asumir rol y de DML directo, y restauración del rol al finalizar. El fixture no valida JWT.
+- [x] 4.6c Serializar creación simultánea por ID antes de consultar recibo y rechazar transición sin presupuesto o revisión; probar dos sesiones, resultado único y ausencia de recibos para comandos fallidos.
 - [ ] 4.7 Revisar independientemente SQL, roles, evidencia fijada, modelo de autorización/idempotencia y tests; verificar CI del SHA final antes de integrar.
 
 ## Workflow follow-up

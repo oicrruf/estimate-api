@@ -49,6 +49,16 @@ Las operaciones de usuario SHALL ejecutarse bajo contexto de identidad autentica
 - **WHEN** la conexión de servicio registra una oferta con evidencia y precio finito
 - **THEN** la operación se autoriza por proyecto, audita y aumenta la revisión una sola vez; un reintento idéntico devuelve el mismo ID.
 
+#### Scenario: Dos reintentos simultáneos crean un proyecto
+- **GIVEN** dos transacciones con el mismo ID de proyecto, actor, clave y contenido
+- **WHEN** llaman simultáneamente al comando de creación
+- **THEN** ambas reciben el mismo ID y persisten exactamente un proyecto y un recibo.
+
+#### Scenario: Transición de presupuesto sin objetivo válido
+- **GIVEN** un editor autorizado y un presupuesto inexistente o una revisión esperada nula
+- **WHEN** solicita una transición de estado
+- **THEN** la base rechaza el comando y no guarda un recibo exitoso.
+
 #### Scenario: Servicio selecciona candidato
 - **GIVEN** un candidato y la evaluación aceptada más reciente con evidencia del mismo proyecto
 - **WHEN** el backend registra selección con actor autorizado y clave idempotente

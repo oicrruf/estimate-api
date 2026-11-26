@@ -119,6 +119,27 @@ do $$ declare rate_id uuid; budget_id uuid; line_id uuid; second_id uuid;
     '10000000-0000-0000-0000-000000000004',
     '00000000-0000-0000-0000-000000000005','activate-1',budget_id,2,'active') then
     raise exception 'activation retry changed ID'; end if;
+  begin
+    perform private.transition_project_budget(
+      '10000000-0000-0000-0000-000000000004',
+      '00000000-0000-0000-0000-000000000005','missing-budget-null',
+      '50000000-0000-0000-0000-000000000099',null,'active');
+    raise exception 'missing budget with null revision accepted';
+  exception when check_violation then null; end;
+  begin
+    perform private.transition_project_budget(
+      '10000000-0000-0000-0000-000000000004',
+      '00000000-0000-0000-0000-000000000005','missing-budget-revision',
+      '50000000-0000-0000-0000-000000000099',1,'active');
+    raise exception 'missing budget with revision accepted';
+  exception when check_violation then null; end;
+  begin
+    perform private.transition_project_budget(
+      '10000000-0000-0000-0000-000000000004',
+      '00000000-0000-0000-0000-000000000005','existing-budget-null',
+      budget_id,null,'closed');
+    raise exception 'null expected revision accepted';
+  exception when check_violation then null; end;
   snapshot_id := private.capture_budget_draft(
     '10000000-0000-0000-0000-000000000004',
     '00000000-0000-0000-0000-000000000005','draft-1',budget_id,3);
@@ -143,6 +164,15 @@ do $$ declare rate_id uuid; budget_id uuid; line_id uuid; second_id uuid;
     '00000000-0000-0000-0000-000000000005','activate-2',second_id,1,'active');
 end $$;
 reset role;
+
+do $$ begin
+  if exists (select 1 from private.project_command_receipts
+    where project_id='10000000-0000-0000-0000-000000000004'
+      and command_key in ('missing-budget-null','missing-budget-revision',
+                          'existing-budget-null')) then
+    raise exception 'failed transition left a successful receipt';
+  end if;
+end $$;
 
 do $$ begin
   if (select count(*) from public.project_service_rates where project_id =

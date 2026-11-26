@@ -25,6 +25,8 @@ Referencias de semántica RLS: [Supabase RLS](https://supabase.com/docs/guides/d
 
 ## Riesgos / Trade-offs
 
+La creación de proyecto usa un bloqueo transaccional derivado de su UUID antes de leer el recibo, porque todavía no existe una fila de proyecto para bloquear. Reintentos simultáneos idénticos comparten el resultado; una colisión del hash solo serializa IDs distintos. La transición de presupuesto exige ID y revisión no nulos y una fila encontrada dentro del proyecto antes de cambiar estado o guardar recibo. Ambas reglas tienen regresiones sintéticas en dos sesiones y en comandos fallidos.
+
 - [Función `SECURITY DEFINER` puede ampliar permisos] → esquema no expuesto, búsqueda fija, revocación explícita y tests de acceso; revisar en checkpoint de seguridad.
 - [Una sesión SQL puede falsificar el GUC de JWT si posee conexión directa] → no conceder conexión directa a usuarios; AT-209 valida JWT y usa contexto de identidad confiable. El harness local no prueba autenticación.
 - [Backend privilegiado o actor falsificado] → rol SQL separado sin BYPASS ni DML; solo funciones explícitas. El ensayo descartable crea un LOGIN distinto con SCRAM y `NOINHERIT`, concede `SET ROLE at208_backend`, y verifica `SET LOCAL ROLE` dentro de la transacción, retorno al LOGIN tras `COMMIT`, denegación de comando antes del cambio y denegación de DML directo. Esto no verifica JWT: la única ruta HTTP actual es `/health`. AT-209 debe verificar token de Auth local, derivar `p_actor` de `sub` validado y probar autorización por recurso a través de FastAPI. La conexión mediante pooler solo se ensayará si el backend la elige; la topología alojada queda por validar antes de desplegar.

@@ -109,6 +109,7 @@ docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   < "$repo_root/tests/at208/trusted_budget.sql"
 bash "$repo_root/tests/at208/concurrent_membership.sh" "$container" "$admin_user"
+bash "$repo_root/tests/at208/concurrent_create.sh" "$container" "$admin_user"
 phase="real SQL login and effective role"
 # The disposable login is intentionally distinct from the NOLOGIN backend role.
 # TCP uses SCRAM; no JWT or HTTP identity is asserted by this test.
