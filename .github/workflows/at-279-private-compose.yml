@@ -40,6 +40,7 @@ jobs:
         run: |
           docker compose up --no-build -d
           python3 ../verify_runtime.py
+          python3 ../verify_browser.py
       - name: Remove only this disposable Compose stack
         if: always()
         working-directory: ci/at-279/package
