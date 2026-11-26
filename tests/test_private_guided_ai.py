@@ -153,6 +153,12 @@ def test_fail_closed_on_unsupported_model_claims() -> None:
         "UTP 3 or 6. OD 0.278 in; segments of 2 m and 1.5 m.",
         "Twenty six UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
         "Twenty-two UTP cables with outer diameter 0.278 inches; segments of 2 m and 1.5 m.",
+        "Seis UTP de OD 0.278 in; un tramo de 2 m o 1.5 m.",
+        "Six UTP with outer diameter 0.278 inches; one segment of 2 m or 1.5 m.",
+        "Seis UTP de OD 0.278 in; tramos de 2 m / 1.5 m.",
+        "Seis UTP de OD 0.278 o 0.224 in; tramos de 2 m y 1.5 m.",
+        "Six UTP with outer diameter 0.278 or 0.224 inches; segments of 2 m and 1.5 m.",
+        "Seis UTP de OD 0.278/0.224 in; tramos de 2 m y 1.5 m.",
     ],
 )
 def test_mismatched_or_conflicting_measurements_fail_before_graph(

@@ -70,7 +70,8 @@ incompatibles o contradictorios antes de llamar al grafo.
 
 #### Scenario: Afirmaciones contradictorias
 
-- **WHEN** el texto mezcla cantidades UTP u OD incompatibles, alternativas,
+- **WHEN** el texto mezcla cantidades UTP u OD incompatibles, alternativas
+  de OD con unidad compartida, longitudes alternativas para un tramo,
   rangos o cantidades aproximadas
 - **THEN** el corte SHALL fallar antes de usar Relate
 

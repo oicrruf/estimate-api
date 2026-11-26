@@ -68,6 +68,18 @@ ROUTE_MEASUREMENT = re.compile(
     rf"(?<![\w.+-])(?P<value>{NUMBER})\s*"
     r"(?:meters|meter|metres|metre|metros|metro|m)\b"
 )
+ALTERNATIVE_JOIN = r"(?:\b(?:o|or)\b|/|[-–])"
+ALTERNATIVE_BEFORE = re.compile(rf"\b{NUMBER}\s*{ALTERNATIVE_JOIN}\s*$")
+ALTERNATIVE_AFTER = re.compile(rf"^\s*{ALTERNATIVE_JOIN}\s*{NUMBER}(?![\w.]|\.\d)")
+
+
+def _has_measurement_alternative(text: str, matches: list[re.Match[str]]) -> bool:
+    """Reject a second number sharing a unit or an alternative measured segment."""
+    return any(
+        ALTERNATIVE_BEFORE.search(text[max(0, match.start() - 40) : match.start()])
+        or ALTERNATIVE_AFTER.match(text[match.end() : match.end() + 40])
+        for match in matches
+    )
 
 
 def _utp_counts(text: str) -> list[int]:
@@ -120,6 +132,8 @@ def _validated_scope(description: str, raw: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Cantidad UTP incompatible con el fixture")
     if count is not None and counts != [count]:
         raise ValueError("Cantidad UTP sin respaldo literal completo")
+    if _has_measurement_alternative(normalized, list(OD_MEASUREMENT.finditer(normalized))):
+        raise ValueError("OD alternativo sin selección confirmada")
     od_values = _od_values(normalized)
     if len(od_values) > 1:
         raise ValueError("OD contradictorios")
@@ -134,6 +148,8 @@ def _validated_scope(description: str, raw: dict[str, Any]) -> dict[str, Any]:
     }
     if variant != "unknown" and od_values != {expected_od[variant]}:
         raise ValueError("OD sin respaldo literal completo y unidad explícita")
+    if _has_measurement_alternative(normalized, list(ROUTE_MEASUREMENT.finditer(normalized))):
+        raise ValueError("Longitudes alternativas sin medición confirmada")
     route_values = _route_values(normalized)
     if route_values and (
         len(route_values) > 2
