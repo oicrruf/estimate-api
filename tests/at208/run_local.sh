@@ -44,7 +44,7 @@ if guard_output="$({
   echo 'Migration accepted an owner without BYPASSRLS' >&2
   exit 1
 fi
-[[ "$guard_output" == *'migration owner must have BYPASSRLS'* ]] || {
+[[ "$guard_output" == *'isolated at208_policy_owner membership required'* ]] || {
   echo "Unexpected preflight failure: $guard_output" >&2
   exit 1
 }
@@ -55,6 +55,9 @@ docker exec "$container" dropdb -U postgres at208_guard
 } | docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
   < "$repo_root/tests/at208/domain_rls.sql"
+docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
+  < "$repo_root/tests/at208/trusted_budget.sql"
+bash "$repo_root/tests/at208/concurrent_membership.sh" "$container"
 
 docker exec "$container" pg_dump -Fc -U postgres -d at208_test > "$domain_dump"
 docker exec "$container" createdb -U postgres at208_restored
@@ -63,12 +66,12 @@ restored="$(docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U postgres
   -c "set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002'; select count(*) from public.projects;")"
 [[ "$restored" == 1 ]] || { echo "Restored tenant isolation failed: $restored" >&2; exit 1; }
 restored_domain="$(docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U postgres -d at208_restored \
-  -c "set role at208_owner; select
+  -c "select
     (select count(*) from public.catalog_items) = 2 and
     (select count(*) from public.project_candidates) = 3 and
     (select count(*) from public.project_selections) = 2 and
     (select count(*) from private.supplier_contacts) = 1 and
-    (select count(*) from private.customer_profiles) = 1;")"
+    (select count(*) from private.customer_profiles) = 2;")"
 [[ "$restored_domain" == t ]] || { echo "Restored domain counts failed: $restored_domain" >&2; exit 1; }
 
 docker exec "$container" dropdb -U postgres at208_restored

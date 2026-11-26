@@ -43,6 +43,11 @@ La persistencia SHALL separar catálogo global versionado de registros de proyec
 - **WHEN** se registra una oferta cuya fecha final antecede a la inicial
 - **THEN** la base la rechaza sin alterar ofertas anteriores.
 
+#### Scenario: Evidencia revisada después de oferta
+- **GIVEN** una oferta histórica creada con evidencia conocida
+- **WHEN** la entidad de evidencia avanza de revisión
+- **THEN** la oferta conserva su revisión y contenido original, y un reintento idéntico recupera la misma oferta.
+
 #### Scenario: Valor no finito
 - **WHEN** se propone `NaN` o infinito como precio o cantidad
 - **THEN** la base rechaza el valor; un número finito y válido se conserva.
@@ -70,3 +75,8 @@ La persistencia SHALL conservar snapshots de propuesta como borradores inmutable
 - **GIVEN** una identidad validada y autorizada por proyecto
 - **WHEN** se modifica un registro mutable
 - **THEN** queda un evento con actor, proyecto, acción, recurso y hora.
+
+#### Scenario: Borrador canónico
+- **GIVEN** un presupuesto activo con revisión vigente
+- **WHEN** el servicio captura un borrador
+- **THEN** la base construye la proyección desde líneas y antecedentes fijados, la guarda inmutable y no concede emisión.

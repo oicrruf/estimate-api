@@ -69,6 +69,7 @@ jobs:
           for file in \
             supabase/migrations/20261126124001_at_208_postgres_domain.sql \
             tests/at208/local_auth_fixture.sql tests/at208/domain_rls.sql \
+            tests/at208/trusted_budget.sql tests/at208/concurrent_membership.sh \
             docs/evidence/at-208.md \
             openspec/specs/project-persistence/spec.md \
             openspec/specs/project-data-isolation/spec.md \

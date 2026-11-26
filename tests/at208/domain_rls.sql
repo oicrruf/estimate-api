@@ -4,17 +4,30 @@ insert into auth.users (id) values
 ('00000000-0000-0000-0000-000000000001'),
 ('00000000-0000-0000-0000-000000000002'),
 ('00000000-0000-0000-0000-000000000003'),
-('00000000-0000-0000-0000-000000000004');
+('00000000-0000-0000-0000-000000000004'),
+('00000000-0000-0000-0000-000000000005');
 do $$ begin
-  if exists (select 1 from pg_roles where rolname = 'at208_owner' and rolsuper) or
+  if exists (select 1 from pg_roles where rolname in
+      ('at208_owner','at208_policy_owner','at208_mutation_owner',
+       'at208_audit_owner','at208_backend') and (rolsuper or rolbypassrls)) or
      (select pg_get_userbyid(relowner) from pg_class where oid = 'public.projects'::regclass)
        <> 'at208_owner' then raise exception 'synthetic non-superuser owner missing'; end if;
   if exists (select 1 from pg_roles where rolname = 'at208_backend' and
              (rolsuper or rolbypassrls)) then
     raise exception 'backend role is privileged'; end if;
+  if has_table_privilege('at208_backend','public.projects','INSERT') or
+     has_table_privilege('at208_backend','public.project_offers','INSERT') or
+     has_table_privilege('authenticated','public.project_memberships','UPDATE') then
+    raise exception 'direct client/backend DML grant leaked'; end if;
   if (select pg_get_userbyid(proowner) from pg_proc
       where oid = 'private.can_read_project(uuid)'::regprocedure)
       <> 'at208_policy_owner' or
+     (select pg_get_userbyid(proowner) from pg_proc
+      where oid = 'private.record_project_offer(uuid,uuid,text,uuid,uuid,uuid,uuid,text,date,date,text,numeric,text)'::regprocedure)
+      <> 'at208_mutation_owner' or
+     (select pg_get_userbyid(proowner) from pg_proc
+      where oid = 'private.audit_project_change()'::regprocedure)
+      <> 'at208_audit_owner' or
      has_table_privilege('at208_policy_owner','public.projects','UPDATE') or
      (select rolbypassrls from pg_roles where rolname='at208_policy_owner') then
     raise exception 'RLS helper owner is too privileged'; end if;
@@ -23,7 +36,8 @@ do $$ begin
     raise exception 'public table without RLS'; end if;
 end $$;
 
-set role at208_owner;
+-- Las semillas se insertan con postgres local; las funciones se prueban con
+-- propietarios NOLOGIN NOBYPASS y el backend sin DML directo.
 insert into public.catalog_items (id, namespace, version, brand, model, sku, label) values
 ('20000000-0000-0000-0000-000000000001','synthetic','1.0.0',
  'Marca ficticia','Modelo uno','ITEM-1','Artículo ficticio'),
@@ -47,6 +61,9 @@ insert into public.supplier_branches (id,supplier_id,country_code,branch_ref,lab
  'SV','branch-2','Otra sucursal');
 insert into public.research_sources (id,source_ref,title,observed_at) values
 ('42000000-0000-0000-0000-000000000001','synthetic-source','Fuente ficticia',now());
+insert into public.knowledge_package_versions (namespace,version,source_id,facts) values
+('synthetic','1','42000000-0000-0000-0000-000000000001','{"synthetic":true}'::jsonb),
+('synthetic','1.0.0','42000000-0000-0000-0000-000000000001','{}'::jsonb);
 insert into public.product_equivalences (left_item_id,right_item_id,source_id,relation) values
 ('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002',
  '42000000-0000-0000-0000-000000000001','compatible_alternative');
@@ -238,6 +255,22 @@ do $$ begin
     raise exception 'direct selection candidate accepted';
   exception when insufficient_privilege then null; end;
   begin
+    insert into public.projects (owner_user_id,name)
+    values (auth.uid(),'Direct project');
+    raise exception 'direct project creation accepted';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.projects set name='Direct rename'
+    where id='10000000-0000-0000-0000-000000000001';
+    raise exception 'direct project update accepted';
+  exception when insufficient_privilege then null; end;
+  begin
+    insert into public.project_memberships (project_id,user_id,role)
+    values ('10000000-0000-0000-0000-000000000001',
+            '00000000-0000-0000-0000-000000000002','viewer');
+    raise exception 'direct membership accepted';
+  exception when insufficient_privilege then null; end;
+  begin
     insert into public.project_evaluations
       (project_id,requirement_entity_id,catalog_item_id,evidence_ref,outcome,rationale)
     values ('10000000-0000-0000-0000-000000000001','e-a2',
@@ -385,7 +418,7 @@ do $$ declare first_id uuid; retry_id uuid; begin
 end $$;
 reset role;
 
-set role at208_owner;
+-- Comprobación administrativa de resultados; no representa una ruta de app.
 do $$ begin
   if (select revision from public.projects where id='10000000-0000-0000-0000-000000000001') <>
      (select revision+1 from at208_revision_before) or
@@ -396,10 +429,30 @@ do $$ begin
      and project_id='10000000-0000-0000-0000-000000000001') then
     raise exception 'trusted actor audit missing'; end if;
 end $$;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+-- Simula una revisión posterior de evidencia mediante administración local;
+-- una oferta histórica debe conservar el contenido y revisión originales.
+update public.project_entities set revision=2, details='{"revised":true}'::jsonb
+where project_id='10000000-0000-0000-0000-000000000001' and entity_id='ev-a';
+reset request.jwt.claim.sub;
+do $$ begin
+  if (select evidence_revision from public.project_offers
+      where project_id='10000000-0000-0000-0000-000000000001'
+        and supplier_ref='trusted-synthetic') <> 1 or
+     (select evidence_snapshot ->> 'revision' from public.project_offers
+      where project_id='10000000-0000-0000-0000-000000000001'
+        and supplier_ref='trusted-synthetic') <> '1' then
+    raise exception 'historical offer evidence changed'; end if;
+end $$;
 reset role;
 
 set role at208_backend;
 do $$ declare candidate_id uuid; evaluation_id uuid; selected_id uuid; begin
+  perform private.record_project_offer('10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001','offer-1','20000000-0000-0000-0000-000000000001',
+    '40000000-0000-0000-0000-000000000001','41000000-0000-0000-0000-000000000001',
+    '42000000-0000-0000-0000-000000000001',
+    'trusted-synthetic',date '2026-01-01',null,'USD',11.5,'ev-a');
   candidate_id := private.record_project_candidate(
     '10000000-0000-0000-0000-000000000001',
     '00000000-0000-0000-0000-000000000001','candidate-2','e-a3',
@@ -443,7 +496,7 @@ do $$ declare candidate_id uuid; evaluation_id uuid; selected_id uuid; begin
   exception when check_violation then null; end;
 end $$;
 reset role;
-set role at208_owner;
+-- Comprobación administrativa de resultados; no representa una ruta de app.
 do $$ begin
   if (select count(*) from public.project_selections
       where project_id='10000000-0000-0000-0000-000000000001') <> 2 or
@@ -452,6 +505,38 @@ do $$ begin
     raise exception 'trusted candidate/evaluation/selection missing or duplicated'; end if;
 end $$;
 reset role;
+
+set role at208_backend;
+do $$ declare created uuid; member uuid; begin
+  created := private.create_project('10000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000005','create-c','Proyecto C');
+  if created <> private.create_project('10000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000005','create-c','Proyecto C') then
+    raise exception 'project create replay failed'; end if;
+  member := private.set_project_member('10000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000005','member-add',
+    '00000000-0000-0000-0000-000000000003','viewer');
+  if member <> private.set_project_member('10000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000005','member-add',
+    '00000000-0000-0000-0000-000000000003','viewer') then
+    raise exception 'membership replay failed'; end if;
+  perform private.set_project_member('10000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000005','member-remove',
+    '00000000-0000-0000-0000-000000000003',null);
+  begin
+    perform private.set_project_member('10000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002','foreign-member',
+      '00000000-0000-0000-0000-000000000005','editor');
+    raise exception 'non-owner managed membership';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+do $$ begin
+  if (select count(*) from public.projects where id='10000000-0000-0000-0000-000000000003') <> 1 or
+     exists (select 1 from public.project_memberships
+             where project_id='10000000-0000-0000-0000-000000000003') then
+    raise exception 'project/member command result wrong'; end if;
+end $$;
 
 set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
@@ -464,38 +549,50 @@ do $$ begin
     raise exception 'B isolation failed'; end if;
   begin
     perform private.transfer_project_ownership('10000000-0000-0000-0000-000000000001',
-      '00000000-0000-0000-0000-000000000002');
-    raise exception 'B transferred A';
+      '00000000-0000-0000-0000-000000000002','direct',
+      '00000000-0000-0000-0000-000000000003');
+    raise exception 'client called transfer';
   exception when insufficient_privilege then null; end;
 end $$;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
 do $$ begin
   if (select count(*) from public.projects) <> 1 then raise exception 'viewer read failed'; end if;
-  update public.project_memberships set role='editor'
-  where project_id='10000000-0000-0000-0000-000000000001'
-    and user_id='00000000-0000-0000-0000-000000000004';
-  if found then raise exception 'viewer promoted self'; end if;
+  begin
+    update public.project_memberships set role='editor'
+    where project_id='10000000-0000-0000-0000-000000000001'
+      and user_id='00000000-0000-0000-0000-000000000004';
+    raise exception 'viewer promoted self';
+  exception when insufficient_privilege then null; end;
 end $$;
 reset request.jwt.claim.sub;
 do $$ begin
   if (select count(*) from public.projects) <> 0 then raise exception 'null actor leaked'; end if;
 end $$;
-set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
-update public.project_memberships set role='viewer'
-where project_id='10000000-0000-0000-0000-000000000001'
-  and user_id='00000000-0000-0000-0000-000000000003';
+reset role;
+set role at208_backend;
+select private.set_project_member('10000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001','downgrade-editor',
+  '00000000-0000-0000-0000-000000000003','viewer');
 do $$ begin
   begin
     perform private.transfer_project_ownership('10000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001','invalid-transfer',
       '00000000-0000-0000-0000-000000000003');
     raise exception 'revoked editor became owner';
   exception when check_violation then null; end;
 end $$;
-update public.project_memberships set role='editor'
-where project_id='10000000-0000-0000-0000-000000000001'
-  and user_id='00000000-0000-0000-0000-000000000003';
+select private.set_project_member('10000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001','restore-editor',
+  '00000000-0000-0000-0000-000000000003','editor');
 select private.transfer_project_ownership('10000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001','transfer-a-to-c',
   '00000000-0000-0000-0000-000000000003');
+select private.transfer_project_ownership('10000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001','transfer-a-to-c',
+  '00000000-0000-0000-0000-000000000003');
+reset role;
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
 do $$ begin
   if (select owner_user_id from public.projects where id='10000000-0000-0000-0000-000000000001') <>
      '00000000-0000-0000-0000-000000000003' then raise exception 'transfer failed'; end if;

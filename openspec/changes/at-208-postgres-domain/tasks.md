@@ -20,11 +20,13 @@
 
 - [x] 4.1 Modelar países, proveedores, sucursales, contactos privados, clientes por proyecto, identidad acumulativa de productos, especificaciones, fuentes y garantías sin mezclar candidatos de proyecto.
 - [x] 4.2 Modelar candidatos, selecciones, evaluaciones, servicios y observaciones históricas de tarifas como datos fundacionales; dejar la política de cálculo a AT-224.
-- [ ] 4.3 Implementar y probar operaciones transaccionales de servicio para entidades, paquetes, presupuestos, líneas y snapshots, con autorización, idempotencia, revisión canónica e invalidación; la emisión queda en AT-222.
-- [ ] 4.4 Verificar atributos y grants reales del propietario de migración y `service_role` antes de aplicar en Supabase, probar JWT y rutas FastAPI en sus issues, obtener revisión independiente del SQL y CI del SHA final.
-- [ ] 4.5 Validar o sustituir la propiedad BYPASSRLS restante de funciones mutadoras por propietarios NOLOGIN con grants/políticas acotadas; comprobar topología exacta de conexión SQL en un entorno Supabase local compatible antes de habilitar producción.
+- [x] 4.3 Implementar y probar comandos transaccionales para declaraciones/evidencia curada, paquete versionado, cliente, tarifa, presupuesto, línea y borrador canónico, con autorización, idempotencia y revisión; la emisión queda en AT-222. Mantener bloqueadas mutaciones arbitrarias de hechos, evidencia y snapshots.
+- [x] 4.4 Quitar DML directo de proyecto/membresía y probar creación, edición, transferencia y reintentos; alinear bloqueo proyecto→membresía y probar carrera en dos sesiones.
+- [x] 4.5 Sustituir propiedad BYPASSRLS de auxiliares/mutadores/auditoría por roles NOLOGIN NOBYPASSRLS con grants/políticas acotadas; verificar localmente que el backend no tiene DML directo.
+- [ ] 4.6 Probar topología exacta de conexión SQL, membresía del migrador, grants y roles en un stack Supabase local compatible; no atribuir compatibilidad a la base PostgreSQL simulada.
+- [ ] 4.7 Revisar independientemente SQL, roles, evidencia fijada, modelo de autorización/idempotencia y tests; verificar CI del SHA final antes de integrar.
 
 ## Workflow follow-up
 
 - Las specs vigentes reflejan el subconjunto probado; el cambio AT-208 sigue activo y se archivará al completar los requisitos pendientes.
-- Mantener PR draft y no hacer merge ni actualizar Linear hasta completar cobertura, revisión independiente y gates aplicables.
+- Mantener PR draft y no hacer merge ni actualizar Linear hasta revisión independiente, prueba de compatibilidad de roles y gates aplicables. FastAPI/JWT permanece en AT-209.

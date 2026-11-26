@@ -11,13 +11,19 @@ do $$ begin
     create role service_role nologin bypassrls;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'at208_owner') then
-    create role at208_owner nologin bypassrls;
+    create role at208_owner nologin nobypassrls;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'at208_backend') then
     create role at208_backend nologin nobypassrls;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'at208_policy_owner') then
     create role at208_policy_owner nologin nobypassrls;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'at208_mutation_owner') then
+    create role at208_mutation_owner nologin nobypassrls;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'at208_audit_owner') then
+    create role at208_audit_owner nologin nobypassrls;
   end if;
 end $$;
 create schema auth;
@@ -33,9 +39,17 @@ grant references on auth.users to at208_owner;
 grant execute on function auth.uid() to at208_owner;
 grant usage on schema auth to at208_policy_owner;
 grant execute on function auth.uid() to at208_policy_owner;
+grant usage on schema auth to at208_mutation_owner, at208_audit_owner;
+grant execute on function auth.uid() to at208_mutation_owner, at208_audit_owner;
 do $$ begin
   if not pg_has_role('at208_owner', 'at208_policy_owner', 'member') then
     grant at208_policy_owner to at208_owner;
+  end if;
+  if not pg_has_role('at208_owner', 'at208_mutation_owner', 'member') then
+    grant at208_mutation_owner to at208_owner;
+  end if;
+  if not pg_has_role('at208_owner', 'at208_audit_owner', 'member') then
+    grant at208_audit_owner to at208_owner;
   end if;
 end $$;
 grant create on schema public to at208_owner;

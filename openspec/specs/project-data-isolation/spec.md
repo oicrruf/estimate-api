@@ -39,6 +39,11 @@ Las operaciones de usuario SHALL ejecutarse bajo contexto de identidad autentica
 - **WHEN** inserta directamente una oferta, línea, presupuesto, snapshot, entidad de evidencia o paquete
 - **THEN** la base rechaza la escritura aunque el proyecto le pertenezca.
 
+#### Scenario: Cliente intenta escribir proyecto o membresía
+- **GIVEN** un propietario autenticado
+- **WHEN** intenta insertar o actualizar directamente proyecto o membresía
+- **THEN** la base deniega DML y exige los comandos de backend con actor, autorización e idempotencia.
+
 #### Scenario: Servicio registra oferta
 - **GIVEN** un actor validado por FastAPI con permiso de edición y una clave idempotente
 - **WHEN** la conexión de servicio registra una oferta con evidencia y precio finito
