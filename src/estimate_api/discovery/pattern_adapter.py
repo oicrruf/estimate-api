@@ -26,6 +26,20 @@ class PatternPlan:
     bindings: tuple[PatternBinding, ...] = ()
 
 
+def candidate_lineage(plan: PatternPlan) -> tuple[tuple[str, str, str], ...]:
+    """Keep real candidate dependencies separate from precomputed quantities."""
+    candidates = {rule.target_key for rule in plan.package.rules}
+    return tuple(
+        dict.fromkeys(
+            (source, "REQUIRES", target)
+            for rule in plan.package.rules
+            for path in rule.candidate_paths
+            for source, target in zip(path, path[1:], strict=False)
+            if source in candidates and target in candidates
+        )
+    )
+
+
 def build_pattern_plan(
     intake: ProjectIntake,
     bindings: tuple[PatternBinding, ...],

@@ -71,7 +71,7 @@ def evaluate_ethernet_scope(catalog: dict[str, Any], topology: dict[str, Any]) -
                 str(item["status"]),
                 str(item["reason"]),
                 str(item["requiredLengthM"]) if item["requiredLengthM"] is not None else None,
-                tuple(item["evidenceIds"]),
+                tuple(dict.fromkeys(item["evidenceIds"])),
             )
             for item in raw["links"]
         ),
@@ -81,7 +81,7 @@ def evaluate_ethernet_scope(catalog: dict[str, Any], topology: dict[str, Any]) -
                 str(item["requiredLengthM"]),
                 item["commercialRolls"] if totals_complete else None,
                 str(item["ruleId"]),
-                tuple(item["evidenceIds"]),
+                tuple(dict.fromkeys(item["evidenceIds"])),
             )
             for item in raw["materials"]
         ),
@@ -118,7 +118,7 @@ def attach_topology_links(proposal: Proposal, topology: TopologyScope) -> Propos
             jurisdiction=None,
             parent_key=None,
             relation="CONNECTS_TO",
-            evidence_ids=link.evidence_ids,
+            evidence_ids=tuple(dict.fromkeys(link.evidence_ids)),
             rule_ids=(link.reason,),
             source_refs=("AT-239",),
         )
@@ -144,13 +144,15 @@ def attach_topology_links(proposal: Proposal, topology: TopologyScope) -> Propos
             jurisdiction=None,
             parent_key=None,
             relation="REQUIRES",
-            evidence_ids=material.evidence_ids,
+            evidence_ids=tuple(dict.fromkeys(material.evidence_ids)),
             rule_ids=(material.rule_id,),
             source_refs=("AT-239",),
         )
         for material in topology.materials
     )
     additions = (*link_additions, *material_additions)
+    if len({line.key for line in additions}) != len(additions):
+        raise ValueError("Duplicate topology line")
     if any(line.key in existing for line in additions):
         raise ValueError("Topology material collides with existing proposal line")
     questions = tuple(

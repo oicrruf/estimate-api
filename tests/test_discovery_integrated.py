@@ -120,6 +120,48 @@ def test_versioned_candidates_keep_provenance_and_revalidate_counts() -> None:
     Draft202012Validator(schema).validate(json.loads(json.dumps(updated.payload)))
 
 
+def test_reviewing_real_utp_candidate_invalidates_its_precomputed_descendants() -> None:
+    pattern = BY_NAME["poe-camera"]
+    project = intake("camera", 8)
+    facts = {
+        "application": confirmed(True, "EV-APPLICATION"),
+        "wired_run": confirmed(True, "EV-WIRED"),
+        "mount_required": confirmed(False, "EV-MOUNT"),
+        "poe_source": confirmed(True, "EV-POE"),
+        "utp_ends": confirmed(2, "EV-ENDS"),
+    }
+    evaluated = evaluate_pattern_scope(
+        project,
+        plan(project, PatternBinding("camera", pattern, facts)),
+        registry_context=registry_context(pattern),
+    )
+    assert (
+        "at247:item:utp",
+        "REQUIRES",
+        "at247:item:utp-connector",
+    ) in evaluated.proposal.evidence_paths
+    proposed = {line.key: line for line in evaluated.proposal.lines}
+    assert proposed["at247:item:utp"].quantity == 8
+    assert proposed["at247:item:utp-connector"].quantity == 16
+    approved = review(
+        evaluated.proposal,
+        tuple(
+            ReviewAction(line.key, "approve")
+            for line in evaluated.proposal.lines
+            if line.state == "agent_proposed"
+        ),
+    )
+    assert approved.status == "approved" and approved.commercial_ready
+    changed = review(approved, (ReviewAction("at247:item:utp", "modify", 12, "candidate"),))
+    changed_lines = {line.key: line for line in changed.lines}
+    for key in ("at247:item:utp-connector", "at247:item:link-test"):
+        assert changed_lines[key].quantity is None
+        assert changed_lines[key].state == "pending_measurement"
+    assert changed_lines["at247:item:poe-power"].state == "user_approved"
+    reapproved_utp = review(changed, (ReviewAction("at247:item:utp", "approve"),))
+    assert reapproved_utp.status == "proposed" and not reapproved_utp.commercial_ready
+
+
 def test_reused_pattern_bindings_keep_distinct_rule_ids_and_shared_quantity_block() -> None:
     pattern = BY_NAME["poe-camera"]
     project = replace(
@@ -413,6 +455,32 @@ def test_read_only_relate_pattern_rule_paths() -> None:
             path["status"] == "required_link_context"
             for path in with_topology.payload["ethernet"]["graphLinkPaths"]
         )
+        overlapping = copy.deepcopy(fixture["topology"])
+        overlapping["runs"][0]["evidenceId"] = overlapping["endpoints"][0]["evidenceId"]
+        duplicate_evidence = evaluate_ethernet_scope(fixture["catalog"], overlapping)
+        assert len(duplicate_evidence.links[0].evidence_ids) == len(
+            set(duplicate_evidence.links[0].evidence_ids)
+        )
+        direct = evaluate_scope(project, None, reader, ethernet_scope=duplicate_evidence)
+        patterned = evaluate_pattern_scope(
+            project,
+            plan(project, binding),
+            reader,
+            registry_context=registry_context(pattern),
+            ethernet_scope=duplicate_evidence,
+        )
+        for result in (direct, patterned):
+            line = next(line for line in result.payload["lines"] if line["key"] == "LINK-CAM-1")
+            assert len(line["evidence"]) == len({item["id"] for item in line["evidence"]})
+            assert not result.payload["commercialReady"]
+        supplied_duplicate = replace(
+            duplicate_evidence,
+            links=(
+                replace(duplicate_evidence.links[0], evidence_ids=("EV-CAM-1", "EV-CAM-1")),
+                *duplicate_evidence.links[1:],
+            ),
+        )
+        evaluate_scope(project, None, reader, ethernet_scope=supplied_duplicate)
         after = connection.execute("MATCH (n) RETURN count(n) AS n").single()["n"]
         assert before == after
         connection.close()

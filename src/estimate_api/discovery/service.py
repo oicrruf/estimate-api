@@ -9,12 +9,12 @@ from estimate_api.contracts.universal_v1 import ProjectDocument
 from estimate_api.knowledge.registry_v1 import CoverageResult
 
 from .constraint_adapter import ConstraintScope, assess_constraints, attach_constraints
-from .engine import discover
+from .engine import attach_lineage, discover
 from .ethernet_adapter import TopologyScope, attach_topology_links
 from .evidence import EvidenceReference, PatternRuleReference, TopologyLinkReference
 from .hardware_adapter import HardwareScope
 from .models import KnowledgePackage, PatternProvider, ProjectIntake, Proposal
-from .pattern_adapter import PatternPlan, build_pattern_plan
+from .pattern_adapter import PatternPlan, build_pattern_plan, candidate_lineage
 from .registry_adapter import RegistryContext, resolve_pattern_coverage
 from .trusted import is_reviewed_pattern, resolve_reviewed_package
 
@@ -153,7 +153,7 @@ def to_review_payload(
     evidence_complete = True
     for line in proposal.lines:
         references = (
-            evidence_reader.resolve(line.evidence_ids)
+            evidence_reader.resolve(tuple(dict.fromkeys(line.evidence_ids)))
             if evidence_reader is not None and line.evidence_ids
             else ()
         )
@@ -443,6 +443,8 @@ def evaluate_scope(
     ):
         trusted = None
     proposal = discover(intake, trusted)
+    if _pattern_plan is not None and trusted is not None:
+        proposal = attach_lineage(proposal, candidate_lineage(_pattern_plan))
     if coverage.status != "cataloged":
         proposal = replace(proposal, status="pending_specialist", commercial_ready=False)
     if ethernet_scope is not None:

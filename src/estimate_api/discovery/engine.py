@@ -56,6 +56,21 @@ def _would_cycle(paths: list[tuple[str, str, str]], source: str, target: str) ->
     return False
 
 
+def attach_lineage(proposal: Proposal, edges: tuple[tuple[str, str, str], ...]) -> Proposal:
+    """Add verified lineage for review invalidation without recalculating quantities."""
+    paths = list(proposal.evidence_paths)
+    known = {line.key for line in proposal.lines}
+    for source, relation, target in edges:
+        edge = (source, relation, target)
+        if source not in known or target not in known:
+            raise ValueError("Pattern lineage references an absent candidate")
+        if edge not in paths:
+            if _would_cycle(paths, source, target):
+                raise ValueError("Pattern lineage cycle")
+            paths.append(edge)
+    return replace(proposal, evidence_paths=tuple(paths))
+
+
 def _package(
     intake: ProjectIntake, provider: PatternProvider | KnowledgePackage | None
 ) -> KnowledgePackage | None:
