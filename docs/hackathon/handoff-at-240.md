@@ -14,6 +14,16 @@ y las comprobaciones de formato, tipos, OpenAPI, secretos y OpenSpec se ejecutan
 sobre ese mismo árbol. Siguen pendientes el endpoint de revisión y la aprobación
 A2UI persistida, por lo que estas regresiones son de dominio y del servicio local.
 
+La revisión posterior también cubre ciclos entre ramas ya descubiertas, bindings
+de necesidades distintas que reutilizan un patrón y cantidades no finitas.
+`discover` rechaza un arco que cerraría un ciclo en el grafo completo. El ID de
+regla conserva su formato anterior para un patrón usado una vez; cuando se
+reutiliza, incorpora de forma inequívoca la clave de la necesidad para evitar
+colisiones. El intake, las cantidades derivadas y las modificaciones rechazan
+NaN, infinito y productos desbordados. `tests/test_discovery_integrated.py`
+comprueba el servicio con dos bindings sintéticos del mismo patrón y mantiene
+la cantidad compartida pendiente de confirmación.
+
 La base integrada probada es `develop` en `c130fda08dd7ae8b69ea45474925bdc0acc1e67f` (AT-247/239/267/246 más AT-265/238/264/229). El contrato vive en `src/estimate_api/discovery`, sin modificar rutas existentes. El fixture `demo/fixtures/at-240-discovery.json` es enteramente ficticio. `evaluate_scope` y `evaluate_pattern_scope` son entradas de backend locales; `scope-review.v1` es el contrato JSON para la futura API/A2UI/escenarios. Todavía no existe ruta HTTP ni pantalla.
 
 ## Recorrido reproducible

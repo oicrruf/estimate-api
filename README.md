@@ -61,6 +61,9 @@ No conecte estos ejemplos a datos reales.
 - [Captura de alcance AT-246](openspec/specs/scope-capture/spec.md) y
   [consistencia global AT-267](openspec/specs/global-solution-consistency/spec.md):
   contratos y checks locales que conservan hechos desconocidos como pendientes.
+- [Descubrimiento y revisión AT-240](docs/hackathon/handoff-at-240.md): entrada
+  local de servicio, reglas sintéticas, cantidades pendientes y revalidación;
+  aún no hay endpoint de revisión ni aprobación persistida.
 - [Patrones de instalación AT-247](docs/at-247-installation-patterns.md),
   [plantillas de servicios AT-259](docs/at-259-service-templates.md) y
   [enlaces Ethernet sintéticos AT-239](demo/ethernet/README.md): derivaciones
