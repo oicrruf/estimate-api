@@ -25,7 +25,7 @@ jobs:
         with:
           version: '0.7.6'
       - name: Install pinned dependencies
-        run: uv sync --frozen --extra dev --extra demo
+        run: uv sync --frozen --extra dev --extra demo --extra private-ai
       - name: Check lint, format, and types
         run: |
           uv run --no-sync ruff check .
@@ -46,7 +46,7 @@ jobs:
         with:
           version: '0.7.6'
       - name: Install pinned dependencies
-        run: uv sync --frozen --extra dev --extra demo
+        run: uv sync --frozen --extra dev --extra demo --extra private-ai
       - name: Run pytest
         run: uv run --no-sync pytest -q
 
@@ -91,6 +91,9 @@ jobs:
         run: |
           ci/at-206-docs/node_modules/.bin/openspec validate --specs --strict
           ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
+          if test -s openspec/changes/private-guided-ai/proposal.md; then
+            ci/at-206-docs/node_modules/.bin/openspec validate private-guided-ai --strict
+          fi
 
   security-metadata:
     name: Secret scan and PR metadata

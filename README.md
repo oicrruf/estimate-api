@@ -46,6 +46,28 @@ In another terminal, run
 The JSON includes `wireVersion: guided-bom.v1`, candidates, evidence, and a draft BOM.
 This route is separate from the canonical API; it uses fictional data and no model key.
 
+The optional [private Luna CLI (AT-211)](demo/guided_bom/PRIVATE_AI.md) uses the
+same synthetic store. It is a local command, **not a public or hosted HTTP endpoint**.
+Run it only in an authorized private environment with `OPENAI_API_KEY` available to
+that process. The coding checks below do not need a key.
+
+```sh
+uv sync --frozen --extra dev --extra demo --extra private-ai
+uv run --frozen --extra demo --extra private-ai python -m demo.guided_bom.private_ai \
+  --store /tmp/estimate-guided-bom.rl \
+  --description 'Seis UTP de OD 0.278 in; tramos de 2 m y 1.5 m.'
+```
+
+This mode defaults to `gpt-6-luna`; a model change requires an explicit `--model`.
+It accepts at most 700 description characters, makes one bounded extraction request
+with at most 500 output tokens, a 15-second timeout, no retries, and `store=false`.
+Python checks complete measurements and units against the fixture before ADK queries
+Relate. Missing UTP count or cable diameter returns questions without a graph call;
+alternative, approximate, fractional, or conflicting item counts fail closed before
+stock or BOM evaluation. Independent camera and UTP counts stay separate;
+any preview remains pending review. For an offline test without a provider, run
+`uv run --frozen --extra dev --extra demo --extra private-ai pytest -q tests/test_private_guided_ai.py tests/test_private_model.py tests/test_private_camera_ai.py`.
+
 ## What is in this repository
 
 | Area | Current state and boundary |
@@ -54,6 +76,7 @@ This route is separate from the canonical API; it uses fictional data and no mod
 | [Local ADK + Relate CLI](demo/agent/README.md) | Reproducible evaluations with fictional product, offer, and inventory evidence; no model provider or production data. |
 | [Local HTTP preview](demo/PREVIEW_HTTP.md) | A separate server, defaulting to `127.0.0.1:8001`, for synthetic demo evaluations. It is not an authenticated or public API. |
 | [Synthetic guided BOM (AT-232)](demo/guided_bom/README.md) | Separate loopback server at `127.0.0.1:8002` with a read-only, fixed-scenario GET; local ADK and Relate, no model call or installation advice. |
+| [Private Luna CLI (AT-211)](demo/guided_bom/PRIVATE_AI.md) | Optional bounded structured extraction over synthetic text; requires an authorized private OpenAI key and exposes no HTTP endpoint. |
 | [AT-208 SQL migration and evidence](docs/evidence/at-208.md) | Domain schema and RLS tested with disposable local PostgreSQL and an official Supabase PostgreSQL image. The migration has not been applied to a hosted project, and there is no authenticated domain HTTP route. |
 | [AT-279 VPS deployment candidate](ci/at-279/README.md) | A Compose package and CI checks for a potential private demo. It has not been deployed to Coolify or a VPS. |
 
