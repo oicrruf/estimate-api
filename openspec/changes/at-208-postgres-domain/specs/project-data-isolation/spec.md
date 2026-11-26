@@ -27,7 +27,17 @@ La capa de datos SHALL rechazar por defecto operaciones de usuario sin identidad
 - **THEN** no se obtiene ningún registro de proyecto ni se acepta una mutación.
 
 ### Requirement: Límite del rol privilegiado
-Las operaciones de usuario SHALL ejecutarse bajo contexto de identidad autenticada con RLS. El rol de servicio SHALL quedar reservado para migraciones o administración explícita y no para omitir autorización por recurso.
+Las operaciones de usuario SHALL ejecutarse bajo contexto de identidad autenticada con RLS. Los cambios comerciales SHALL pasar por un servicio transaccional con actor validado, autorización por recurso e idempotencia; la conexión de servicio SHALL recibir solo ejecución de funciones revisadas y ningún DML directo sobre las tablas comerciales.
+
+#### Scenario: Cliente intenta escribir datos comerciales
+- **GIVEN** un propietario o editor autenticado
+- **WHEN** inserta directamente una oferta, línea, presupuesto, snapshot, entidad de evidencia o paquete
+- **THEN** la base rechaza la escritura aunque el proyecto le pertenezca.
+
+#### Scenario: Servicio registra oferta
+- **GIVEN** un actor validado por FastAPI con permiso de edición y una clave idempotente
+- **WHEN** la conexión de servicio registra una oferta con evidencia y precio finito
+- **THEN** la operación se autoriza por proyecto, audita y aumenta la revisión una sola vez; un reintento idéntico devuelve el mismo ID.
 
 #### Scenario: Prueba local con identidad simulada
 - **GIVEN** un PostgreSQL descartable que simula el contexto de Auth

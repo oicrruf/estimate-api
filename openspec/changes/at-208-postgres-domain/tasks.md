@@ -16,7 +16,14 @@
 
 - [x] 3.1 Ejecutar OpenSpec, pruebas SQL y controles de secreto sobre el diff; registrar resultados y solicitar checkpoint de revisión de seguridad antes de integrar.
 
+## 4. Cobertura restante del objetivo AT-208 (bloquea Done)
+
+- [ ] 4.1 Modelar países, proveedores, sucursales, contactos, clientes, identidad acumulativa de productos, especificaciones, fuentes y garantías sin mezclar candidatos de proyecto.
+- [ ] 4.2 Modelar candidatos, selecciones, evaluaciones, servicios y tarifas como datos fundacionales; dejar la política de cálculo a AT-224.
+- [ ] 4.3 Implementar y probar operaciones transaccionales de servicio para entidades, paquetes, presupuestos, líneas y snapshots, con autorización, idempotencia, revisión canónica e invalidación; la emisión queda en AT-222.
+- [ ] 4.4 Verificar atributos y grants reales del propietario de migración y `service_role` antes de aplicar en Supabase, probar JWT y rutas FastAPI en sus issues, obtener revisión independiente del SQL y CI del SHA final.
+
 ## Workflow follow-up
 
-- Archivar y sincronizar specs en el commit final AT-208 cuando pruebas y revisión permitan cerrar el cambio.
-- Mantener PR draft y no hacer merge ni actualizar Linear hasta revisión independiente y gates aplicables.
+- Las specs vigentes reflejan el subconjunto probado; el cambio AT-208 sigue activo y se archivará al completar los requisitos pendientes.
+- Mantener PR draft y no hacer merge ni actualizar Linear hasta completar cobertura, revisión independiente y gates aplicables.

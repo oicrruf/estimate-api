@@ -2,9 +2,21 @@
 -- Requiere roles Supabase anon/authenticated y auth.uid()/auth.users.
 begin;
 
+-- Las funciones de membresía son SECURITY DEFINER y deben leer tablas FORCE RLS
+-- sin invocar de nuevo la misma política. Fallar antes de crear objetos si el
+-- propietario de esta migración no puede hacerlo; verificar el rol alojado aparte.
+do $$ begin
+  if not exists (select 1 from pg_roles
+                 where rolname = current_user and (rolbypassrls or rolsuper)) then
+    raise exception 'migration owner must have BYPASSRLS for private helpers'
+      using errcode = '42501';
+  end if;
+end $$;
+
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
+grant usage on schema private to service_role;
 
 create table public.projects (
   id uuid primary key default gen_random_uuid(),
@@ -93,10 +105,14 @@ create table public.project_offers (
   valid_from date not null,
   valid_until date,
   currency text not null check (currency ~ '^[A-Z]{3}$'),
-  unit_price numeric(18,4) not null check (unit_price >= 0),
+  unit_price numeric(18,4) not null check (
+    unit_price >= 0 and unit_price <> all (
+      array['NaN'::numeric, 'Infinity'::numeric, '-Infinity'::numeric])),
   evidence_ref text not null check (length(btrim(evidence_ref)) > 0),
   primary key (project_id, id),
-  check (valid_until is null or valid_until >= valid_from)
+  check (valid_until is null or valid_until >= valid_from),
+  foreign key (project_id, evidence_ref)
+    references public.project_entities(project_id, entity_id) on delete restrict
 );
 create index project_offers_history_idx on public.project_offers (project_id, catalog_item_id, observed_at desc);
 
@@ -118,7 +134,9 @@ create table public.budget_lines (
   budget_id uuid not null,
   entity_id text not null,
   offer_id uuid,
-  quantity numeric(18,4) not null check (quantity > 0),
+  quantity numeric(18,4) not null check (
+    quantity > 0 and quantity <> all (
+      array['NaN'::numeric, 'Infinity'::numeric, '-Infinity'::numeric])),
   created_at timestamptz not null default now(),
   primary key (project_id, id),
   foreign key (project_id, budget_id)
@@ -135,6 +153,7 @@ create table public.proposal_snapshots (
   id uuid not null default gen_random_uuid(),
   budget_id uuid not null,
   revision bigint not null check (revision > 0),
+  status text not null default 'draft' check (status = 'draft'),
   document jsonb not null check (jsonb_typeof(document) = 'object'),
   created_by uuid not null default auth.uid() references auth.users(id) on delete restrict,
   created_at timestamptz not null default now(),
@@ -154,6 +173,19 @@ create table public.audit_events (
   occurred_at timestamptz not null default now()
 );
 create index audit_events_project_time_idx on public.audit_events (project_id, occurred_at desc, id desc);
+
+-- Privado: una clave de comando por proyecto se ata a su payload exacto.
+create table private.project_command_receipts (
+  project_id uuid not null references public.projects(id) on delete restrict,
+  command_key text not null check (length(btrim(command_key)) between 1 and 200),
+  actor_user_id uuid not null references auth.users(id) on delete restrict,
+  action text not null,
+  payload jsonb not null,
+  result_id uuid not null,
+  created_at timestamptz not null default now(),
+  primary key (project_id, command_key)
+);
+revoke all on private.project_command_receipts from public, anon, authenticated, service_role;
 
 -- Las funciones privadas devuelven solo booleanos y evitan recursión entre políticas.
 create function private.is_project_owner(p_project_id uuid)
@@ -254,6 +286,32 @@ begin
 end;
 $$;
 
+-- Toda mutación dependiente invalida la revisión del proyecto en la misma transacción.
+create function private.bump_project_revision()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare tenant uuid;
+begin
+  if tg_op = 'DELETE' then tenant := old.project_id; else tenant := new.project_id; end if;
+  update public.projects set revision = revision + 1 where id = tenant;
+  if tg_op = 'DELETE' then return old; else return new; end if;
+end;
+$$;
+
+create function private.bump_budget_revision()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare tenant uuid; budget uuid;
+begin
+  if tg_op = 'DELETE' then
+    tenant := old.project_id; budget := old.budget_id;
+  else
+    tenant := new.project_id; budget := new.budget_id;
+  end if;
+  update public.project_budgets set revision = revision + 1
+  where project_id = tenant and id = budget;
+  if tg_op = 'DELETE' then return old; else return new; end if;
+end;
+$$;
+
 create trigger projects_audit after insert or update or delete on public.projects
 for each row execute function private.audit_project_change();
 create trigger memberships_audit after insert or update or delete on public.project_memberships
@@ -273,11 +331,29 @@ for each row execute function private.audit_project_change();
 create trigger snapshots_audit after insert on public.proposal_snapshots
 for each row execute function private.audit_project_change();
 
+create trigger memberships_revision after insert or update or delete on public.project_memberships
+for each row execute function private.bump_project_revision();
+create trigger entities_project_revision after insert or update or delete on public.project_entities
+for each row execute function private.bump_project_revision();
+create trigger relations_project_revision after insert or delete on public.project_relations
+for each row execute function private.bump_project_revision();
+create trigger packages_project_revision after insert or update or delete on public.project_packages
+for each row execute function private.bump_project_revision();
+create trigger offers_project_revision after insert on public.project_offers
+for each row execute function private.bump_project_revision();
+create trigger budgets_project_revision after insert or update on public.project_budgets
+for each row execute function private.bump_project_revision();
+create trigger budget_lines_budget_revision after insert or update or delete on public.budget_lines
+for each row execute function private.bump_budget_revision();
+create trigger snapshots_project_revision after insert on public.proposal_snapshots
+for each row execute function private.bump_project_revision();
+
 -- Transferencia atómica: destino debe ser editor, sin cambiar propietario por UPDATE directo.
 create function private.transfer_project_ownership(p_project_id uuid, p_new_owner uuid)
 returns void language plpgsql security definer set search_path = '' as $$
 declare
   old_owner uuid;
+  removed integer;
 begin
   if auth.uid() is null then
     raise exception 'authenticated actor required' using errcode = '28000';
@@ -286,14 +362,79 @@ begin
   if old_owner is null or old_owner <> auth.uid() then
     raise exception 'project owner required' using errcode = '42501';
   end if;
-  if not exists (select 1 from public.project_memberships
-                 where project_id = p_project_id and user_id = p_new_owner and role = 'editor') then
+  perform 1 from public.project_memberships
+  where project_id = p_project_id and user_id = p_new_owner and role = 'editor'
+  for update;
+  if not found then
     raise exception 'new owner must be an existing editor' using errcode = '23514';
   end if;
   delete from public.project_memberships where project_id = p_project_id and user_id = p_new_owner;
+  get diagnostics removed = row_count;
+  if removed <> 1 then
+    raise exception 'editor membership changed during transfer' using errcode = '40001';
+  end if;
   update public.projects set owner_user_id = p_new_owner where id = p_project_id;
   insert into public.project_memberships (project_id, user_id, role)
   values (p_project_id, old_owner, 'editor');
+end;
+$$;
+
+-- Solo el backend de confianza puede invocar esta operación. p_actor es el
+-- subject de un JWT ya validado por FastAPI; jamás aceptar el actor del cliente.
+create function private.record_project_offer(
+  p_project_id uuid, p_actor uuid, p_command_key text, p_catalog_item_id uuid,
+  p_supplier_ref text, p_valid_from date, p_valid_until date,
+  p_currency text, p_unit_price numeric, p_evidence_ref text
+)
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare
+  input_payload jsonb;
+  prior private.project_command_receipts%rowtype;
+  new_id uuid;
+  previous_claim text := current_setting('request.jwt.claim.sub', true);
+begin
+  if p_actor is null or p_project_id is null or
+     length(btrim(p_command_key)) not between 1 and 200 then
+    raise exception 'actor, project and command key required' using errcode = '23514';
+  end if;
+  perform 1 from public.projects where id = p_project_id for update;
+  if not found or not (
+    exists (select 1 from public.projects where id = p_project_id and owner_user_id = p_actor)
+    or exists (select 1 from public.project_memberships
+               where project_id = p_project_id and user_id = p_actor and role = 'editor')
+  ) then
+    raise exception 'project editor required' using errcode = '42501';
+  end if;
+  if not exists (select 1 from public.project_entities
+                 where project_id = p_project_id and entity_id = p_evidence_ref
+                   and kind = 'Evidence' and knowledge_state = 'known') then
+    raise exception 'known project evidence required' using errcode = '23514';
+  end if;
+  input_payload := jsonb_build_object(
+    'catalog_item_id', p_catalog_item_id, 'supplier_ref', p_supplier_ref,
+    'valid_from', p_valid_from, 'valid_until', p_valid_until,
+    'currency', p_currency, 'unit_price', p_unit_price, 'evidence_ref', p_evidence_ref);
+  select * into prior from private.project_command_receipts
+  where project_id = p_project_id and command_key = p_command_key;
+  if found then
+    if prior.actor_user_id <> p_actor or prior.action <> 'record_offer' or
+       prior.payload <> input_payload then
+      raise exception 'idempotency key reused with different command' using errcode = '23505';
+    end if;
+    return prior.result_id;
+  end if;
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  insert into public.project_offers
+    (project_id, catalog_item_id, supplier_ref, valid_from, valid_until,
+     currency, unit_price, evidence_ref)
+  values (p_project_id, p_catalog_item_id, p_supplier_ref, p_valid_from,
+          p_valid_until, p_currency, p_unit_price, p_evidence_ref)
+  returning id into new_id;
+  insert into private.project_command_receipts
+    (project_id, command_key, actor_user_id, action, payload, result_id)
+  values (p_project_id, p_command_key, p_actor, 'record_offer', input_payload, new_id);
+  perform set_config('request.jwt.claim.sub', coalesce(previous_claim, ''), true);
+  return new_id;
 end;
 $$;
 
@@ -397,7 +538,7 @@ using (private.is_project_owner(project_id));
 revoke all on table public.projects, public.project_memberships, public.catalog_items,
   public.project_entities, public.project_relations, public.project_packages,
   public.project_offers, public.project_budgets, public.budget_lines,
-  public.proposal_snapshots, public.audit_events from public, anon, authenticated;
+  public.proposal_snapshots, public.audit_events from public, anon, authenticated, service_role;
 grant select on table public.projects, public.project_memberships, public.catalog_items,
   public.project_entities, public.project_relations, public.project_packages,
   public.project_offers, public.project_budgets, public.budget_lines,
@@ -407,36 +548,21 @@ grant update (name) on public.projects to authenticated;
 grant insert (project_id, user_id, role) on public.project_memberships to authenticated;
 grant update (role) on public.project_memberships to authenticated;
 grant delete on public.project_memberships to authenticated;
-grant insert (project_id, entity_id, kind, label, origin_kind, origin_ref,
-  scope_kind, scope_id, revision, knowledge_state, details) on public.project_entities to authenticated;
-grant update (label, origin_ref, scope_kind, scope_id, revision, knowledge_state, details)
-  on public.project_entities to authenticated;
-grant delete on public.project_entities to authenticated;
-grant insert (project_id, source_entity_id, predicate, target_entity_id)
-  on public.project_relations to authenticated;
-grant delete on public.project_relations to authenticated;
-grant insert (project_id, package_id, namespace, version, subject_entity_id, facts)
-  on public.project_packages to authenticated;
-grant update (namespace, version, subject_entity_id, facts)
-  on public.project_packages to authenticated;
-grant delete on public.project_packages to authenticated;
-grant insert (project_id, catalog_item_id, supplier_ref, observed_at, valid_from,
-  valid_until, currency, unit_price, evidence_ref) on public.project_offers to authenticated;
-grant insert (project_id, status, currency) on public.project_budgets to authenticated;
-grant update (status) on public.project_budgets to authenticated;
-grant insert (project_id, budget_id, entity_id, offer_id, quantity)
-  on public.budget_lines to authenticated;
-grant update (offer_id, quantity) on public.budget_lines to authenticated;
-grant delete on public.budget_lines to authenticated;
-grant insert (project_id, budget_id, revision, document) on public.proposal_snapshots to authenticated;
+-- Las escrituras de dominio/evidencia/comercio se reservan a funciones privadas
+-- de servicio revisadas. Aún no se ofrece servicio para entidades, paquetes,
+-- presupuestos, líneas ni snapshots: permanecen bloqueados para clientes.
 
 revoke all on function private.is_project_owner(uuid), private.can_read_project(uuid),
   private.can_edit_project(uuid), private.transfer_project_ownership(uuid, uuid),
   private.prevent_owner_membership(), private.touch_project(), private.touch_budget(),
-  private.guard_entity_revision(),
-  private.audit_project_change() from public, anon, authenticated;
+  private.guard_entity_revision(), private.audit_project_change(),
+  private.bump_project_revision(), private.bump_budget_revision(),
+  private.record_project_offer(uuid, uuid, text, uuid, text, date, date, text, numeric, text)
+  from public, anon, authenticated, service_role;
 grant execute on function private.is_project_owner(uuid), private.can_read_project(uuid),
   private.can_edit_project(uuid), private.transfer_project_ownership(uuid, uuid)
   to authenticated;
+grant execute on function private.record_project_offer(
+  uuid, uuid, text, uuid, text, date, date, text, numeric, text) to service_role;
 
 commit;

@@ -34,6 +34,10 @@ La persistencia SHALL separar catálogo global versionado de registros de proyec
 - **WHEN** se registra una oferta cuya fecha final antecede a la inicial
 - **THEN** la base la rechaza sin alterar ofertas anteriores.
 
+#### Scenario: Valor no finito
+- **WHEN** se propone `NaN` o infinito como precio o cantidad
+- **THEN** la base rechaza el valor; un número finito y válido se conserva.
+
 ### Requirement: Presupuesto activo único
 La persistencia SHALL permitir como máximo un presupuesto activo por proyecto y SHALL mantener líneas y referencias de oferta dentro del mismo proyecto.
 
@@ -43,7 +47,7 @@ La persistencia SHALL permitir como máximo un presupuesto activo por proyecto y
 - **THEN** la base rechaza la operación.
 
 ### Requirement: Snapshot y auditoría
-La persistencia SHALL conservar snapshots de propuesta y eventos de mutación sin alterar registros históricos y sin copiar secretos ni documentos comerciales completos al evento de auditoría.
+La persistencia SHALL conservar snapshots de propuesta como borradores inmutables y eventos de mutación sin alterar registros históricos ni copiar secretos o documentos comerciales completos al evento de auditoría. Un snapshot SHALL NOT conceder permiso para emitir una propuesta.
 
 #### Scenario: Mutación con actor
 - **GIVEN** una identidad validada y autorizada por proyecto

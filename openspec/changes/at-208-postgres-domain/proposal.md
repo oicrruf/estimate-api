@@ -4,6 +4,8 @@
 
 AT-208 necesita convertir el contrato universal de proyecto y la decisión PostgreSQL del ADR 0001 en persistencia versionada con integridad e aislamiento comprobables. El backend aún no tiene esquema de aplicación; los ejemplos y fixtures actuales no establecen permisos entre usuarios.
 
+Este borrador cubre el sobre universal y una primera operación confiable de oferta. El objetivo completo de AT-208 leído en Linear incluye más entidades comerciales y rutas transaccionales; las tareas abiertas enumeran esa brecha y bloquean Done.
+
 ## What Changes
 
 - Crear migración inicial para proyectos, membresías, entidades y relaciones universales, paquetes asociados, catálogo reutilizable, ofertas históricas, presupuestos, snapshots y auditoría.

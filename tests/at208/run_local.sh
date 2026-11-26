@@ -31,9 +31,28 @@ fi
 docker exec "$container" createdb -U postgres at208_test
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
   < "$repo_root/tests/at208/local_auth_fixture.sql"
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
+  -c 'grant create on database at208_test to at208_owner'
 docker exec "$container" pg_dump -Fc -U postgres -d at208_test > "$baseline_dump"
-docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
-  < "$repo_root/supabase/migrations/20261126124001_at_208_postgres_domain.sql"
+docker exec "$container" createdb -U postgres at208_guard
+docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard \
+  < "$repo_root/tests/at208/local_auth_fixture.sql"
+if guard_output="$({
+  printf 'set role authenticated;\n'
+  cat "$repo_root/supabase/migrations/20261126124001_at_208_postgres_domain.sql"
+} | docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard 2>&1)"; then
+  echo 'Migration accepted an owner without BYPASSRLS' >&2
+  exit 1
+fi
+[[ "$guard_output" == *'migration owner must have BYPASSRLS'* ]] || {
+  echo "Unexpected preflight failure: $guard_output" >&2
+  exit 1
+}
+docker exec "$container" dropdb -U postgres at208_guard
+{
+  printf 'set role at208_owner;\n'
+  cat "$repo_root/supabase/migrations/20261126124001_at_208_postgres_domain.sql"
+} | docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
   < "$repo_root/tests/at208/domain_rls.sql"
 

@@ -49,6 +49,7 @@ jobs:
         run: |
           ci/at-206-docs/node_modules/.bin/openspec validate --specs --strict
           ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
+          ci/at-206-docs/node_modules/.bin/openspec validate at-208-postgres-domain --strict
       - name: Build and smoke test local container
         run: |
           docker compose config --quiet
@@ -71,9 +72,9 @@ jobs:
             docs/evidence/at-208.md \
             openspec/specs/project-persistence/spec.md \
             openspec/specs/project-data-isolation/spec.md \
-            openspec/changes/archive/2026-11-26-at-208-postgres-domain/proposal.md \
-            openspec/changes/archive/2026-11-26-at-208-postgres-domain/design.md \
-            openspec/changes/archive/2026-11-26-at-208-postgres-domain/tasks.md; do
+            openspec/changes/at-208-postgres-domain/proposal.md \
+            openspec/changes/at-208-postgres-domain/design.md \
+            openspec/changes/at-208-postgres-domain/tasks.md; do
             test -s "$file"
           done
           bash tests/at208/run_local.sh
