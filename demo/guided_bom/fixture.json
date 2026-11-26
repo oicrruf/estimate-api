@@ -1,0 +1,36 @@
+{
+  "wireVersion": "guided-bom.v1",
+  "scenarioId": "synthetic-three-wifi-cameras-no-network",
+  "notice": "Ejemplo ficticio; no es asesoría de instalación ni cotización.",
+  "cameraCount": 3,
+  "route": {
+    "id": "SEG-DEMO",
+    "sectionLengthsM": ["2.0", "1.5"],
+    "confirmedJoins": 1,
+    "confirmedBoxEntries": 2,
+    "confirmedSupportPoints": 3,
+    "evidenceId": "EV-ROUTE-CONFIRMED"
+  },
+  "fillDemo": {
+    "thresholdFraction": "0.40",
+    "thresholdSource": "synthetic://guided-bom/illustrative-threshold-not-code",
+    "conduit": {
+      "3/4": {"nominalOuterDiameterIn": "0.922", "nominalWallThicknessIn": "0.049", "derivedInnerDiameterIn": "0.824"},
+      "1": {"nominalOuterDiameterIn": "1.163", "nominalWallThicknessIn": "0.057", "derivedInnerDiameterIn": "1.049"},
+      "1 1/4": {"nominalOuterDiameterIn": "1.510", "nominalWallThicknessIn": "0.065", "derivedInnerDiameterIn": "1.380"}
+    },
+    "conduitSource": "https://steeltubeinstitute.org/steel-conduit/electrical-metallic-tubing/",
+    "cableVariants": {
+      "thick": {"nominalOuterDiameterIn": "0.278", "source": "https://www.belden.com/products/cable/ethernet-cable/category-6a-cable/10gxs32"},
+      "slim": {"nominalOuterDiameterIn": "0.224", "source": "https://www.belden.com/products/cable/ethernet-cable/category-6-cable/2412"},
+      "unknown": {"nominalOuterDiameterIn": null, "source": null}
+    },
+    "cableCountChoices": [3, 6],
+    "routeLengthChoices": ["known", "unknown"]
+  },
+  "iterations": [
+    {"cableCount": 3, "cableVariant": "thick", "expectedEmtId": "GEN-EMT-3-4"},
+    {"cableCount": 6, "cableVariant": "thick", "expectedEmtId": "GEN-EMT-1-1-4"},
+    {"cableCount": 6, "cableVariant": "slim", "expectedEmtId": "GEN-EMT-1"}
+  ]
+}
