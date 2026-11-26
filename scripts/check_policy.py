@@ -43,15 +43,21 @@ def main() -> int:
     parser.add_argument("--title")
     parser.add_argument("--branch")
     parser.add_argument("--commit")
-    parser.add_argument("--issue", default="AT-207")
+    parser.add_argument("--issue")
     args = parser.parse_args()
     errors = []
-    if args.title and not check_title(args.title, args.issue):
+    issue = args.issue
+    if not issue and args.title:
+        match = re.search(r"\((AT-[0-9]+)\)$", args.title)
+        issue = match.group(1) if match else None
+    if (args.title or args.branch or args.commit) and not issue:
+        errors.append("issue ID is required or must appear at end of PR title")
+    if args.title and issue and not check_title(args.title, issue):
         errors.append("PR title must be Conventional Commits with issue ID")
-    if args.branch and not check_branch(args.branch, args.issue):
+    if args.branch and issue and not check_branch(args.branch, issue):
         errors.append("branch must use feature/fix/hotfix/AT-XXX-slug")
-    if args.commit:
-        errors.extend(check_commit(args.commit, args.issue))
+    if args.commit and issue:
+        errors.extend(check_commit(args.commit, issue))
     if errors:
         for error in errors:
             print(error, file=sys.stderr)

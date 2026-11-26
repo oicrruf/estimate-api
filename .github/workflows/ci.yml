@@ -67,4 +67,4 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BRANCH: ${{ github.head_ref }}
-        run: uv run --no-sync python scripts/check_policy.py --title "$PR_TITLE" --branch "$PR_BRANCH" --issue AT-207
+        run: uv run --no-sync python scripts/check_policy.py --title "$PR_TITLE" --branch "$PR_BRANCH"
