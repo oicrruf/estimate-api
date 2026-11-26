@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://estimate.example/schema/knowledge-registry.v1.schema.json",
+  "title": "Estimate Agent knowledge registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packages"],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "packages": {"type": "array", "items": {"$ref": "#/$defs/package"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "uniqueText": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {"enum": ["project", "site", "area", "workstream"]},
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*(?::[a-z0-9][a-z0-9-]*)+$"}
+      }
+    },
+    "package": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "namespace", "version", "taxonomy", "source", "applicability", "limits", "review", "categorySpecs", "installationPatterns", "ruleSets"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*(?::[a-z0-9][a-z0-9-]*)+$"},
+        "namespace": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$"},
+        "version": {"type": "string", "pattern": "^[1-9][0-9]*\\.[0-9]+\\.[0-9]+$"},
+        "taxonomy": {"$ref": "#/$defs/text"},
+        "source": {
+          "type": "object", "additionalProperties": false, "required": ["ref", "version"],
+          "properties": {"ref": {"$ref": "#/$defs/text"}, "version": {"$ref": "#/$defs/text"}}
+        },
+        "applicability": {
+          "type": "object", "additionalProperties": false,
+          "required": ["jurisdictions", "categories", "scopes"],
+          "properties": {
+            "jurisdictions": {"$ref": "#/$defs/uniqueText"},
+            "categories": {"$ref": "#/$defs/uniqueText"},
+            "scopes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/scope"}}
+          }
+        },
+        "limits": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "review": {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "requiredReviewer", "evidenceRefs"],
+          "properties": {
+            "state": {"enum": ["unverified", "verified"]},
+            "requiredReviewer": {"$ref": "#/$defs/text"},
+            "reviewerRef": {"$ref": "#/$defs/text"},
+            "evidenceRefs": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+          }
+        },
+        "categorySpecs": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false, "required": ["category", "schemaRef"],
+            "properties": {"category": {"$ref": "#/$defs/text"}, "schemaRef": {"$ref": "#/$defs/text"}}
+          }
+        },
+        "installationPatterns": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false, "required": ["id", "category", "ref"],
+            "properties": {"id": {"$ref": "#/$defs/text"}, "category": {"$ref": "#/$defs/text"}, "ref": {"$ref": "#/$defs/text"}}
+          }
+        },
+        "ruleSets": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false, "required": ["id", "rules"],
+            "properties": {
+              "id": {"$ref": "#/$defs/text"},
+              "rules": {"type": "array", "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["topic", "choice", "sourceRef"],
+                "properties": {
+                  "topic": {"$ref": "#/$defs/text"},
+                  "choice": {"$ref": "#/$defs/text"},
+                  "sourceRef": {"$ref": "#/$defs/text"}
+                }
+              }}
+            }
+          }
+        }
+      }
+    }
+  }
+}
