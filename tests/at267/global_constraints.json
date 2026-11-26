@@ -1,0 +1,574 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectId": "global:goal",
+  "entities": [
+    {
+      "id": "global:goal",
+      "kind": "ProjectGoal",
+      "label": "goal",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:network-demand",
+      "kind": "Resource",
+      "label": "network demand",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:switch-total",
+      "kind": "Resource",
+      "label": "switch total",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:poe-demand",
+      "kind": "Resource",
+      "label": "poe demand",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:switch-poe",
+      "kind": "Resource",
+      "label": "switch poe",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:power-demand",
+      "kind": "Resource",
+      "label": "power demand",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:power-budget",
+      "kind": "Resource",
+      "label": "power budget",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:emt-selection",
+      "kind": "Resource",
+      "label": "emt selection",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:emt-model-spec",
+      "kind": "Resource",
+      "label": "emt model spec",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:task-required",
+      "kind": "Resource",
+      "label": "task required",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:task-provided",
+      "kind": "Resource",
+      "label": "task provided",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:permit-required",
+      "kind": "Resource",
+      "label": "permit required",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:permit-provided",
+      "kind": "Resource",
+      "label": "permit provided",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "unknown"
+    },
+    {
+      "id": "global:evidence",
+      "kind": "Evidence",
+      "label": "evidence",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known",
+      "relations": [
+        {
+          "predicate": "supports",
+          "targetId": "global:network-demand"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:switch-total"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:poe-demand"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:switch-poe"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:power-demand"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:power-budget"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:emt-selection"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:emt-model-spec"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:task-required"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:task-provided"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:permit-required"
+        },
+        {
+          "predicate": "supports",
+          "targetId": "global:permit-provided"
+        }
+      ]
+    },
+    {
+      "id": "global:total-ports",
+      "kind": "Constraint",
+      "label": "total ports",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:poe-ports",
+      "kind": "Constraint",
+      "label": "poe ports",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:poe-power",
+      "kind": "Constraint",
+      "label": "poe power",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:emt-model",
+      "kind": "Constraint",
+      "label": "emt model",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:task-coverage",
+      "kind": "Constraint",
+      "label": "task coverage",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    },
+    {
+      "id": "global:permit-coverage",
+      "kind": "Constraint",
+      "label": "permit coverage",
+      "origin": {
+        "kind": "user",
+        "ref": "synthetic-at267-v1"
+      },
+      "scope": {
+        "kind": "project",
+        "id": "global:project"
+      },
+      "revision": 1,
+      "knowledgeState": "known"
+    }
+  ],
+  "packages": [
+    {
+      "id": "global:check-total-ports",
+      "namespace": "estimate.constraints",
+      "version": "1.0.0",
+      "subjectId": "global:total-ports",
+      "facts": {
+        "check": {
+          "id": "global:total-ports",
+          "kind": "cardinality",
+          "inputs": {
+            "demand": {
+              "value": 9,
+              "source": {
+                "entityId": "global:network-demand",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "limit": {
+              "value": 8,
+              "source": {
+                "entityId": "global:switch-total",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "unit": "port"
+          }
+        }
+      }
+    },
+    {
+      "id": "global:check-poe-ports",
+      "namespace": "estimate.constraints",
+      "version": "1.0.0",
+      "subjectId": "global:poe-ports",
+      "facts": {
+        "check": {
+          "id": "global:poe-ports",
+          "kind": "cardinality",
+          "inputs": {
+            "demand": {
+              "value": 8,
+              "source": {
+                "entityId": "global:poe-demand",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "limit": {
+              "value": 8,
+              "source": {
+                "entityId": "global:switch-poe",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "unit": "poe-port"
+          }
+        }
+      }
+    },
+    {
+      "id": "global:check-poe-power",
+      "namespace": "estimate.constraints",
+      "version": "1.0.0",
+      "subjectId": "global:poe-power",
+      "facts": {
+        "check": {
+          "id": "global:poe-power",
+          "kind": "capacity",
+          "inputs": {
+            "demand": {
+              "value": 96,
+              "source": {
+                "entityId": "global:power-demand",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "limit": {
+              "value": 60,
+              "source": {
+                "entityId": "global:power-budget",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "unit": "W"
+          }
+        }
+      }
+    },
+    {
+      "id": "global:check-emt-model",
+      "namespace": "estimate.constraints",
+      "version": "1.0.0",
+      "subjectId": "global:emt-model",
+      "facts": {
+        "check": {
+          "id": "global:emt-model",
+          "kind": "compatibility",
+          "inputs": {
+            "selected": {
+              "value": "emt-3-4",
+              "source": {
+                "entityId": "global:emt-selection",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "allowed": {
+              "value": [
+                "emt-1"
+              ],
+              "source": {
+                "entityId": "global:emt-model-spec",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "global:check-task-coverage",
+      "namespace": "estimate.constraints",
+      "version": "1.0.0",
+      "subjectId": "global:task-coverage",
+      "facts": {
+        "check": {
+          "id": "global:task-coverage",
+          "kind": "coverage",
+          "inputs": {
+            "required": {
+              "value": [
+                "install",
+                "test"
+              ],
+              "source": {
+                "entityId": "global:task-required",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "provided": {
+              "value": [
+                "install"
+              ],
+              "source": {
+                "entityId": "global:task-provided",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "global:check-permit-coverage",
+      "namespace": "estimate.constraints",
+      "version": "1.0.0",
+      "subjectId": "global:permit-coverage",
+      "facts": {
+        "check": {
+          "id": "global:permit-coverage",
+          "kind": "coverage",
+          "inputs": {
+            "required": {
+              "value": [
+                "site-permit"
+              ],
+              "source": {
+                "entityId": "global:permit-required",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            },
+            "provided": {
+              "value": [],
+              "source": {
+                "entityId": "global:permit-provided",
+                "revision": 1,
+                "evidenceIds": [
+                  "global:evidence"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
