@@ -45,10 +45,30 @@ con consulta fija para evaluar el pool común.
 ### Requirement: BOM guiada separada
 
 El GET guiado determinista SHALL permanecer separado de la extracción privada
-y la extracción de UTP SHALL aceptar sólo valores respaldados literalmente.
+y la extracción de UTP SHALL aceptar sólo cantidades y mediciones completas
+con unidades explícitas que coincidan con la fixture. SHALL rechazar valores
+incompatibles o contradictorios antes de llamar al grafo.
+
+#### Scenario: Mediciones completas
+
+- **WHEN** una descripción ES/EN contiene seis UTP, OD 0.278 in y tramos de
+  2 m y 1.5 m, con números y unidades completos
+- **THEN** el corte SHALL invocar Relate y producir una evaluación preliminar
+
+#### Scenario: Subcadenas o unidades incompatibles
+
+- **WHEN** el texto contiene 12 m y 11.5 m, OD 0.278 mm u otra medición fuera
+  del fixture, aunque incluya como subcadena 2 m o 0.278
+- **THEN** el corte SHALL fallar antes de usar Relate o generar cantidades
+
+#### Scenario: Afirmaciones contradictorias
+
+- **WHEN** el texto mezcla cantidades UTP u OD incompatibles
+- **THEN** el corte SHALL fallar antes de usar Relate
 
 #### Scenario: Falta OD o longitud
 
 - **WHEN** la descripción omite OD o longitud del tramo
 - **THEN** el corte SHALL dejar pendientes las conclusiones o cantidades
-  correspondientes y no inventar precio ni compatibilidad
+  correspondientes y no inventar precio ni compatibilidad; sin OD o cantidad
+  UTP SHALL omitir la consulta de grafo

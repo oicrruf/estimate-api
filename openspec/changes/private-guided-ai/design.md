@@ -18,5 +18,11 @@ cantidad en el texto.
 
 El GET `/v1/demo/guided-bom` continúa separado y determinista. Ambos CLI
 privados reciben sólo fixture sintético; no se monta una ruta HTTP paga.
+La validación local de la entrada guiada analiza tokens numéricos completos y
+unidades `in`/`mm` y `m`/`meter`/`metro` con Decimal. Exige un OD explícito
+de la fixture y ambos tramos exactos para cantidades; rechaza valores fuera
+del fixture o afirmaciones contradictorias. Cantidad u OD ausentes producen
+pregunta y cero llamadas a Relate. Longitud ausente conserva únicamente una
+selección transversal preliminar, sin BOM.
 Pruebas offline usan respuestas SDK simuladas y store Relate real. La ejecución
 OpenAI real desde esta rama queda como gate separado.

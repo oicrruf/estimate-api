@@ -7,6 +7,12 @@ local real. El modelo no recibe herramientas, Cypher, URLs ni rutas. Python
 verifica respaldo literal y calcula la BOM exclusivamente con el fixture
 `guided-bom.v1`. El resultado lleva `PENDING_REVIEW`; no es una cotización ni
 asesoría de instalación.
+La extracción exige cantidades UTP y OD con números completos y unidades
+explícitas; sólo 0.278 o 0.224 **pulgadas** permiten la evaluación. Los tramos
+de 2 y 1.5 m deben estar declarados completos para obtener cantidades. Un
+`12 m`/`11.5 m`, OD en `mm` o datos contradictorios fallan antes de abrir
+Relate. Cantidad u OD ausentes devuelven `NEEDS_INPUT`, pregunta y cero
+consultas; longitud ausente permite sólo selección preliminar, sin BOM.
 
 Con Python 3.12, desde la raíz del repo:
 
