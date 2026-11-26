@@ -57,8 +57,10 @@ def test_eight_poe_and_separate_uplink_stay_in_review() -> None:
     assert lines["network:uplink"]["quantity"] == 1
     assert lines["camera:link"]["quantity"] == 8
     assert lines["camera:termination"]["quantity"] == 16
+    assert lines["camera:link"]["ruleId"] == "camera:camera-to-link"
+    assert lines["camera:link"]["sourceRefs"] == ["synthetic://at266/cameras/camera:camera-to-link"]
     assert lines["camera:link"]["evidenceStatus"] == "unknown"
-    assert payload["evidencePaths"]
+    assert ["camera:camera", "REQUIRES", "camera:link"] in payload["evidencePaths"]
     assert payload["constraints"] is not None
     findings = {item["checkId"]: item for item in payload["constraints"]["findings"]}
     assert findings["global:total-ports"]["status"] == "fail"  # 8 cameras + 1 uplink > 8
