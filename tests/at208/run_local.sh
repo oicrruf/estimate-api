@@ -62,6 +62,14 @@ docker exec -i "$container" pg_restore -U postgres -d at208_restored < "$domain_
 restored="$(docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U postgres -d at208_restored \
   -c "set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002'; select count(*) from public.projects;")"
 [[ "$restored" == 1 ]] || { echo "Restored tenant isolation failed: $restored" >&2; exit 1; }
+restored_domain="$(docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U postgres -d at208_restored \
+  -c "set role at208_owner; select
+    (select count(*) from public.catalog_items) = 2 and
+    (select count(*) from public.project_candidates) = 3 and
+    (select count(*) from public.project_selections) = 2 and
+    (select count(*) from private.supplier_contacts) = 1 and
+    (select count(*) from private.customer_profiles) = 1;")"
+[[ "$restored_domain" == t ]] || { echo "Restored domain counts failed: $restored_domain" >&2; exit 1; }
 
 docker exec "$container" dropdb -U postgres at208_restored
 docker exec "$container" createdb -U postgres at208_restored

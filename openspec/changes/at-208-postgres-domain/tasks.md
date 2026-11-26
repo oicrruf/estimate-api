@@ -18,10 +18,11 @@
 
 ## 4. Cobertura restante del objetivo AT-208 (bloquea Done)
 
-- [ ] 4.1 Modelar países, proveedores, sucursales, contactos, clientes, identidad acumulativa de productos, especificaciones, fuentes y garantías sin mezclar candidatos de proyecto.
-- [ ] 4.2 Modelar candidatos, selecciones, evaluaciones, servicios y tarifas como datos fundacionales; dejar la política de cálculo a AT-224.
+- [x] 4.1 Modelar países, proveedores, sucursales, contactos privados, clientes por proyecto, identidad acumulativa de productos, especificaciones, fuentes y garantías sin mezclar candidatos de proyecto.
+- [x] 4.2 Modelar candidatos, selecciones, evaluaciones, servicios y observaciones históricas de tarifas como datos fundacionales; dejar la política de cálculo a AT-224.
 - [ ] 4.3 Implementar y probar operaciones transaccionales de servicio para entidades, paquetes, presupuestos, líneas y snapshots, con autorización, idempotencia, revisión canónica e invalidación; la emisión queda en AT-222.
 - [ ] 4.4 Verificar atributos y grants reales del propietario de migración y `service_role` antes de aplicar en Supabase, probar JWT y rutas FastAPI en sus issues, obtener revisión independiente del SQL y CI del SHA final.
+- [ ] 4.5 Validar o sustituir la propiedad BYPASSRLS restante de funciones mutadoras por propietarios NOLOGIN con grants/políticas acotadas; comprobar topología exacta de conexión SQL en un entorno Supabase local compatible antes de habilitar producción.
 
 ## Workflow follow-up
 

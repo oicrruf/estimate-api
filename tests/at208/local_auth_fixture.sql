@@ -13,6 +13,12 @@ do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'at208_owner') then
     create role at208_owner nologin bypassrls;
   end if;
+  if not exists (select 1 from pg_roles where rolname = 'at208_backend') then
+    create role at208_backend nologin nobypassrls;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'at208_policy_owner') then
+    create role at208_policy_owner nologin nobypassrls;
+  end if;
 end $$;
 create schema auth;
 create table auth.users (id uuid primary key);
@@ -25,4 +31,11 @@ grant execute on function auth.uid() to authenticated;
 grant usage on schema auth to at208_owner;
 grant references on auth.users to at208_owner;
 grant execute on function auth.uid() to at208_owner;
+grant usage on schema auth to at208_policy_owner;
+grant execute on function auth.uid() to at208_policy_owner;
+do $$ begin
+  if not pg_has_role('at208_owner', 'at208_policy_owner', 'member') then
+    grant at208_policy_owner to at208_owner;
+  end if;
+end $$;
 grant create on schema public to at208_owner;

@@ -9,6 +9,11 @@ Restringe cada lectura y escritura a la identidad autenticada y al proyecto auto
 ### Requirement: Acceso de mínimo privilegio
 Las tablas de aplicación SHALL aplicar RLS y permisos de columna para que propietario, editor y lector obtengan únicamente las operaciones definidas para su proyecto.
 
+#### Scenario: Contactos privados
+- **GIVEN** un usuario autenticado que puede leer el directorio de proveedores
+- **WHEN** intenta leer contactos de sucursal o perfiles de cliente en el esquema privado
+- **THEN** la base deniega el acceso directo.
+
 #### Scenario: Lector intenta mutar
 - **GIVEN** un lector de un proyecto
 - **WHEN** intenta modificar una entidad o presupuesto
@@ -38,6 +43,11 @@ Las operaciones de usuario SHALL ejecutarse bajo contexto de identidad autentica
 - **GIVEN** un actor validado por FastAPI con permiso de edición y una clave idempotente
 - **WHEN** la conexión de servicio registra una oferta con evidencia y precio finito
 - **THEN** la operación se autoriza por proyecto, audita y aumenta la revisión una sola vez; un reintento idéntico devuelve el mismo ID.
+
+#### Scenario: Servicio selecciona candidato
+- **GIVEN** un candidato y la evaluación aceptada más reciente con evidencia del mismo proyecto
+- **WHEN** el backend registra selección con actor autorizado y clave idempotente
+- **THEN** cambia solo ese candidato, conserva el historial y devuelve el mismo resultado en reintentos idénticos.
 
 #### Scenario: Prueba local con identidad simulada
 - **GIVEN** un PostgreSQL descartable que simula el contexto de Auth
