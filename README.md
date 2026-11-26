@@ -38,3 +38,13 @@ Follow [AGENTS.md](AGENTS.md). OpenSpec uses `spec-driven` in `openspec/config.y
 ## AT-246 scope capture
 
 `src/estimate_api/domain/scope_capture` contains a versioned scope-draft contract and an adapter to the universal project document. It uses synthetic examples and has no persistence or external service access. See `openspec/changes/archive/2026-11-26-at-246-scope-capture/` for the specification.
+
+## AT-227 demo local
+
+Con Python 3.12 y `uv` 0.7.6, la entrada ADK + Relate usa únicamente datos ficticios y un store local explícito. El primer comando descarga dependencias fijadas en `uv.lock`; la evaluación no llama a un proveedor de modelo:
+
+```sh
+uv run --frozen --extra demo python -m demo.agent.cli demo --store /tmp/estimate-at227.demo.rl
+```
+
+Véanse [prerequisitos, modo de almacenamiento, ayuda y límites](demo/agent/README.md). La API y la UI de este flujo aún no están implementadas.
