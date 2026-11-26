@@ -22,5 +22,12 @@ remain pending. It SHALL return a review-required, unpersisted proposal.
 #### Scenario: Quantity change
 
 - **WHEN** a new confirmed camera count follows a prior proposal
-- **THEN** AT-240 SHALL report changed lines and the bridge SHALL discard the
-  earlier constraint document until fresh checks are supplied
+- **THEN** AT-240 SHALL report changed lines and the bridge SHALL reject reuse
+  of the earlier constraint document, leaving checks pending
+
+#### Scenario: Stale same-need constraint document
+
+- **WHEN** an internal caller supplies a changed document with the same
+  declared eight-camera and one-uplink counts
+- **THEN** the local bridge SHALL reject it rather than treating its checks as
+  verified evidence

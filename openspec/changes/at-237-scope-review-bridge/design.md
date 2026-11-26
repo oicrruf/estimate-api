@@ -6,10 +6,12 @@ whole counts become AT-240 `Need` values; inferred and missing counts remain
 pending. AT-240's reviewed synthetic camera package, constraint evaluation and
 proposal diff own all dependency, status and change rules.
 
-`ConstraintSnapshot` is a local caller-attested fixture binding, not a trusted
-production check. On a subsequent preview the bridge discards that document,
-retains required check IDs and marks them pending. AT-248 must supply a trusted
-fresh snapshot before a real confirmation path. The response keeps
+`ConstraintSnapshot` accepts only the exact synthetic AT-267 document, checked
+by a pinned canonical JSON digest and the declared counts. An untrusted caller
+cannot substitute a same-need but stale or altered document. A subsequent
+preview rejects reuse, retains required check IDs and marks them pending.
+AT-248 must supply a trusted fresh snapshot before a real confirmation path.
+The response keeps
 `scope_review_pending`, `review_required=true` and `persisted=false` regardless
 of AT-240 status. No HTTP route, approval action, database write or paid model
 call exists in this change.

@@ -1,8 +1,9 @@
 """The local synthetic intake entry stays pending through AT-240 review."""
 
+import copy
 import json
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -84,8 +85,12 @@ def test_missing_evidence_never_derives_an_inferred_count() -> None:
 
 def test_changed_count_invalidates_prior_review_and_constraint_snapshot() -> None:
     first = preview_scope_review(intake(fact(8), fact(1)), snapshot=snapshot())
-    with pytest.raises(ValueError, match="does not match"):
+    with pytest.raises(ValueError, match="exact synthetic"):
         preview_scope_review(intake(fact(10), fact(1)), snapshot=snapshot())
+    with pytest.raises(ValueError, match="separate fresh"):
+        preview_scope_review(
+            intake(fact(8), fact(1)), snapshot=snapshot(), previous=first.scope_review.proposal
+        )
     changed = preview_scope_review(
         intake(fact(10, "synthetic://changed"), fact(1)), previous=first.scope_review.proposal
     )
@@ -101,3 +106,16 @@ def test_changed_count_invalidates_prior_review_and_constraint_snapshot() -> Non
         "camera:termination",
     }
     assert next(line for line in payload["lines"] if line["key"] == "camera:link")["quantity"] == 10
+
+
+def test_same_need_but_stale_or_changed_snapshot_fails_closed() -> None:
+    fixed = snapshot()
+    stale = cast(dict[str, Any], copy.deepcopy(fixed.document))
+    for package in stale["packages"]:
+        if package["facts"]["check"]["id"] == "global:total-ports":
+            package["facts"]["check"]["inputs"]["demand"]["value"] = 8
+    with pytest.raises(ValueError, match="exact synthetic"):
+        preview_scope_review(
+            intake(fact(8), fact(1)),
+            snapshot=ConstraintSnapshot(cast(ProjectDocument, stale), 8, 1),
+        )

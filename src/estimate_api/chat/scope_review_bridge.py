@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from typing import Literal
 
@@ -25,6 +27,7 @@ from estimate_api.domain.scope_capture import (
 
 PROJECT_ID = "camera:goal"
 REQUIRED_CHECKS = ("global:total-ports", "global:poe-ports")
+SYNTHETIC_CONSTRAINT_SHA256 = "c44bbf0ade77253686b4bd7a664b5698420793abaeb12014cfdf9d17c2ae8155"
 
 
 @dataclass(frozen=True)
@@ -38,7 +41,7 @@ class NetworkIntake:
 
 @dataclass(frozen=True)
 class ConstraintSnapshot:
-    """Caller-attested input binding; AT-248 must verify real evidence freshness."""
+    """Only the exact reviewed synthetic AT-267 fixture is accepted."""
 
     document: ProjectDocument
     cameras: int
@@ -63,6 +66,16 @@ def _confirmed_count(value: Fact[int] | None) -> int | None:
     return value.value if value.certainty == Certainty.CONFIRMED else None
 
 
+def _is_fixed_synthetic_document(document: ProjectDocument) -> bool:
+    try:
+        canonical = json.dumps(
+            document, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+        ).encode()
+    except (TypeError, ValueError):
+        return False
+    return hashlib.sha256(canonical).hexdigest() == SYNTHETIC_CONSTRAINT_SHA256
+
+
 def preview_scope_review(
     intake: NetworkIntake,
     *,
@@ -75,15 +88,18 @@ def preview_scope_review(
     uplink_ports = _confirmed_count(intake.uplink_ports)
     if previous is not None and previous.project_id != PROJECT_ID:
         raise ValueError("Previous proposal belongs to another project")
+    if snapshot is not None and previous is not None:
+        raise ValueError("A prior proposal requires a separate fresh constraint review")
     if snapshot is not None and (
         snapshot.cameras != cameras
         or snapshot.uplink_ports != uplink_ports
         or snapshot.document.get("projectId") != PROJECT_ID
+        or not _is_fixed_synthetic_document(snapshot.document)
     ):
-        raise ValueError("Constraint evidence does not match confirmed intake")
-    # A prior proposal makes every constraint check stale. A fresh AT-248 check
-    # must be supplied in a separate review cycle; never recycle its document.
-    document = snapshot.document if snapshot is not None and previous is None else None
+        raise ValueError("Only the exact synthetic constraint fixture matches this intake")
+    # A prior proposal makes every constraint check stale. AT-248 must provide
+    # a separately verified fresh source before any real confirmation path.
+    document = snapshot.document if snapshot is not None else None
     required_checks = tuple(
         dict.fromkeys((*REQUIRED_CHECKS, *(previous.constraint_check_ids if previous else ())))
     )

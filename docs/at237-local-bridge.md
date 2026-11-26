@@ -20,9 +20,10 @@ draft also retains unanswered site questions. Changing the camera count creates
 AT-240 change records and requires a new constraint document; the old fixture
 is never silently reused.
 
-`ConstraintSnapshot` only attests that local synthetic input counts match the
-fixture request. It is not a verified production evidence source. AT-248 must
-own freshness and provenance, AT-209 must own project authorization and
+`ConstraintSnapshot` accepts only the pinned AT-267 synthetic fixture and its
+matching 8+1 counts; altered or stale same-need documents fail closed. It is
+not a verified production evidence source. AT-248 must own freshness and
+provenance, AT-209 must own project authorization and
 storage, and AT-254 must own a user confirmation step. AT-280 must approve any
 future public route and canonical OpenAPI update. No professional or commercial
 approval is implied by this demonstration.
