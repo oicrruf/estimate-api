@@ -13,3 +13,5 @@ Ocho puertos PoE más un uplink distinto exigen al menos nueve puertos totales. 
 ## Reproducibilidad
 
 `verify_relate.py` crea una base temporal local, carga el seed, cierra y reabre, lo carga otra vez y verifica conteos y las nueve consultas contra `expected.json`. No requiere servicio, credenciales ni proveedor. El archivo OpenAPI de `docs/hackathon` es un ejemplo **planificado de demo**, no la API canónica en ejecución; AT-227 implementará el contrato final.
+
+El workflow exclusivo `.github/workflows/at-229-relate-demo.yml` repite el verificador desde un checkout limpio, instala el wheel oficial de `relate-db==1.3.0` con SHA-256 fijado y falla si la regeneración del seed modifica el archivo versionado. Sólo necesita `contents: read` y no recibe secretos.

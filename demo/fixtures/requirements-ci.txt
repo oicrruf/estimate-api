@@ -1,0 +1,3 @@
+# Wheel oficial de PyPI para Linux x86_64 (cp39-abi3, compatible con Python 3.12).
+# https://pypi.org/project/relate-db/1.3.0/#files
+relate-db==1.3.0 --hash=sha256:33ba7a6163d3bc2f2220a7ac3719754b091735071ce48c54489978fbacc9d1b4

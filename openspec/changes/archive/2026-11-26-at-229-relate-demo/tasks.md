@@ -11,6 +11,7 @@
 - [x] 2.1 Ejecutar seed dos veces en `relate-db==1.3.0`, con dos cierres/reaperturas y conteos estables.
 - [x] 2.2 Comparar nueve consultas y rutas con `expected.json` mediante verificador local sin credenciales.
 - [x] 2.3 Validar OpenSpec, sincronizar spec vigente y archivar este cambio.
+- [x] 2.4 Añadir CI aislado y de sólo lectura con dependencia verificada por hash, nueve consultas y comparación del seed regenerado.
 
 ## Gate de integración posterior
 

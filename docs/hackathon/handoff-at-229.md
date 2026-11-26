@@ -17,6 +17,8 @@ python3 demo/fixtures/build_seed.py
 
 Resultado observado: Q1–Q9 `OK`; 60 nodos y 61 relaciones; seed cargado dos veces; base cerrada y reabierta dos veces sin cambiar conteos. El SHA-256 de `seed.cypher` generado permaneció en `b64ae48df3cf6763963513bebc90dc015f5978e38abb5baf7609c5ea64750a40`.
 
+El workflow de AT-229 repite estas pruebas desde un checkout limpio en Ubuntu 24.04/Python 3.12. Instala el wheel oficial con el hash de `demo/fixtures/requirements-ci.txt`, compara el seed regenerado con Git y ejecuta las nueve consultas. Tiene permiso GitHub `contents: read`; no usa secretos. El workflow documental de AT-206 valida OpenSpec por separado.
+
 Para OpenSpec, el CLI fijado en `ci/at-206-docs` se puede instalar con:
 
 ```sh
