@@ -192,6 +192,10 @@ def discover(
                 source,
                 rule.relation,
                 rule.evidence_ids,
+                rule.rule_ids,
+                rule.source_refs,
+                rule.candidate_paths,
+                rule.pattern_id,
             )
             paths.append((source, rule.relation, rule.target_key))
             if quantity is None:
@@ -260,7 +264,13 @@ def review(proposal: Proposal, actions: tuple[ReviewAction, ...]) -> Proposal:
             )
     result_lines = tuple(updated)
     base_status = _status(result_lines)
-    status = "proposed" if proposal.blocking_facts and base_status == "approved" else base_status
+    status = (
+        "blocked"
+        if proposal.technical_blockers
+        else "proposed"
+        if proposal.blocking_facts and base_status == "approved"
+        else base_status
+    )
     return replace(
         proposal,
         revision=proposal.revision + 1,
@@ -276,7 +286,13 @@ def revalidate(
 ) -> Proposal:
     if previous.project_id != intake.project_id:
         raise ValueError("Project mismatch")
-    fresh = discover(intake, provider)
+    return diff_proposals(previous, discover(intake, provider))
+
+
+def diff_proposals(previous: Proposal, fresh: Proposal) -> Proposal:
+    """Invalidate prior review whenever the derived scope is recomputed."""
+    if previous.project_id != fresh.project_id:
+        raise ValueError("Project mismatch")
     old = {line.key: line for line in previous.lines}
     new = {line.key: line for line in fresh.lines}
     changes = []

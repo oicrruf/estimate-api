@@ -4,7 +4,7 @@
   "title": "Scope review v1 transport contract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "projectId", "revision", "status", "commercialReady", "lines", "questions", "blockingFacts", "workPackages", "evidencePaths", "changes", "hardware", "coverage"],
+  "required": ["schemaVersion", "projectId", "revision", "status", "commercialReady", "lines", "questions", "blockingFacts", "technicalBlockers", "workPackages", "evidencePaths", "changes", "hardware", "ethernet", "coverage"],
   "properties": {
     "schemaVersion": {"const": "scope-review.v1"},
     "projectId": {"type": "string", "minLength": 1},
@@ -14,13 +14,29 @@
     "lines": {"type": "array", "items": {"$ref": "#/$defs/line"}},
     "questions": {"type": "array", "items": {"type": "string"}},
     "blockingFacts": {"type": "array", "items": {"type": "string"}},
+    "technicalBlockers": {"type": "array", "items": {"type": "string"}},
     "workPackages": {"type": "object", "additionalProperties": {"enum": ["complete", "incomplete", "pending"]}},
     "evidencePaths": {"type": "array", "items": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "string"}}},
     "changes": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["key", "change"], "properties": {"key": {"type": "string"}, "change": {"enum": ["added", "removed", "changed", "approval_stale"]}}}},
     "hardware": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/hardware"}]},
+    "ethernet": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ethernet"}]},
     "coverage": {"type": "object", "additionalProperties": false, "required": ["status", "packageIds", "reasons"], "properties": {"status": {"enum": ["cataloged", "unsupported", "pending_specialist"]}, "packageIds": {"type": "array", "items": {"type": "string"}}, "reasons": {"type": "array", "items": {"type": "string"}}}}
   },
   "$defs": {
+    "ethernet": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "links", "materials", "pending", "incompatible", "professionalValidationRequired", "graphLinkPaths", "materialTotalsComplete"],
+      "properties": {
+        "status": {"enum": ["PENDING", "REVIEW_REQUIRED", "DERIVED"]},
+        "links": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "reason", "requiredLengthM", "evidenceIds"], "properties": {"id": {"type": "string"}, "status": {"type": "string"}, "reason": {"type": "string"}, "requiredLengthM": {"type": ["string", "null"]}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}},
+        "materials": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["cableId", "requiredLengthM", "commercialRolls", "ruleId", "evidenceIds"], "properties": {"cableId": {"type": "string"}, "requiredLengthM": {"type": "string"}, "commercialRolls": {"type": ["integer", "null"], "minimum": 0}, "ruleId": {"type": "string"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}},
+        "pending": {"type": "array", "items": {"type": "string"}},
+        "incompatible": {"type": "array", "items": {"type": "string"}},
+        "professionalValidationRequired": {"type": "boolean"},
+        "materialTotalsComplete": {"type": "boolean"},
+        "graphLinkPaths": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["linkId", "endpointId", "evidenceId", "status"], "properties": {"linkId": {"type": "string"}, "endpointId": {"type": ["string", "null"]}, "evidenceId": {"type": ["string", "null"]}, "status": {"enum": ["required_link_context", "unknown"]}}}}
+      }
+    },
     "hardware": {
       "type": "object", "additionalProperties": false,
       "required": ["status", "lines", "missing", "incompatible", "pending", "professionalValidationRequired"],
@@ -45,7 +61,7 @@
     },
     "line": {
       "type": "object", "additionalProperties": false,
-      "required": ["key", "kind", "workPackage", "quantity", "unit", "state", "required", "justification", "ruleId", "packageVersion", "jurisdiction", "source", "parentKey", "relation", "evidence", "evidenceStatus", "actions"],
+      "required": ["key", "kind", "workPackage", "quantity", "unit", "state", "required", "justification", "ruleId", "packageVersion", "jurisdiction", "source", "parentKey", "relation", "evidence", "evidenceStatus", "actions", "ruleIds", "sourceRefs", "candidatePaths", "patternId", "graphRulePaths"],
       "properties": {
         "key": {"type": "string"},
         "kind": {"enum": ["equipment", "material", "accessory", "consumable", "service", null]},
@@ -63,7 +79,12 @@
         "relation": {"type": ["string", "null"]},
         "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
         "evidenceStatus": {"enum": ["capability_context", "unknown"]},
-        "actions": {"type": "array", "uniqueItems": true, "items": {"enum": ["approve", "reject", "modify"]}}
+        "actions": {"type": "array", "uniqueItems": true, "items": {"enum": ["approve", "reject", "modify"]}},
+        "ruleIds": {"type": "array", "items": {"type": "string"}},
+        "sourceRefs": {"type": "array", "items": {"type": "string"}},
+        "candidatePaths": {"type": "array", "items": {"type": "array", "minItems": 2, "items": {"type": "string"}}},
+        "patternId": {"type": ["string", "null"]},
+        "graphRulePaths": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["patternId", "ruleId", "sourceRef", "status"], "properties": {"patternId": {"type": "string"}, "ruleId": {"type": "string"}, "sourceRef": {"type": ["string", "null"]}, "status": {"enum": ["rule_context", "unknown"]}}}}
       }
     }
   }

@@ -62,4 +62,14 @@ def resolve_pattern_coverage(
             result.conflicts,
             ("pattern_package_mismatch",),
         )
+    catalog_refs = {
+        (item["id"], item["category"], item["ref"]) for item in matched["installationPatterns"]
+    }
+    if not set(package.pattern_refs) <= catalog_refs:
+        return CoverageResult(
+            "pending_specialist",
+            result.package_ids,
+            result.conflicts,
+            ("pattern_reference_missing",),
+        )
     return result

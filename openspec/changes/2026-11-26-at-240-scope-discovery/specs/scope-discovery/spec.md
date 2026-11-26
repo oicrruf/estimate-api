@@ -53,3 +53,19 @@ El servicio SHALL consumir el resultado de cobertura del registro versionado y S
 - **GIVEN** un proyecto con una necesidad adicional sin regla en el paquete aplicable
 - **WHEN** se genera la propuesta
 - **THEN** la necesidad permanece visible, aparece una pregunta de cobertura y no se habilita cotización.
+
+### Requirement: Candidatos versionados y topología medible
+El sistema SHALL conservar como candidatos revisables las rutas, reglas, fuentes y evidencias de patrones versionados. SHALL mantener cada enlace requerido aunque falte su medida, y SHALL no publicar totales comerciales de cable de una topología parcialmente medida.
+
+#### Scenario: Patrón y enlace sintéticos
+- **GIVEN** una necesidad declarada con hechos confirmados AT-247 y topología AT-239 parcialmente medida
+- **WHEN** se descubre el alcance
+- **THEN** aparecen candidatos con procedencia, todos los enlaces exigidos y cable pendiente sin metraje total inventado.
+
+### Requirement: Alternativa condicionada y revalidación
+El sistema SHALL bloquear rechazo de una pieza imprescindible y SHALL mostrar una alternativa únicamente cuando la arquitectura y los hechos que activan el patrón alternativo estén confirmados; SHALL invalidar aprobación anterior y señalar altas y bajas.
+
+#### Scenario: Backhaul mesh
+- **GIVEN** un enlace cableado rechazado
+- **WHEN** el backhaul cambia a inalámbrico con evidencia confirmada
+- **THEN** el diff retira las piezas cableadas, propone las tareas inalámbricas y mantiene la nueva solución pendiente de revisión y validación técnica.

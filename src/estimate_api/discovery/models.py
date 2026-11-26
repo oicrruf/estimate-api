@@ -35,7 +35,7 @@ class Rule:
     id: str
     source_key: str
     target_key: str
-    kind: LineKind
+    kind: LineKind | None
     work_package: str
     relation: str
     evidence: str
@@ -47,6 +47,10 @@ class Rule:
     when_fact: str | None = None
     when_value: str | int | float | bool | None = None
     evidence_ids: tuple[str, ...] = ()
+    rule_ids: tuple[str, ...] = ()
+    source_refs: tuple[str, ...] = ()
+    candidate_paths: tuple[tuple[str, ...], ...] = ()
+    pattern_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,6 +61,7 @@ class KnowledgePackage:
     source: str
     rules: tuple[Rule, ...]
     registry_package_id: str | None = None
+    pattern_refs: tuple[tuple[str, str, str], ...] = ()
 
 
 class PatternProvider(Protocol):
@@ -82,6 +87,10 @@ class ProposalLine:
     parent_key: str | None
     relation: str | None
     evidence_ids: tuple[str, ...] = ()
+    rule_ids: tuple[str, ...] = ()
+    source_refs: tuple[str, ...] = ()
+    candidate_paths: tuple[tuple[str, ...], ...] = ()
+    pattern_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -103,4 +112,5 @@ class Proposal:
     evidence_paths: tuple[tuple[str, str, str], ...]
     changes: tuple[tuple[str, str], ...] = ()
     blocking_facts: tuple[str, ...] = ()
+    technical_blockers: tuple[str, ...] = ()
     commercial_ready: bool = False

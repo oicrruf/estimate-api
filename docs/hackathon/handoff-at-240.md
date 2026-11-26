@@ -1,6 +1,6 @@
 # AT-240: preparación local de descubrimiento
 
-La base es `develop` en `f0b0e55fc0940734f48da036d1cabab00e1fe155` (AT-265, AT-238, AT-264 y AT-229 integrados). El contrato vive en `src/estimate_api/discovery`, sin modificar rutas existentes. El fixture `demo/fixtures/at-240-discovery.json` es enteramente ficticio. `evaluate_scope` es la entrada de backend local; su `scope-review.v1` tiene esquema JSON para la futura API/A2UI. Todavía no existe ruta HTTP ni pantalla.
+La base integrada probada es `develop` en `c130fda08dd7ae8b69ea45474925bdc0acc1e67f` (AT-247/239/267/246 más AT-265/238/264/229). El contrato vive en `src/estimate_api/discovery`, sin modificar rutas existentes. El fixture `demo/fixtures/at-240-discovery.json` es enteramente ficticio. `evaluate_scope` y `evaluate_pattern_scope` son entradas de backend locales; `scope-review.v1` es el contrato JSON para la futura API/A2UI/escenarios. Todavía no existe ruta HTTP ni pantalla.
 
 ## Recorrido reproducible
 
@@ -13,23 +13,26 @@ UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev ruff check .
 UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev mypy src/estimate_api
 OPENSPEC_TELEMETRY=0 ci/at-206-docs/node_modules/.bin/openspec validate 2026-11-26-at-240-scope-discovery --strict
 UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev python demo/fixtures/verify_at240_scope.py
+UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev pytest -q tests/test_discovery_integrated.py
 ```
 
 El harness prueba descubrimiento, cantidades pendientes, rutas de dependencia, rechazo, aprobación, revalidación, límites, contrato de transporte y un segundo rubro sintético. La prueba Relate carga el seed AT-229 en un archivo temporal aislado, ejecuta el adaptador con consultas fijas de solo lectura y verifica que los 60 nodos no cambien. Solo encuentra contexto de capacidad de producto; las reglas de instalación permanecen sin validar. El adaptador tipado AT-238 verifica que la ruta ficticia confirmada conserva EMT, unión y soportes, más conector pendiente; la ruta desconocida no genera cantidades. El registro AT-265 resuelve cobertura con fallo seguro: paquete sin verificar, sin cobertura o desalineado deja `pending_specialist`. El harness recorre entrada→propuesta→revisión→revalidación y conserva todos los insumos requeridos al aumentar cámaras. No prueba una entrada de usuario real porque el API actual solo expone `/health`.
 
+`tests/test_discovery_integrated.py` usa los patrones reales AT-247 y la topología AT-239 integrados. Comprueba candidato UTP y terminaciones con reglas, fuentes y rutas; rechazo de UTP; cambio mesh cableado→inalámbrico solo con hecho confirmado; enlaces exigidos con medidas conocidas o pendientes; cable parcial sin total de compra; rubro sin cobertura sin BOM inventada. Un store Relate temporal carga el seed sintético AT-247/239 y verifica lecturas patrón→regla→fuente y endpoint→enlace→evidencia sin cambiar sus nodos.
+
 ## Integración pendiente
 
-- [AT-264](https://linear.app/oicrruf/issue/AT-264) ya aporta el documento universal v1. Sigue pendiente mapear el levantamiento [AT-246](https://linear.app/oicrruf/issue/AT-246) a `ProjectIntake` sin duplicar su contrato ni inferir cantidades.
+- [AT-264](https://linear.app/oicrruf/issue/AT-264) y [AT-246](https://linear.app/oicrruf/issue/AT-246) aportan documento y borrador de levantamiento. Falta su adaptador a `ProjectIntake`: el borrador no enumera necesidades normalizadas y no se deben inferir cantidades.
 - AT-265 ya aporta cobertura catalogada; aún falta revisión técnica de cada paquete y de sus reglas de instalación. `cataloged` no equivale a cumplimiento profesional.
-- [AT-238](https://linear.app/oicrruf/issue/AT-238/modelar-dependencias-de-ferreteria-accesorios-y-cantidades-derivadas) está integrado; su fixture sigue siendo sintética y exige validación profesional. [AT-239](https://linear.app/oicrruf/issue/AT-239/dimensionar-cableado-utp-y-componentes-de-enlaces-ethernet-para) debe aportar el patrón de enlaces validado, con cantidades dependientes de mediciones reales.
+- [AT-238](https://linear.app/oicrruf/issue/AT-238/modelar-dependencias-de-ferreteria-accesorios-y-cantidades-derivadas), [AT-239](https://linear.app/oicrruf/issue/AT-239/dimensionar-cableado-utp-y-componentes-de-enlaces-ethernet-para) y AT-247 están integrados y consumidos como fuentes sintéticas. Aún necesitan validación técnica profesional para cada proyecto y medidas de campo.
 - [AT-227](https://linear.app/oicrruf/issue/AT-227/construir-vertical-slice-relate-para-hackathon-con-dataset-demostrable) debe conectar el grafo en la aplicación. El adaptador local lee evidencia AT-229, pero no prueba dependencias de instalación.
 - [AT-237](https://linear.app/oicrruf/issue/AT-237/incorporar-chat-contextual-para-crear-y-modificar-proyectos-con) debe conectar ingreso conversacional y mutaciones de proyecto; [AT-248](https://linear.app/oicrruf/issue/AT-248/construir-revision-a2ui-del-alcance-propuesto-vs-solicitado) debe implementar revisión A2UI y persistencia auditable.
 - [AT-234](https://linear.app/oicrruf/issue/AT-234/generar-y-comparar-escenarios-recomendado-economico-y-personalizado) debe comprobar que los tres escenarios conservan el alcance aprobado. Este paquete solo entrega `commercial_ready`; no crea escenarios ni precios.
 
 ## Puertas de aceptación
 
-El **contrato de dominio** queda listo para revisión en este PR: expansión acotada, cobertura AT-265, cantidades AT-238, evidencia de capacidad AT-229, revisión y diff/revalidación deterministas. El paquete sigue siendo sintético; ningún resultado afirma cumplimiento técnico o normativo.
+El **contrato de dominio** queda listo para revisión en este PR: expansión acotada, cobertura AT-265, cantidades AT-238, candidatos AT-247, topología AT-239, evidencia de capacidad AT-229 y rutas Relate sintéticas de solo lectura, revisión y diff/revalidación deterministas. El paquete sigue siendo sintético; ningún resultado afirma cumplimiento técnico o normativo.
 
-La **demostración de extremo a extremo** sigue pendiente: entrada real de chat/API, revisión A2UI persistida, paquete de enlaces AT-239 validado, relaciones Relate de instalación y revalidación de escenarios/cotización. AT-249/250 pueden consumir el contrato de dominio sin esperar que esas capas downstream estén completas; sus pruebas visuales no son precondición circular para este slice.
+La **demostración de extremo a extremo** sigue pendiente: entrada real de chat/API, revisión A2UI persistida, validación técnica profesional de los patrones y del diseño, y revalidación de escenarios/cotización. AT-249/250 pueden consumir el contrato de dominio sin esperar que esas capas downstream estén completas; sus pruebas visuales no son precondición circular para este slice.
 
 No se debe declarar AT-240 completo con este harness. `commercialReady` exige cobertura catalogada, validación técnica externa, aprobación y evidencia suficiente. La ruta de capacidad AT-229 nunca se presenta como prueba de un patrón físico.

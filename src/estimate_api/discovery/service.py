@@ -8,9 +8,11 @@ from typing import Literal, Protocol, TypedDict
 from estimate_api.knowledge.registry_v1 import CoverageResult
 
 from .engine import discover
-from .evidence import EvidenceReference
+from .ethernet_adapter import TopologyScope, attach_topology_links
+from .evidence import EvidenceReference, PatternRuleReference, TopologyLinkReference
 from .hardware_adapter import HardwareScope
 from .models import KnowledgePackage, PatternProvider, ProjectIntake, Proposal
+from .pattern_adapter import PatternPlan
 from .registry_adapter import RegistryContext, resolve_pattern_coverage
 
 SCHEMA_VERSION: Literal["scope-review.v1"] = "scope-review.v1"
@@ -18,6 +20,14 @@ SCHEMA_VERSION: Literal["scope-review.v1"] = "scope-review.v1"
 
 class EvidenceReader(Protocol):
     def resolve(self, evidence_ids: tuple[str, ...]) -> tuple[EvidenceReference, ...]: ...
+
+    def resolve_pattern_rules(
+        self, pattern_id: str, rule_ids: tuple[str, ...]
+    ) -> tuple[PatternRuleReference, ...]: ...
+
+    def resolve_topology_links(
+        self, link_ids: tuple[str, ...], dataset_id: str
+    ) -> tuple[TopologyLinkReference, ...]: ...
 
 
 class EvidencePayload(TypedDict):
@@ -45,6 +55,11 @@ class LinePayload(TypedDict):
     evidence: list[EvidencePayload]
     evidenceStatus: Literal["capability_context", "unknown"]
     actions: list[str]
+    ruleIds: list[str]
+    sourceRefs: list[str]
+    candidatePaths: list[list[str]]
+    patternId: str | None
+    graphRulePaths: list[dict[str, str | None]]
 
 
 class ScopeReviewPayload(TypedDict):
@@ -61,6 +76,19 @@ class ScopeReviewPayload(TypedDict):
     changes: list[dict[str, str]]
     hardware: HardwarePayload | None
     coverage: CoveragePayload
+    ethernet: EthernetPayload | None
+    technicalBlockers: list[str]
+
+
+class EthernetPayload(TypedDict):
+    status: str
+    links: list[dict[str, str | list[str] | None]]
+    materials: list[dict[str, str | int | list[str] | None]]
+    pending: list[str]
+    incompatible: list[str]
+    professionalValidationRequired: bool
+    graphLinkPaths: list[dict[str, str | None]]
+    materialTotalsComplete: bool
 
 
 class CoveragePayload(TypedDict):
@@ -91,6 +119,8 @@ def to_review_payload(
     coverage: CoverageResult | None = None,
     technical_validated: bool = False,
     hardware_scope: HardwareScope | None = None,
+    ethernet_scope: TopologyScope | None = None,
+    ethernet_dataset_id: str | None = None,
 ) -> ScopeReviewPayload:
     """Render contract data; catalog coverage never implies technical validation."""
     if coverage is None:
@@ -103,12 +133,21 @@ def to_review_payload(
             if evidence_reader is not None and line.evidence_ids
             else ()
         )
+        rule_references = (
+            evidence_reader.resolve_pattern_rules(line.pattern_id, line.rule_ids)
+            if evidence_reader is not None and line.pattern_id is not None and line.rule_ids
+            else ()
+        )
         status: Literal["capability_context", "unknown"] = (
             "capability_context"
             if references and all(ref.status == "capability_context" for ref in references)
             else "unknown"
         )
         if line.rule_id is not None and status == "unknown":
+            evidence_complete = False
+        if line.pattern_id is not None and (
+            not rule_references or any(ref.status != "rule_context" for ref in rule_references)
+        ):
             evidence_complete = False
         actions = [] if line.state == "user_requested" else ["approve", "reject", "modify"]
         if line.quantity is None and "approve" in actions:
@@ -140,6 +179,19 @@ def to_review_payload(
                 ],
                 evidenceStatus=status,
                 actions=actions,
+                ruleIds=list(line.rule_ids),
+                sourceRefs=list(line.source_refs),
+                candidatePaths=[list(path) for path in line.candidate_paths],
+                patternId=line.pattern_id,
+                graphRulePaths=[
+                    {
+                        "patternId": ref.pattern_id,
+                        "ruleId": ref.rule_id,
+                        "sourceRef": ref.source_ref,
+                        "status": ref.status,
+                    }
+                    for ref in rule_references
+                ],
             )
         )
     hardware_payload: HardwarePayload | None = None
@@ -174,6 +226,54 @@ def to_review_payload(
     hardware_ready = hardware_scope is None or (
         hardware_scope.status == "DERIVED" and not hardware_scope.professional_validation_required
     )
+    ethernet_payload: EthernetPayload | None = None
+    if ethernet_scope is not None:
+        graph_links = (
+            evidence_reader.resolve_topology_links(
+                tuple(link.id for link in ethernet_scope.links), ethernet_dataset_id
+            )
+            if evidence_reader is not None and ethernet_dataset_id is not None
+            else ()
+        )
+        ethernet_payload = EthernetPayload(
+            status=ethernet_scope.status,
+            links=[
+                {
+                    "id": link.id,
+                    "status": link.status,
+                    "reason": link.reason,
+                    "requiredLengthM": link.required_length_m,
+                    "evidenceIds": list(link.evidence_ids),
+                }
+                for link in ethernet_scope.links
+            ],
+            materials=[
+                {
+                    "cableId": item.cable_id,
+                    "requiredLengthM": item.required_length_m,
+                    "commercialRolls": item.commercial_rolls,
+                    "ruleId": item.rule_id,
+                    "evidenceIds": list(item.evidence_ids),
+                }
+                for item in ethernet_scope.materials
+            ],
+            pending=list(ethernet_scope.pending),
+            incompatible=list(ethernet_scope.incompatible),
+            professionalValidationRequired=ethernet_scope.professional_validation_required,
+            materialTotalsComplete=ethernet_scope.material_totals_complete,
+            graphLinkPaths=[
+                {
+                    "linkId": ref.link_id,
+                    "endpointId": ref.endpoint_id,
+                    "evidenceId": ref.evidence_id,
+                    "status": ref.status,
+                }
+                for ref in graph_links
+            ],
+        )
+    ethernet_ready = ethernet_scope is None or (
+        ethernet_scope.status == "DERIVED" and not ethernet_scope.professional_validation_required
+    )
     return ScopeReviewPayload(
         schemaVersion=SCHEMA_VERSION,
         projectId=proposal.project_id,
@@ -183,7 +283,8 @@ def to_review_payload(
         and coverage.status == "cataloged"
         and technical_validated
         and evidence_complete
-        and hardware_ready,
+        and hardware_ready
+        and ethernet_ready,
         lines=rendered,
         questions=list(proposal.questions),
         blockingFacts=list(proposal.blocking_facts),
@@ -196,6 +297,8 @@ def to_review_payload(
             packageIds=list(coverage.package_ids),
             reasons=list(coverage.reasons),
         ),
+        ethernet=ethernet_payload,
+        technicalBlockers=list(proposal.technical_blockers),
     )
 
 
@@ -207,6 +310,8 @@ def evaluate_scope(
     registry_context: RegistryContext | None = None,
     technical_validated: bool = False,
     hardware_scope: HardwareScope | None = None,
+    ethernet_scope: TopologyScope | None = None,
+    ethernet_dataset_id: str | None = None,
 ) -> ScopeEvaluation:
     """Call from a future API/chat adapter after intake and specialist validation."""
     package = (
@@ -218,6 +323,8 @@ def evaluate_scope(
     proposal = discover(intake, package)
     if coverage.status != "cataloged":
         proposal = replace(proposal, status="pending_specialist", commercial_ready=False)
+    if ethernet_scope is not None:
+        proposal = attach_topology_links(proposal, ethernet_scope)
     return ScopeEvaluation(
         proposal,
         to_review_payload(
@@ -226,5 +333,66 @@ def evaluate_scope(
             coverage=coverage,
             technical_validated=technical_validated,
             hardware_scope=hardware_scope,
+            ethernet_scope=ethernet_scope,
+            ethernet_dataset_id=ethernet_dataset_id,
+        ),
+    )
+
+
+def evaluate_pattern_scope(
+    intake: ProjectIntake,
+    plan: PatternPlan,
+    evidence_reader: EvidenceReader | None = None,
+    *,
+    registry_context: RegistryContext | None = None,
+    previous: Proposal | None = None,
+    ethernet_scope: TopologyScope | None = None,
+    ethernet_dataset_id: str | None = None,
+) -> ScopeEvaluation:
+    """Evaluate actual AT-247 candidates; always retain pending and stale-review state."""
+    from .engine import diff_proposals
+
+    if (
+        previous is not None
+        and ethernet_scope is None
+        and any(line.work_package == "ethernet" for line in previous.lines)
+    ):
+        raise ValueError("Topology is required when revalidating prior Ethernet scope")
+    evaluated = evaluate_scope(
+        intake,
+        plan.package,
+        evidence_reader,
+        registry_context=registry_context,
+        ethernet_scope=ethernet_scope,
+        ethernet_dataset_id=ethernet_dataset_id,
+    )
+    proposal = evaluated.proposal
+    pending = tuple(dict.fromkeys((*proposal.blocking_facts, *plan.pending)))
+    if pending or plan.limit_reached:
+        questions = tuple(
+            dict.fromkeys(
+                (*proposal.questions, *(f"Confirmar patrón: {item}" for item in plan.pending))
+            )
+        )
+        proposal = replace(
+            proposal,
+            blocking_facts=pending,
+            questions=questions,
+            status="pending_specialist"
+            if plan.limit_reached or proposal.status == "pending_specialist"
+            else "proposed",
+            commercial_ready=False,
+        )
+    if previous is not None:
+        proposal = diff_proposals(previous, proposal)
+    coverage = resolve_pattern_coverage(intake, plan.package, registry_context)
+    return ScopeEvaluation(
+        proposal,
+        to_review_payload(
+            proposal,
+            evidence_reader,
+            coverage=coverage,
+            ethernet_scope=ethernet_scope,
+            ethernet_dataset_id=ethernet_dataset_id,
         ),
     )
