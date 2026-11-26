@@ -1,0 +1,6 @@
+.git
+.github
+.venv
+.env*
+!.env.example
+ci/at-206-docs/node_modules
