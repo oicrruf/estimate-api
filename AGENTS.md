@@ -6,4 +6,12 @@ For high-impact auth, RLS, migrations, pricing rules, cross-service security, an
 
 Before integration, inspect current PR review threads and actionable feedback, base SHA, checks and security findings. Fix feedback in the same branch and rerun checks. Resolve threads only after verifying fixes. Use Squash & Merge only, verify one conventional issue commit on `develop`, then update Linear. Never force push protected branches.
 
-Keep source and fixtures synthetic. No production secrets. Do not implement AT-277 Trivy gate until AT-207 is merged; the bootstrap includes defensive secret scanning.
+Keep source and fixtures synthetic. No production secrets. Keep the existing defensive secret scan; dependency and image security gates require their own scoped changes.
+
+Keep the README current as the repository entry point. In the same PR, update
+README.md or a guide linked from it when changing user-visible behavior, commands,
+configuration or environment variables, contracts, tests, or deployment. Keep
+capability-specific detail in its guide and check that the README link still works.
+When documentation does not apply, state the reason in the PR. For documentation-only
+changes that do not change a capability, validate the existing documentation and
+applicable checks without creating an unrelated OpenSpec delta.
