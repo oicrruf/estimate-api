@@ -47,4 +47,4 @@ Con Python 3.12 y `uv` 0.7.6, la entrada ADK + Relate usa únicamente datos fict
 uv run --frozen --extra demo python -m demo.agent.cli demo --store /tmp/estimate-at227.demo.rl
 ```
 
-Véanse [prerequisitos, modo de almacenamiento, ayuda y límites](demo/agent/README.md). La API y la UI de este flujo aún no están implementadas.
+Véanse [prerequisitos, modo de almacenamiento, ayuda y límites](demo/agent/README.md). La [API local de vista previa AT-278](demo/PREVIEW_HTTP.md) se ejecuta en loopback y no está montada en la API productiva. La pantalla Angular se integra por separado.

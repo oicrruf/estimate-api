@@ -1,0 +1,42 @@
+name: AT-278 HTTP local
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - '.github/workflows/at-278-preview-http.yml'
+      - 'demo/preview_api.py'
+      - 'demo/PREVIEW_HTTP.md'
+      - 'tests/at278/**'
+      - 'openspec/changes/*at-278-local-preview-api/**'
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-local-http:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12.14'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.22.3'
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.7.6'
+      - name: Instalar dependencias fijadas
+        run: |
+          uv sync --frozen --extra dev --extra demo
+          npm ci --ignore-scripts --no-audit --no-fund --prefix ci/at-206-docs
+      - name: Verificar HTTP local y tipos
+        run: |
+          uv run --no-sync ruff check demo/preview_api.py tests/at278
+          uv run --no-sync ruff format --check demo/preview_api.py tests/at278
+          uv run --no-sync mypy demo/preview_api.py tests/at278
+          uv run --no-sync pytest -q tests/at278
+          ci/at-206-docs/node_modules/.bin/openspec validate at-278-local-preview-api --strict
