@@ -1,0 +1,763 @@
+{
+    "assumptions": [
+        {
+            "id": "CAMERAS-WIFI",
+            "state": "inferred",
+            "value": 3
+        },
+        {
+            "id": "SATELLITE-CONNECTIVITY",
+            "state": "inferred",
+            "value": "optional"
+        }
+    ],
+    "bom": [
+        {
+            "evidenceIds": [
+                "EV-ROUTE-CONFIRMED",
+                "EV-GUIDED-CAT-EMT-1-1-4"
+            ],
+            "family": "emt",
+            "itemId": "GEN-EMT-1-1-4",
+            "quantity": 2,
+            "ruleId": "RULE-COMMERCIAL-SECTION",
+            "state": "draft",
+            "unit": "piece"
+        },
+        {
+            "evidenceIds": [
+                "EV-ROUTE-CONFIRMED",
+                "EV-GUIDED-CAT-COUPLING-1-1-4"
+            ],
+            "family": "coupling",
+            "itemId": "GEN-COUPLING-1-1-4",
+            "quantity": 1,
+            "ruleId": "RULE-CONFIRMED-JOINS",
+            "state": "draft",
+            "unit": "piece"
+        },
+        {
+            "evidenceIds": [
+                "EV-ROUTE-CONFIRMED",
+                "EV-GUIDED-CAT-CONNECTOR-1-1-4"
+            ],
+            "family": "connector",
+            "itemId": "GEN-CONNECTOR-1-1-4",
+            "quantity": 2,
+            "ruleId": "RULE-CONFIRMED-ENTRIES",
+            "state": "draft",
+            "unit": "piece"
+        },
+        {
+            "evidenceIds": [
+                "EV-ROUTE-CONFIRMED",
+                "EV-GUIDED-CAT-SUPPORT-1-1-4"
+            ],
+            "family": "support",
+            "itemId": "GEN-SUPPORT-1-1-4",
+            "quantity": 3,
+            "ruleId": "RULE-CONFIRMED-SUPPORTS",
+            "state": "draft",
+            "unit": "piece"
+        }
+    ],
+    "candidates": {
+        "accessories": [
+            {
+                "diameter": "1",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-CONNECTOR-1",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-CONNECTOR-1",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-CAT-CONNECTOR-1",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "connector",
+                "itemId": "GEN-CONNECTOR-1",
+                "reasonCodes": [
+                    "DIFFERENT_DIAMETER"
+                ],
+                "status": "DIAMETER_MISMATCH"
+            },
+            {
+                "diameter": "1 1/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-CONNECTOR-1-1-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1-1-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-CONNECTOR-1-1-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-GUIDED-CAT-CONNECTOR-1-1-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "connector",
+                "itemId": "GEN-CONNECTOR-1-1-4",
+                "reasonCodes": [
+                    "SAME_DIAMETER"
+                ],
+                "status": "ELIGIBLE_FOR_DEMO"
+            },
+            {
+                "diameter": "3/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-CONNECTOR-3-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-3-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-CONNECTOR-3-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-CAT-CONNECTOR-3-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "connector",
+                "itemId": "GEN-CONNECTOR-3-4",
+                "reasonCodes": [
+                    "DIFFERENT_DIAMETER"
+                ],
+                "status": "DIAMETER_MISMATCH"
+            },
+            {
+                "diameter": "1",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-COUPLING-1",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-COUPLING-1",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-CAT-COUPLING-1",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "coupling",
+                "itemId": "GEN-COUPLING-1",
+                "reasonCodes": [
+                    "DIFFERENT_DIAMETER"
+                ],
+                "status": "DIAMETER_MISMATCH"
+            },
+            {
+                "diameter": "1 1/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-COUPLING-1-1-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1-1-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-COUPLING-1-1-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-GUIDED-CAT-COUPLING-1-1-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "coupling",
+                "itemId": "GEN-COUPLING-1-1-4",
+                "reasonCodes": [
+                    "SAME_DIAMETER"
+                ],
+                "status": "ELIGIBLE_FOR_DEMO"
+            },
+            {
+                "diameter": "3/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-COUPLING-3-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-3-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-COUPLING-3-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-CAT-COUPLING-3-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "coupling",
+                "itemId": "GEN-COUPLING-3-4",
+                "reasonCodes": [
+                    "DIFFERENT_DIAMETER"
+                ],
+                "status": "DIAMETER_MISMATCH"
+            },
+            {
+                "diameter": "1",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-SUPPORT-1",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-SUPPORT-1",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-CAT-SUPPORT-1",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "support",
+                "itemId": "GEN-SUPPORT-1",
+                "reasonCodes": [
+                    "DIFFERENT_DIAMETER"
+                ],
+                "status": "DIAMETER_MISMATCH"
+            },
+            {
+                "diameter": "1 1/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-SUPPORT-1-1-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1-1-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-SUPPORT-1-1-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-GUIDED-CAT-SUPPORT-1-1-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "support",
+                "itemId": "GEN-SUPPORT-1-1-4",
+                "reasonCodes": [
+                    "SAME_DIAMETER"
+                ],
+                "status": "ELIGIBLE_FOR_DEMO"
+            },
+            {
+                "diameter": "3/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-SUPPORT-3-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-3-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-SUPPORT-3-4",
+                                "type": "ACCESSORY"
+                            },
+                            {
+                                "id": "EV-CAT-SUPPORT-3-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "support",
+                "itemId": "GEN-SUPPORT-3-4",
+                "reasonCodes": [
+                    "DIFFERENT_DIAMETER"
+                ],
+                "status": "DIAMETER_MISMATCH"
+            }
+        ],
+        "cables": [
+            {
+                "itemId": "UTP-TYPE-UNSPECIFIED",
+                "outerDiameterIn": "0.278",
+                "price": null,
+                "quantityInRoute": 6,
+                "status": "NEEDS_LINK_TOPOLOGY_AND_LENGTH",
+                "variant": "thick"
+            }
+        ],
+        "cameras": [
+            {
+                "itemId": "WIFI-CAMERA-TYPE-UNSPECIFIED",
+                "price": null,
+                "quantity": 3,
+                "status": "NEEDS_POWER_AND_COVERAGE_VALIDATION"
+            }
+        ],
+        "connectivity": [
+            {
+                "itemId": "STARLINK-OPTION",
+                "label": "Starlink, opci\u00f3n conceptual sin verificar",
+                "price": null,
+                "sourceRef": "synthetic://guided-bom/connectivity-option",
+                "status": "NEEDS_SITE_VALIDATION"
+            },
+            {
+                "itemId": "LOCAL-WIFI-OPTION",
+                "patternCandidates": [
+                    "at247:item:wireless-survey",
+                    "at247:item:wireless-test"
+                ],
+                "pending": [
+                    "mount_required",
+                    "power_required"
+                ],
+                "status": "NEEDS_SITE_VALIDATION"
+            }
+        ],
+        "emt": [
+            {
+                "diameter": "3/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-EMT-3-4",
+                                "type": "MATERIAL"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-3-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-EMT-3-4",
+                                "type": "MATERIAL"
+                            },
+                            {
+                                "id": "EV-CAT-EMT-3-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "emt",
+                "fill": {
+                    "allowedAreaFactorIn2": "0.27159040",
+                    "eligible": false,
+                    "fillPercent": "68.3",
+                    "occupiedAreaFactorIn2": "0.463704"
+                },
+                "innerDiameterIn": "0.824",
+                "itemId": "GEN-EMT-3-4",
+                "reasonCodes": [
+                    "ILLUSTRATIVE_FILL_EXCEEDED"
+                ],
+                "status": "REJECTED_BY_DEMO_FILL"
+            },
+            {
+                "diameter": "1",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-EMT-1",
+                                "type": "MATERIAL"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-EMT-1",
+                                "type": "MATERIAL"
+                            },
+                            {
+                                "id": "EV-CAT-EMT-1",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "emt",
+                "fill": {
+                    "allowedAreaFactorIn2": "0.44016040",
+                    "eligible": false,
+                    "fillPercent": "42.1",
+                    "occupiedAreaFactorIn2": "0.463704"
+                },
+                "innerDiameterIn": "1.049",
+                "itemId": "GEN-EMT-1",
+                "reasonCodes": [
+                    "ILLUSTRATIVE_FILL_EXCEEDED"
+                ],
+                "status": "REJECTED_BY_DEMO_FILL"
+            },
+            {
+                "diameter": "1 1/4",
+                "evidencePaths": [
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-EMT-1-1-4",
+                                "type": "MATERIAL"
+                            },
+                            {
+                                "id": "SPEC-DIAMETER-1-1-4",
+                                "type": "SPEC"
+                            }
+                        ],
+                        "relations": [
+                            "FITS_DIAMETER"
+                        ]
+                    },
+                    {
+                        "nodes": [
+                            {
+                                "id": "GEN-EMT-1-1-4",
+                                "type": "MATERIAL"
+                            },
+                            {
+                                "id": "EV-GUIDED-CAT-EMT-1-1-4",
+                                "type": "EVIDENCE"
+                            }
+                        ],
+                        "relations": [
+                            "SUPPORTED_BY"
+                        ]
+                    }
+                ],
+                "family": "emt",
+                "fill": {
+                    "allowedAreaFactorIn2": "0.76176000",
+                    "eligible": true,
+                    "fillPercent": "24.3",
+                    "occupiedAreaFactorIn2": "0.463704"
+                },
+                "innerDiameterIn": "1.380",
+                "itemId": "GEN-EMT-1-1-4",
+                "reasonCodes": [
+                    "ILLUSTRATIVE_FILL_PASS"
+                ],
+                "status": "ELIGIBLE_FOR_DEMO"
+            }
+        ],
+        "enclosure": [],
+        "switch": []
+    },
+    "evidence": {
+        "at238ValidationTopics": [
+            "capacidad_y_llenado",
+            "ambiente_y_accesibilidad",
+            "fijacion_y_separacion",
+            "puesta_a_tierra_y_proteccion",
+            "normativa_local"
+        ],
+        "at239DirectCameraLinks": 0,
+        "fillCriterion": {
+            "basis": "n*cable_od_in^2 <= fraction*conduit_inner_diameter_in^2",
+            "comparison": "exact_decimal_before_display_rounding",
+            "fraction": "0.40",
+            "sourceRef": "synthetic://guided-bom/illustrative-threshold-not-code"
+        },
+        "graphPaths": [
+            {
+                "nodes": [
+                    {
+                        "id": "SEG-DEMO",
+                        "type": "INSTALLATION_SEGMENT"
+                    },
+                    {
+                        "id": "REQ-DEMO-CONNECTOR",
+                        "type": "REQUIREMENT"
+                    },
+                    {
+                        "id": "EV-ROUTE-CONFIRMED",
+                        "type": "EVIDENCE"
+                    }
+                ],
+                "relations": [
+                    "REQUIRES",
+                    "SUPPORTED_BY"
+                ],
+                "ruleId": "RULE-CONFIRMED-CONNECTOR"
+            },
+            {
+                "nodes": [
+                    {
+                        "id": "SEG-DEMO",
+                        "type": "INSTALLATION_SEGMENT"
+                    },
+                    {
+                        "id": "REQ-DEMO-COUPLING",
+                        "type": "REQUIREMENT"
+                    },
+                    {
+                        "id": "EV-ROUTE-CONFIRMED",
+                        "type": "EVIDENCE"
+                    }
+                ],
+                "relations": [
+                    "REQUIRES",
+                    "SUPPORTED_BY"
+                ],
+                "ruleId": "RULE-CONFIRMED-COUPLING"
+            },
+            {
+                "nodes": [
+                    {
+                        "id": "SEG-DEMO",
+                        "type": "INSTALLATION_SEGMENT"
+                    },
+                    {
+                        "id": "REQ-DEMO-SUPPORT",
+                        "type": "REQUIREMENT"
+                    },
+                    {
+                        "id": "EV-ROUTE-CONFIRMED",
+                        "type": "EVIDENCE"
+                    }
+                ],
+                "relations": [
+                    "REQUIRES",
+                    "SUPPORTED_BY"
+                ],
+                "ruleId": "RULE-CONFIRMED-SUPPORT"
+            }
+        ],
+        "primarySources": {
+            "cable": "https://www.belden.com/products/cable/ethernet-cable/category-6a-cable/10gxs32",
+            "conduit": "https://steeltubeinstitute.org/steel-conduit/electrical-metallic-tubing/"
+        }
+    },
+    "notice": "Ejemplo ficticio; no es asesor\u00eda de instalaci\u00f3n ni cotizaci\u00f3n.",
+    "requirements": [
+        {
+            "evidenceId": "EV-ROUTE-CONFIRMED",
+            "id": "UTP-IN-ROUTE",
+            "state": "confirmed",
+            "unit": "cables",
+            "value": 6
+        },
+        {
+            "evidenceId": "https://www.belden.com/products/cable/ethernet-cable/category-6a-cable/10gxs32",
+            "id": "CABLE-OD",
+            "state": "confirmed",
+            "unit": "in",
+            "value": "0.278",
+            "variant": "thick"
+        },
+        {
+            "evidenceId": "EV-ROUTE-CONFIRMED",
+            "id": "ROUTE-SECTIONS",
+            "state": "confirmed",
+            "unit": "m",
+            "value": [
+                "2.0",
+                "1.5"
+            ]
+        }
+    ],
+    "scenarioId": "synthetic-three-wifi-cameras-no-network",
+    "status": {
+        "code": "PENDING_REVIEW",
+        "compatibility": "ILLUSTRATIVE_CANDIDATE",
+        "professionalValidationRequired": true,
+        "selectedDemoEmtId": "GEN-EMT-1-1-4",
+        "unknown": [
+            "camera_power",
+            "client_assets",
+            "environment",
+            "exclusions",
+            "internet_service",
+            "local_code",
+            "location",
+            "objective",
+            "physical_link_topology",
+            "power_source",
+            "prices",
+            "real_dimensions",
+            "restrictions",
+            "sketch",
+            "supplies",
+            "wifi_coverage"
+        ]
+    },
+    "wireVersion": "guided-bom.v1"
+}
