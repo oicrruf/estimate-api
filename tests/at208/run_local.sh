@@ -7,7 +7,13 @@ pg_image="${AT208_PG_IMAGE:-postgres:17-alpine}"
 admin_user="${AT208_ADMIN_USER:-postgres}"
 baseline_dump="$(mktemp)"
 domain_dump="$(mktemp)"
+phase="container startup"
 cleanup() {
+  local status=$?
+  if (( status != 0 )); then
+    echo "AT-208 local database failed during: $phase" >&2
+    docker logs --tail 100 "$container" >&2 || true
+  fi
   docker rm -f "$container" >/dev/null 2>&1 || true
   rm -f "$baseline_dump" "$domain_dump"
 }
@@ -34,13 +40,16 @@ if [[ "$ready" != true ]]; then
   exit 1
 fi
 
+phase="create synthetic test database"
 docker exec "$container" createdb -U "$admin_user" at208_test
+phase="install local role and Auth fixture"
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   < "$repo_root/tests/at208/local_auth_fixture.sql"
 docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   -c 'grant create on database at208_test to at208_owner'
 docker exec "$container" pg_dump -Fc -U "$admin_user" -d at208_test > "$baseline_dump"
 docker exec "$container" createdb -U "$admin_user" at208_guard
+phase="negative role admission"
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_guard \
   < "$repo_root/tests/at208/local_auth_fixture.sql"
 expect_guard_failure() {
@@ -88,16 +97,19 @@ docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208
   cat "$repo_root/supabase/migrations/20261126124001_at_208_postgres_domain.sql"
 } | docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_guard
 docker exec "$container" dropdb -U "$admin_user" at208_guard
+phase="apply AT-208 migration as at208_owner"
 {
   printf 'set role at208_owner;\n'
   cat "$repo_root/supabase/migrations/20261126124001_at_208_postgres_domain.sql"
 } | docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test
+phase="tenant and domain tests"
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   < "$repo_root/tests/at208/domain_rls.sql"
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   < "$repo_root/tests/at208/trusted_budget.sql"
 bash "$repo_root/tests/at208/concurrent_membership.sh" "$container" "$admin_user"
 
+phase="backup and restore"
 docker exec "$container" pg_dump -Fc -U "$admin_user" -d at208_test > "$domain_dump"
 docker exec "$container" createdb -U "$admin_user" at208_restored
 docker exec -i "$container" pg_restore -U "$admin_user" -d at208_restored < "$domain_dump"
