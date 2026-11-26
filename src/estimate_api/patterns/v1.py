@@ -162,7 +162,7 @@ def expand(pattern: Pattern, facts: dict[str, Fact]) -> Expansion:
             stack.append((target, next_path, depth + 1, tuple(sorted(set(evidence)))))
     return Expansion(
         "LIMIT_REACHED" if limited else "PENDING" if pending else "DERIVED",
-        tuple(result[key] for key in sorted(result)),
+        () if limited or quantity_conflicts else tuple(result[key] for key in sorted(result)),
         tuple(sorted(pending)),
         tuple(sorted(cycles)),
         visited,

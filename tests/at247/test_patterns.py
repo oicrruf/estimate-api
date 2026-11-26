@@ -207,7 +207,8 @@ def test_cycle_dedup_and_limits() -> None:
     assert len([c for c in result.candidates if c["itemId"] == first["toId"]]) == 1
     assert result.cycles
     pattern["maxEdges"] = 1
-    assert expand(pattern, base() | {"power_required": fact(True)}).status == "LIMIT_REACHED"
+    limited = expand(pattern, base() | {"power_required": fact(True)})
+    assert limited.status == "LIMIT_REACHED" and limited.candidates == ()
     pattern["maxEdges"] = 64
     pattern["maxDepth"] = 1
     assert expand(pattern, base() | {"power_required": fact(True)}).status == "LIMIT_REACHED"
@@ -227,6 +228,22 @@ def test_conflicting_quantities_remain_pending() -> None:
     assert result.status == "PENDING"
     assert "quantity_conflict:at247:item:power-source" in result.pending
     assert "power-source" not in items(result)
+    assert result.candidates == ()
+
+
+def test_unknown_route_fixture_does_not_invoke_at238() -> None:
+    hardware_path = FIXTURE.parents[2] / "demo/hardware/fixture.json"
+    hardware = json.loads(hardware_path.read_text(encoding="utf-8"))
+    inputs = base() | {
+        "route_measured": {"state": "unknown", "value": None, "evidenceId": None},
+        "lb_required": fact(False),
+    }
+    expansion, derived = evaluate_emt_with_at238(
+        BY_NAME["emt-route"], inputs, hardware["catalog"], hardware["routes"]["unknown"]
+    )
+    assert expansion.status == "PENDING"
+    assert "at238-route-evaluation" not in items(expansion)
+    assert derived is None
 
 
 def test_relate_seed_idempotent_and_evidence_path(tmp_path: Path) -> None:
