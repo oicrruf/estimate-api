@@ -11,6 +11,7 @@ describe la arquitectura; las guías enlazadas abajo detallan cada capacidad y s
 | `estimate_api.app:app` | API HTTP canónica: sólo `GET /health` como operación de aplicación. Responde `{"status":"ok"}` para indicar que el proceso responde; no comprueba dependencias. `/openapi.json` y las rutas de documentación son propias de FastAPI. |
 | [CLI ADK + Relate](demo/agent/README.md) | Demo local determinista con consultas Cypher y datos ficticios. No usa LLM ni servicios remotos. |
 | [Preview HTTP local](demo/PREVIEW_HTTP.md) | Servidor separado en `127.0.0.1:8001` con `GET /v1/demo/evaluate`; no forma parte del OpenAPI canónico ni está desplegado. |
+| [BOM guiada sintética AT-232](demo/guided_bom/README.md) | Servidor separado en `127.0.0.1:8002` con `GET /v1/demo/guided-bom`, ADK y Relate locales; no usa modelo ni ofrece asesoría de instalación. |
 | [Migración SQL AT-208](docs/evidence/at-208.md) | Esquema de dominio y RLS con pruebas locales descartables y ensayo en imagen oficial de Supabase PostgreSQL. No es una migración aplicada al proyecto alojado ni una ruta HTTP autenticada. |
 | [Candidato AT-279](ci/at-279/README.md) | Paquete y pruebas de Compose para una demo privada futura. Es un candidato local/CI, sin despliegue Coolify operativo. |
 
