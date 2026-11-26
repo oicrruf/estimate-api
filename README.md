@@ -33,6 +33,19 @@ store behavior. A [separate HTTP preview](demo/PREVIEW_HTTP.md) offers
 `GET /v1/demo/evaluate` on loopback for local UI testing; it is not mounted on the
 canonical API and is not a hosted demo. Do not connect these examples to real data.
 
+To try the [synthetic guided BOM](demo/guided_bom/README.md), seed its separate local
+Relate store and start the loopback server from the repository root:
+
+```sh
+uv run --frozen --extra demo python -m demo.guided_bom.cli seed --store /tmp/estimate-guided-bom.rl
+uv run --frozen --extra demo python -m demo.guided_bom.http --store /tmp/estimate-guided-bom.rl --port 8002
+```
+
+In another terminal, run
+`curl -sS 'http://127.0.0.1:8002/v1/demo/guided-bom?cable_count=6&cable_variant=thick'`.
+The JSON includes `wireVersion: guided-bom.v1`, candidates, evidence, and a draft BOM.
+This route is separate from the canonical API; it uses fictional data and no model key.
+
 ## What is in this repository
 
 | Area | Current state and boundary |
@@ -40,6 +53,7 @@ canonical API and is not a hosted demo. Do not connect these examples to real da
 | [Canonical OpenAPI](contracts/openapi.json) | OpenAPI 3.1, version `0.1.0`; its only application operation is `GET /health`. `estimate-app` should pin a known revision, compare it with the upstream artifact, and regenerate its client when it changes. CLI and preview changes do not automatically extend this contract. |
 | [Local ADK + Relate CLI](demo/agent/README.md) | Reproducible evaluations with fictional product, offer, and inventory evidence; no model provider or production data. |
 | [Local HTTP preview](demo/PREVIEW_HTTP.md) | A separate server, defaulting to `127.0.0.1:8001`, for synthetic demo evaluations. It is not an authenticated or public API. |
+| [Synthetic guided BOM (AT-232)](demo/guided_bom/README.md) | Separate loopback server at `127.0.0.1:8002` with a read-only, fixed-scenario GET; local ADK and Relate, no model call or installation advice. |
 | [AT-208 SQL migration and evidence](docs/evidence/at-208.md) | Domain schema and RLS tested with disposable local PostgreSQL and an official Supabase PostgreSQL image. The migration has not been applied to a hosted project, and there is no authenticated domain HTTP route. |
 | [AT-279 VPS deployment candidate](ci/at-279/README.md) | A Compose package and CI checks for a potential private demo. It has not been deployed to Coolify or a VPS. |
 
