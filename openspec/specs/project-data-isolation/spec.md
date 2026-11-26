@@ -54,6 +54,11 @@ Las operaciones de usuario SHALL ejecutarse bajo contexto de identidad autentica
 - **WHEN** el backend registra selección con actor autorizado y clave idempotente
 - **THEN** cambia solo ese candidato, conserva el historial y devuelve el mismo resultado en reintentos idénticos.
 
+#### Scenario: Propietario auxiliar expuesto
+- **GIVEN** un rol auxiliar de política, mutación o auditoría con LOGIN, o asumible por un rol de cliente, backend u otra sesión ordinaria
+- **WHEN** el migrador intenta aplicar el esquema
+- **THEN** la migración falla antes de crear objetos de dominio.
+
 #### Scenario: Prueba local con identidad simulada
 - **GIVEN** un PostgreSQL descartable que simula el contexto de Auth
 - **WHEN** pasa una prueba de aislamiento

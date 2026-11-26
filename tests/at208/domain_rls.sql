@@ -506,6 +506,66 @@ do $$ begin
 end $$;
 reset role;
 
+-- Dos evaluaciones en la misma transacción tienen orden monotónico; rechazar
+-- una candidatura ya elegida conserva la selección anterior como historia.
+set role at208_backend;
+do $$
+declare
+  old_accepted uuid;
+  rejected_id uuid;
+  new_accepted uuid;
+begin
+  old_accepted := private.record_project_evaluation(
+    '10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001','evaluation-2','e-a3',
+    '20000000-0000-0000-0000-000000000002','ev-a','accepted','Evaluación comprobada');
+  rejected_id := private.record_project_evaluation(
+    '10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001','evaluation-reject-selected','e-a3',
+    '20000000-0000-0000-0000-000000000002','ev-a','rejected','Nueva evidencia adversa');
+  begin
+    perform private.select_project_candidate(
+      '10000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001','stale-after-rejection','e-a3',
+      '20000000-0000-0000-0000-000000000002',old_accepted);
+    raise exception 'stale accepted evaluation selected';
+  exception when check_violation then null; end;
+  new_accepted := private.record_project_evaluation(
+    '10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001','evaluation-after-rejection','e-a3',
+    '20000000-0000-0000-0000-000000000002','ev-a','accepted','Nueva revisión favorable');
+  perform private.select_project_candidate(
+    '10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001','selection-after-rejection','e-a3',
+    '20000000-0000-0000-0000-000000000002',new_accepted);
+end $$;
+reset role;
+do $$ begin
+  if (select count(*) from public.project_selections
+      where project_id='10000000-0000-0000-0000-000000000001'
+        and requirement_entity_id='e-a3' and status='active') <> 1 or
+     (select count(*) from public.project_selections
+      where project_id='10000000-0000-0000-0000-000000000001'
+        and requirement_entity_id='e-a3' and status='superseded'
+        and superseded_at is not null) <> 1 or
+     (select count(*) from public.project_evaluations
+      where project_id='10000000-0000-0000-0000-000000000001'
+        and requirement_entity_id='e-a3') <> 3 or
+     not exists (
+       select 1 from public.project_evaluations rejected
+       join public.project_evaluations accepted
+         on accepted.project_id=rejected.project_id
+        and accepted.requirement_entity_id=rejected.requirement_entity_id
+        and accepted.catalog_item_id=rejected.catalog_item_id
+       where rejected.outcome='rejected' and accepted.outcome='accepted'
+         and accepted.rationale='Nueva revisión favorable'
+         and rejected.rationale='Nueva evidencia adversa'
+         and accepted.evaluation_seq > rejected.evaluation_seq
+         and accepted.created_at = rejected.created_at) then
+    raise exception 'adverse evaluation, history or monotonic order failed';
+  end if;
+end $$;
+
 set role at208_backend;
 do $$ declare created uuid; member uuid; begin
   created := private.create_project('10000000-0000-0000-0000-000000000003',

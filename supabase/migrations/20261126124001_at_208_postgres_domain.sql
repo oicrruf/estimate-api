@@ -5,30 +5,58 @@ begin;
 -- Roles NOLOGIN y NOBYPASS aprovisionados por un administrador fuera de esta
 -- migración. Fallar antes de crear objetos si faltan o el migrador no puede
 -- transferirles la propiedad de funciones. Nada aquí modifica roles alojados.
-do $$ begin
+do $$
+declare
+  helper name;
+  exposed_role name;
+begin
   if not exists (select 1 from pg_roles
                  where rolname = 'at208_backend' and not rolbypassrls and not rolsuper) then
     raise exception 'dedicated at208_backend role without BYPASSRLS required'
       using errcode = '42501';
   end if;
   if not exists (select 1 from pg_roles
-                 where rolname = 'at208_policy_owner' and not rolbypassrls and not rolsuper)
+                 where rolname = 'at208_policy_owner' and not rolcanlogin
+                   and not rolbypassrls and not rolsuper)
      or not pg_has_role(current_user, 'at208_policy_owner', 'member') then
-    raise exception 'isolated at208_policy_owner membership required'
+    raise exception 'isolated NOLOGIN at208_policy_owner membership required'
       using errcode = '42501';
   end if;
   if not exists (select 1 from pg_roles
-                 where rolname = 'at208_mutation_owner' and not rolbypassrls and not rolsuper)
+                 where rolname = 'at208_mutation_owner' and not rolcanlogin
+                   and not rolbypassrls and not rolsuper)
      or not pg_has_role(current_user, 'at208_mutation_owner', 'member') then
-    raise exception 'isolated at208_mutation_owner membership required'
+    raise exception 'isolated NOLOGIN at208_mutation_owner membership required'
       using errcode = '42501';
   end if;
   if not exists (select 1 from pg_roles
-                 where rolname = 'at208_audit_owner' and not rolbypassrls and not rolsuper)
+                 where rolname = 'at208_audit_owner' and not rolcanlogin
+                   and not rolbypassrls and not rolsuper)
      or not pg_has_role(current_user, 'at208_audit_owner', 'member') then
-    raise exception 'isolated at208_audit_owner membership required'
+    raise exception 'isolated NOLOGIN at208_audit_owner membership required'
       using errcode = '42501';
   end if;
+  for helper in select unnest(array[
+    'at208_policy_owner', 'at208_mutation_owner', 'at208_audit_owner']::name[])
+  loop
+    -- El rol conectado que ejecuta la migración es el único LOGIN autorizado
+    -- a asumir estos propietarios. Las sesiones normales no deben heredarlos.
+    select r.rolname into exposed_role from pg_roles r
+    where r.rolcanlogin and r.rolname <> session_user
+      and pg_has_role(r.rolname, helper, 'member') limit 1;
+    if found then
+      raise exception 'helper % exposed to login role %', helper, exposed_role
+        using errcode = '42501';
+    end if;
+    select r.rolname into exposed_role from pg_roles r
+    where r.rolname in ('anon', 'authenticated', 'service_role',
+                        'at208_backend', 'authenticator')
+      and pg_has_role(r.rolname, helper, 'member') limit 1;
+    if found then
+      raise exception 'helper % exposed to runtime role %', helper, exposed_role
+        using errcode = '42501';
+    end if;
+  end loop;
 end $$;
 
 create schema if not exists private;
@@ -231,6 +259,7 @@ create index candidates_product_idx on public.project_candidates (catalog_item_i
 create table public.project_evaluations (
   project_id uuid not null,
   id uuid not null default gen_random_uuid(),
+  evaluation_seq bigint generated always as identity unique,
   requirement_entity_id text not null,
   catalog_item_id uuid not null,
   evidence_ref text not null,
@@ -246,24 +275,30 @@ create table public.project_evaluations (
     references public.project_entities(project_id, entity_id) on delete restrict
 );
 create index evaluations_candidate_idx on public.project_evaluations
-  (project_id, requirement_entity_id, catalog_item_id, created_at desc);
+  (project_id, requirement_entity_id, catalog_item_id, evaluation_seq desc);
 create table public.project_selections (
   project_id uuid not null,
+  id uuid not null default gen_random_uuid(),
   requirement_entity_id text not null,
   catalog_item_id uuid not null,
-  candidate_status text not null default 'selected' check (candidate_status = 'selected'),
   evaluation_id uuid not null,
   evaluation_outcome text not null default 'accepted' check (evaluation_outcome = 'accepted'),
+  status text not null default 'active' check (status in ('active', 'superseded')),
   selected_at timestamptz not null default now(),
-  primary key (project_id, requirement_entity_id),
-  foreign key (project_id, requirement_entity_id, catalog_item_id, candidate_status)
-    references public.project_candidates(project_id, requirement_entity_id, catalog_item_id, status)
+  superseded_at timestamptz,
+  primary key (project_id, id),
+  check ((status = 'active' and superseded_at is null) or
+         (status = 'superseded' and superseded_at is not null)),
+  foreign key (project_id, requirement_entity_id, catalog_item_id)
+    references public.project_candidates(project_id, requirement_entity_id, catalog_item_id)
     on delete restrict,
   foreign key (project_id, evaluation_id, requirement_entity_id, catalog_item_id,
                evaluation_outcome)
     references public.project_evaluations(project_id, id, requirement_entity_id,
                                           catalog_item_id, outcome) on delete restrict
 );
+create unique index project_selections_one_active_idx on public.project_selections
+  (project_id, requirement_entity_id) where status = 'active';
 
 create table public.project_offers (
   project_id uuid not null references public.projects(id) on delete restrict,
@@ -893,6 +928,10 @@ begin
   values (p_project_id, p_requirement, p_catalog_item_id, p_evidence_ref,
           p_outcome, p_rationale) returning id into new_id;
   if p_outcome = 'rejected' then
+    update public.project_selections
+    set status = 'superseded', superseded_at = clock_timestamp()
+    where project_id = p_project_id and requirement_entity_id = p_requirement
+      and catalog_item_id = p_catalog_item_id and status = 'active';
     update public.project_candidates set status = 'rejected'
     where project_id = p_project_id and requirement_entity_id = p_requirement
       and catalog_item_id = p_catalog_item_id;
@@ -947,10 +986,17 @@ begin
                                where latest.project_id = p_project_id
                                  and latest.requirement_entity_id = p_requirement
                                  and latest.catalog_item_id = p_catalog_item_id
-                               order by latest.created_at desc, latest.id desc limit 1)) then
+                               order by latest.evaluation_seq desc limit 1)) then
     raise exception 'latest accepted evaluation required' using errcode = '23514';
   end if;
   perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  update public.project_selections
+  set status = 'superseded', superseded_at = clock_timestamp()
+  where project_id = p_project_id and requirement_entity_id = p_requirement
+    and status = 'active';
+  update public.project_candidates set status = 'proposed'
+  where project_id = p_project_id and requirement_entity_id = p_requirement
+    and status = 'selected';
   update public.project_candidates set status = 'selected'
   where project_id = p_project_id and requirement_entity_id = p_requirement
     and catalog_item_id = p_catalog_item_id and status = 'proposed';
@@ -1552,8 +1598,12 @@ create policy evaluations_mutator_insert on public.project_evaluations for inser
 with check (true);
 create policy selections_read on public.project_selections for select to authenticated
 using (private.can_read_project(project_id));
+create policy selections_mutator_read on public.project_selections for select to at208_mutation_owner
+using (true);
 create policy selections_mutator_insert on public.project_selections for insert to at208_mutation_owner
 with check (true);
+create policy selections_mutator_update on public.project_selections for update to at208_mutation_owner
+using (true) with check (true);
 
 create policy offers_read on public.project_offers for select to authenticated
 using (private.can_read_project(project_id));
@@ -1623,7 +1673,7 @@ grant select on public.projects, public.project_memberships, public.project_enti
   public.research_sources, public.knowledge_package_versions,
   public.project_offers,
   public.project_service_rates, public.project_budgets, public.budget_lines,
-  public.proposal_snapshots
+  public.proposal_snapshots, public.project_selections
   to at208_mutation_owner;
 grant insert (id, owner_user_id, name) on public.projects to at208_mutation_owner;
 grant update (owner_user_id, revision, updated_at) on public.projects to at208_mutation_owner;
@@ -1637,6 +1687,7 @@ grant insert on public.project_entities to at208_mutation_owner;
 grant insert on public.project_packages to at208_mutation_owner;
 grant update (status) on public.project_candidates to at208_mutation_owner;
 grant insert on public.project_evaluations, public.project_selections to at208_mutation_owner;
+grant update (status, superseded_at) on public.project_selections to at208_mutation_owner;
 grant insert on public.project_budgets, public.budget_lines to at208_mutation_owner;
 grant insert on public.project_customers, private.customer_profiles to at208_mutation_owner;
 grant insert on public.proposal_snapshots to at208_mutation_owner;

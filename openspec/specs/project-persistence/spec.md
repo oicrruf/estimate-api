@@ -68,6 +68,16 @@ La persistencia SHALL normalizar país, proveedor, sucursal y contacto privado; 
 - **WHEN** se intenta seleccionarlo en el proyecto A
 - **THEN** la base rechaza la referencia cruzada.
 
+#### Scenario: Evaluación adversa posterior a selección
+- **GIVEN** una candidatura elegida con evaluación aceptada
+- **WHEN** se registra una evaluación rechazada para esa candidatura
+- **THEN** la evaluación persiste, la selección deja de estar activa y su fila histórica permanece.
+
+#### Scenario: Evaluaciones de la misma transacción
+- **GIVEN** dos evaluaciones de la misma candidatura creadas en una transacción
+- **WHEN** se busca la evaluación más reciente para elegirla
+- **THEN** prevalece la secuencia monotónica y no el desempate de hora o UUID.
+
 ### Requirement: Snapshot y auditoría
 La persistencia SHALL conservar snapshots de propuesta como borradores inmutables y eventos de mutación sin alterar registros históricos ni copiar secretos o documentos comerciales completos al evento de auditoría. Un snapshot SHALL NOT conceder permiso para emitir una propuesta.
 

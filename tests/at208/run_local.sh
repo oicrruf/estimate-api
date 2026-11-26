@@ -37,17 +37,37 @@ docker exec "$container" pg_dump -Fc -U postgres -d at208_test > "$baseline_dump
 docker exec "$container" createdb -U postgres at208_guard
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard \
   < "$repo_root/tests/at208/local_auth_fixture.sql"
-if guard_output="$({
-  printf 'set role authenticated;\n'
+expect_guard_failure() {
+  local expected="$1"
+  local active_role="$2"
+  local guard_output
+  if guard_output="$({
+  printf 'set role %s;\n' "$active_role"
   cat "$repo_root/supabase/migrations/20261126124001_at_208_postgres_domain.sql"
-} | docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard 2>&1)"; then
-  echo 'Migration accepted an owner without BYPASSRLS' >&2
-  exit 1
-fi
-[[ "$guard_output" == *'isolated at208_policy_owner membership required'* ]] || {
-  echo "Unexpected preflight failure: $guard_output" >&2
-  exit 1
+  } | docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard 2>&1)"; then
+    echo "Migration accepted forbidden role topology: $expected" >&2
+    exit 1
+  fi
+  [[ "$guard_output" == *"$expected"* ]] || {
+    echo "Unexpected preflight failure: $guard_output" >&2
+    exit 1
+  }
 }
+expect_guard_failure 'isolated NOLOGIN at208_policy_owner membership required' authenticated
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard \
+  -c 'alter role at208_policy_owner login'
+expect_guard_failure 'isolated NOLOGIN at208_policy_owner membership required' at208_owner
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard \
+  -c 'alter role at208_policy_owner nologin; grant at208_policy_owner to authenticated'
+expect_guard_failure 'helper at208_policy_owner exposed to runtime role authenticated' at208_owner
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard \
+  -c 'revoke at208_policy_owner from authenticated; grant at208_policy_owner to at208_backend'
+expect_guard_failure 'helper at208_policy_owner exposed to runtime role at208_backend' at208_owner
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard \
+  -c 'revoke at208_policy_owner from at208_backend; create role at208_untrusted login nobypassrls; grant at208_policy_owner to at208_untrusted'
+expect_guard_failure 'helper at208_policy_owner exposed to login role at208_untrusted' at208_owner
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_guard \
+  -c 'revoke at208_policy_owner from at208_untrusted; drop role at208_untrusted'
 docker exec "$container" dropdb -U postgres at208_guard
 {
   printf 'set role at208_owner;\n'
@@ -69,7 +89,7 @@ restored_domain="$(docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U p
   -c "select
     (select count(*) from public.catalog_items) = 2 and
     (select count(*) from public.project_candidates) = 3 and
-    (select count(*) from public.project_selections) = 2 and
+    (select count(*) from public.project_selections) = 3 and
     (select count(*) from private.supplier_contacts) = 1 and
     (select count(*) from private.customer_profiles) = 2;")"
 [[ "$restored_domain" == t ]] || { echo "Restored domain counts failed: $restored_domain" >&2; exit 1; }

@@ -23,6 +23,8 @@
 - [x] 4.3 Implementar y probar comandos transaccionales para declaraciones/evidencia curada, paquete versionado, cliente, tarifa, presupuesto, línea y borrador canónico, con autorización, idempotencia y revisión; la emisión queda en AT-222. Mantener bloqueadas mutaciones arbitrarias de hechos, evidencia y snapshots.
 - [x] 4.4 Quitar DML directo de proyecto/membresía y probar creación, edición, transferencia y reintentos; alinear bloqueo proyecto→membresía y probar carrera en dos sesiones.
 - [x] 4.5 Sustituir propiedad BYPASSRLS de auxiliares/mutadores/auditoría por roles NOLOGIN NOBYPASSRLS con grants/políticas acotadas; verificar localmente que el backend no tiene DML directo.
+- [x] 4.5a Rechazar propietarios auxiliares LOGIN o asumibles por roles de cliente/backend/sesión ordinaria; probar admisión negativa en PostgreSQL descartable.
+- [x] 4.5b Conservar evaluación adversa posterior a selección, superseder la selección activa y ordenar evaluaciones de una transacción por secuencia monotónica; probar reintento y selección vigente.
 - [ ] 4.6 Probar topología exacta de conexión SQL, membresía del migrador, grants y roles en un stack Supabase local compatible; no atribuir compatibilidad a la base PostgreSQL simulada.
 - [ ] 4.7 Revisar independientemente SQL, roles, evidencia fijada, modelo de autorización/idempotencia y tests; verificar CI del SHA final antes de integrar.
 
