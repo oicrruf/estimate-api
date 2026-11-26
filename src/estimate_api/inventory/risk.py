@@ -180,6 +180,23 @@ def evaluate_inventory(
     offer_ids = [claim.offer_id for claim in claims]
     if len(offer_ids) != len(set(offer_ids)):
         raise ValueError("multiple current claims for one offer")
+    by_offer = {claim.offer_id: claim for claim in claims}
+    for dependency in dependencies:
+        if dependency.kind not in ("shared_pool", "shared_distributor"):
+            raise ValueError("unknown dependency kind")
+        if not dependency.identifier or not dependency.evidence_id or not dependency.source:
+            raise ValueError("dependency requires identifier, evidence and source")
+        if (
+            dependency.left_offer_id == dependency.right_offer_id
+            or dependency.left_offer_id not in by_offer
+            or dependency.right_offer_id not in by_offer
+        ):
+            raise ValueError("dependency references unknown or repeated offer")
+        if dependency.kind == "shared_pool" and (
+            by_offer[dependency.left_offer_id].pool_id != dependency.identifier
+            or by_offer[dependency.right_offer_id].pool_id != dependency.identifier
+        ):
+            raise ValueError("shared pool dependency differs from offer pool identities")
     pool_ids = [pool.pool_id for pool in pool_caps]
     if len(pool_ids) != len(set(pool_ids)):
         raise ValueError("multiple current claims for one pool")
@@ -287,12 +304,6 @@ def evaluate_inventory(
         reasons.add("SHARED_POOL_CAP")
 
     for dependency in dependencies:
-        if dependency.kind not in ("shared_pool", "shared_distributor"):
-            raise ValueError("unknown dependency kind")
-        if not dependency.evidence_id or not dependency.source:
-            raise ValueError("dependency requires evidence and source")
-        if dependency.left_offer_id not in offer_ids or dependency.right_offer_id not in offer_ids:
-            raise ValueError("dependency references unknown offer")
         reasons.add("SHARED_POOL" if dependency.kind == "shared_pool" else "SHARED_DISTRIBUTOR")
 
     if not claims or unresolved:

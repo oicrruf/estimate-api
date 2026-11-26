@@ -36,20 +36,30 @@ def read_inventory(
         if row["productId"] == product_id
     ]
     offer_ids = {row["offerId"] for row in offers}
-    observation_rows = connection.execute(
-        "MATCH (s:STOCK_OBSERVATION) "
-        "OPTIONAL MATCH (s)-[:SUPPORTED_BY]->(e:EVIDENCE) "
-        "RETURN s.offerId AS offerId,s.poolId AS poolId, "
-        "s.state AS state,s.quantity AS quantity,s.observedAt AS observedAt, "
-        "s.validUntil AS validUntil,s.supplierId AS supplierId,s.branchId AS branchId, "
-        "s.restockAt AS restockAt,s.reservationId AS reservationId, "
-        "s.reservationProjectId AS reservationProjectId, "
-        "s.reservationQuoteId AS reservationQuoteId, "
-        "s.reservationExpiresAt AS reservationExpiresAt, "
-        "e.source AS source,e.id AS evidenceId"
-    ).data()
-    observed_keys = [(row["offerId"], row["poolId"]) for row in observation_rows]
-    if len(observed_keys) != len(set(observed_keys)):
+    pool_ids = {row["poolId"] for row in offers if row["poolId"]}
+    observation_rows = [
+        row
+        for row in connection.execute(
+            "MATCH (s:STOCK_OBSERVATION) "
+            "OPTIONAL MATCH (s)-[:SUPPORTED_BY]->(e:EVIDENCE) "
+            "RETURN s.offerId AS offerId,s.poolId AS poolId, "
+            "s.state AS state,s.quantity AS quantity,s.observedAt AS observedAt, "
+            "s.validUntil AS validUntil,s.supplierId AS supplierId,s.branchId AS branchId, "
+            "s.restockAt AS restockAt,s.reservationId AS reservationId, "
+            "s.reservationProjectId AS reservationProjectId, "
+            "s.reservationQuoteId AS reservationQuoteId, "
+            "s.reservationExpiresAt AS reservationExpiresAt, "
+            "e.source AS source,e.id AS evidenceId"
+        ).data()
+        if row["offerId"] in offer_ids or row["poolId"] in pool_ids
+    ]
+    observed_subjects: list[tuple[str, str]] = []
+    for row in observation_rows:
+        offer_id, pool_id = row["offerId"], row["poolId"]
+        if (offer_id is None) == (pool_id is None):
+            raise ValueError("stock observation must identify exactly one offer or pool")
+        observed_subjects.append(("offer", offer_id) if offer_id is not None else ("pool", pool_id))
+    if len(observed_subjects) != len(set(observed_subjects)):
         raise ValueError("multiple stock observations or evidence links for one subject")
     by_offer = {row["offerId"]: row for row in observation_rows if row["offerId"] in offer_ids}
     claims: list[StockClaim] = []
@@ -92,7 +102,6 @@ def read_inventory(
                     _date(row["reservationExpiresAt"]),
                 )
             )
-    pool_ids = {row["poolId"] for row in offers if row["poolId"]}
     pool_rows = connection.execute(
         "MATCH (p:PRODUCT)-[:SUPPORTS]->(c:CAPABILITY {key:'poolCapacity'})"
         "-[:SUPPORTED_BY]->(e:EVIDENCE) RETURN p.id AS productId,p.poolId AS poolId, "

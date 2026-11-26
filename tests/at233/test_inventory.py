@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 import relate
 
+from demo.agent.graph import camera_stock_evidence
 from estimate_api.inventory.relate_reader import read_inventory
 from estimate_api.inventory.risk import (
     Dependency,
@@ -101,13 +102,29 @@ def test_at229_public_stock_stays_unknown_and_read_is_pure(tmp_path: Path) -> No
     connection.close()
 
 
+def test_at227_demo_public_capacity_is_not_at233_supplier_confirmation(tmp_path: Path) -> None:
+    path = str(tmp_path / "demo-boundary.rl")
+    connection = relate.connect(path)
+    _seed(connection)
+    connection.close()
+    demo_rows = camera_stock_evidence(path, 2)
+    assert len(demo_rows) == 1
+    assert (demo_rows[0]["listedQuantity"], demo_rows[0]["poolCapacity"]) == (4, 2)
+    connection = relate.connect(path, read_only=True)
+    result = evaluate_inventory(2, *read_inventory(connection, "CAM-POE"), now=NOW)
+    assert result.risk == RiskLevel.UNKNOWN
+    assert (result.confirmed_quantity, result.coverage, result.shortage) == (None, None, None)
+    assert all(item.reason == "PUBLIC_ONLY" for item in result.claims)
+    connection.close()
+
+
 def test_confirmed_pool_2_of_4_and_reopened_sufficient_2(tmp_path: Path) -> None:
     path = str(tmp_path / "confirmed.db")
     connection = relate.connect(path)
     _seed(connection)
     _confirmed_graph(connection)
     connection.close()
-    connection = relate.connect(path)
+    connection = relate.connect(path, read_only=True)
     claims, caps, dependencies = read_inventory(connection, "CAM-POE")
     limited = evaluate_inventory(4, claims, caps, dependencies, now=NOW)
     assert limited.confirmed_quantity == 2
@@ -261,6 +278,75 @@ def test_shared_pool_requires_confirmed_cap_and_evidence() -> None:
         )
 
 
+def test_shared_pool_dependency_cannot_invent_pool_identity() -> None:
+    fresh = StockClaim(
+        "OFF-FICT-A",
+        "SUP-FICT-A",
+        None,
+        StockState.SUPPLIER_CONFIRMED,
+        2,
+        NOW,
+        NOW + timedelta(days=1),
+        "confirmación ficticia",
+        "EV-FICT-A",
+    )
+    second = replace(fresh, offer_id="OFF-FICT-B", supplier_id="SUP-FICT-B")
+    linked = Dependency(
+        "OFF-FICT-A", "OFF-FICT-B", "shared_pool", "POOL-FICT", "EV-POOL-FICT", "fuente ficticia"
+    )
+    with pytest.raises(ValueError, match="pool identities"):
+        evaluate_inventory(4, (fresh, second), (), (linked,), now=NOW)
+    with pytest.raises(ValueError, match="pool identities"):
+        evaluate_inventory(
+            4,
+            (replace(fresh, pool_id="POOL-FICT"), second),
+            (),
+            (linked,),
+            now=NOW,
+        )
+
+
+def test_relate_rejects_ambiguous_or_duplicate_offer_observations(tmp_path: Path) -> None:
+    path = str(tmp_path / "ambiguous.db")
+    connection = relate.connect(path)
+    _seed(connection)
+    _observation(
+        connection,
+        "STOCK-FICT-A",
+        offerId="OFF-CAM-A",
+        state="supplier_confirmed",
+        quantity=2,
+        observedAt="2026-11-26T10:00:00Z",
+        validUntil="2026-11-27T10:00:00Z",
+        source="confirmación ficticia",
+        evidenceId="EV-FICT-A",
+    )
+    _observation(
+        connection,
+        "STOCK-FICT-B",
+        offerId="OFF-CAM-A",
+        poolId="POOL-CAM-POE",
+        state="supplier_confirmed",
+        quantity=2,
+        observedAt="2026-11-26T10:00:00Z",
+        validUntil="2026-11-27T10:00:00Z",
+        source="confirmación ficticia",
+        evidenceId="EV-FICT-B",
+    )
+    connection.close()
+    connection = relate.connect(path, read_only=True)
+    with pytest.raises(ValueError, match="exactly one offer or pool"):
+        read_inventory(connection, "CAM-POE")
+    connection.close()
+    connection = relate.connect(path)
+    connection.execute("MATCH (s:STOCK_OBSERVATION {id:'STOCK-FICT-B'}) REMOVE s.poolId")
+    connection.close()
+    connection = relate.connect(path, read_only=True)
+    with pytest.raises(ValueError, match="multiple stock observations"):
+        read_inventory(connection, "CAM-POE")
+    connection.close()
+
+
 def test_offer_hold_requires_matching_scope_and_exclusive_expiry() -> None:
     confirmed = StockClaim(
         "OFF-CONFIRMED",
@@ -374,7 +460,7 @@ def test_graph_offer_and_pool_holds_require_quote_scope(tmp_path: Path) -> None:
             f"s.reservationExpiresAt = '{expiry}'"
         )
     connection.close()
-    connection = relate.connect(path)
+    connection = relate.connect(path, read_only=True)
     snapshot = read_inventory(connection, "CAM-POE")
     held = evaluate_inventory(4, *snapshot, now=NOW, scope=SCOPE)
     assert (held.confirmed_quantity, held.coverage, held.shortage) == (2, 0.5, 2)
