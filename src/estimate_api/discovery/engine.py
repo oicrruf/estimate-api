@@ -152,6 +152,8 @@ def discover(
                 raise ValueError("Pattern depth limit")
             if rule.target_key in lines:
                 paths.append((source, rule.relation, rule.target_key))
+                if rule.required and not lines[rule.target_key].required:
+                    lines[rule.target_key] = replace(lines[rule.target_key], required=True)
                 if lines[rule.target_key].parent_key != source:
                     blocking_facts.add(f"quantity:{rule.target_key}")
                     questions.append(
@@ -243,10 +245,25 @@ def review(proposal: Proposal, actions: tuple[ReviewAction, ...]) -> Proposal:
     known = {line.key for line in proposal.lines}
     if not decisions.keys() <= known:
         raise ValueError("Unknown proposal line")
+    descendants: set[str] = set()
+    modified = {action.key for action in actions if action.decision == "modify"}
+    frontier = set(modified)
+    while frontier:
+        children = {
+            target
+            for source, _, target in proposal.evidence_paths
+            if source in frontier and target not in modified and target not in descendants
+        }
+        descendants.update(children)
+        frontier = children
     updated = []
     for line in proposal.lines:
         action = decisions.get(line.key)
-        if action is None:
+        if line.key in descendants:
+            if action is not None:
+                raise ValueError("Review descendants after parent quantity or unit changes")
+            updated.append(replace(line, quantity=None, state="pending_measurement"))
+        elif action is None:
             updated.append(line)
         elif line.state == "user_requested":
             raise ValueError("Change requested needs via project intake")
@@ -263,12 +280,22 @@ def review(proposal: Proposal, actions: tuple[ReviewAction, ...]) -> Proposal:
                 replace(line, state="user_approved" if action.decision == "approve" else "rejected")
             )
     result_lines = tuple(updated)
+    blocking_facts = tuple(
+        fact
+        for fact in proposal.blocking_facts
+        if not (fact.startswith("quantity:") and fact.removeprefix("quantity:") in modified)
+    )
+    confirmed_questions = {
+        f"¿Qué cantidad total de {key} cubre todas las dependencias?"
+        for key in modified
+        if f"quantity:{key}" in proposal.blocking_facts
+    }
     base_status = _status(result_lines)
     status = (
         "blocked"
         if proposal.technical_blockers
         else "proposed"
-        if proposal.blocking_facts and base_status == "approved"
+        if blocking_facts and base_status == "approved"
         else base_status
     )
     return replace(
@@ -277,6 +304,19 @@ def review(proposal: Proposal, actions: tuple[ReviewAction, ...]) -> Proposal:
         status=status,
         lines=result_lines,
         work_packages=_summarize(result_lines),
+        blocking_facts=blocking_facts,
+        questions=tuple(
+            dict.fromkeys(
+                (
+                    *(
+                        question
+                        for question in proposal.questions
+                        if question not in confirmed_questions
+                    ),
+                    *(f"Confirmar cantidad de {key}" for key in sorted(descendants)),
+                )
+            )
+        ),
         commercial_ready=status == "approved",
     )
 
@@ -324,7 +364,11 @@ def diff_proposals(previous: Proposal, fresh: Proposal) -> Proposal:
             changes.append((key, "added"))
         elif key not in new:
             changes.append((key, "removed"))
-        elif old[key].quantity != new[key].quantity or old[key].rule_id != new[key].rule_id:
+        elif (
+            old[key].quantity != new[key].quantity
+            or old[key].unit != new[key].unit
+            or old[key].rule_id != new[key].rule_id
+        ):
             changes.append((key, "changed"))
         elif old[key].state == "user_approved":
             changes.append((key, "approval_stale"))
