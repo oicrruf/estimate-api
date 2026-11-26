@@ -1,0 +1,9 @@
+# AT-233 ↔ AT-241: contrato futuro de reservas
+
+Este evaluador sólo lee observaciones sintéticas. El futuro adaptador AT-241 deberá pasar `QuoteScope(project_id="PROJECT-FICT-1", quote_id="QUOTE-FICT-1")` desde la cotización activa, independientemente de los datos de stock. Nunca debe tomar el contexto de la oferta, una etiqueta de fuente o el texto del proveedor.
+
+Una observación `STOCK_OBSERVATION` con `state="reserved"` deberá enlazar mediante `SUPPORTED_BY` a una evidencia específica del hold y proporcionar `reservationId`, `reservationProjectId`, `reservationQuoteId` y `reservationExpiresAt` con zona horaria. `observedAt` y `validUntil` siguen siendo obligatorios para que la observación sea vigente. Ambos vencimientos son exclusivos: exactamente en ese instante el hold no cuenta. El lector conserva estos campos tanto en ofertas como en pools; el evaluador compara ambas referencias con `QuoteScope` y exige evidencia antes de sumar capacidad.
+
+Por ejemplo, `HOLD-FICT-1` de `PROJECT-FICT-1` / `QUOTE-FICT-1` por dos unidades puede contribuir antes de su vencimiento; `QUOTE-FICT-OTHER` o una referencia ausente no. Si dos ofertas apuntan a `HOLD-FICT-1`, el hold aporta una sola vez. Las unidades con confirmación independiente mantienen su contribución. Un límite reservado de `POOL-FICT-1` se aplica como tope, nunca como unidades adicionales.
+
+AT-241 deberá definir verificación transaccional de holds y procedencia antes de persistir observaciones reales. AT-233 no crea, renueva ni libera reservas y no promete suministro.

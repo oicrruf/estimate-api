@@ -26,6 +26,12 @@ class RiskLevel(StrEnum):
 
 
 @dataclass(frozen=True)
+class QuoteScope:
+    project_id: str
+    quote_id: str
+
+
+@dataclass(frozen=True)
 class StockClaim:
     offer_id: str
     supplier_id: str
@@ -38,6 +44,10 @@ class StockClaim:
     evidence_id: str | None
     pool_id: str | None = None
     restock_at: datetime | None = None
+    reservation_id: str | None = None
+    reservation_project_id: str | None = None
+    reservation_quote_id: str | None = None
+    reservation_expires_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -49,6 +59,10 @@ class PoolClaim:
     valid_until: datetime | None
     source: str | None
     evidence_id: str | None
+    reservation_id: str | None = None
+    reservation_project_id: str | None = None
+    reservation_quote_id: str | None = None
+    reservation_expires_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -109,8 +123,34 @@ def _fresh(observed_at: datetime | None, valid_until: datetime | None, now: date
         and valid_until
         and observed_at.tzinfo
         and valid_until.tzinfo
-        and observed_at <= now <= valid_until
+        and observed_at <= now < valid_until
     )
+
+
+def _reservation_reason(
+    reservation_id: str | None,
+    project_id: str | None,
+    quote_id: str | None,
+    expires_at: datetime | None,
+    scope: QuoteScope | None,
+    now: datetime,
+) -> str | None:
+    if (
+        not reservation_id
+        or not project_id
+        or not quote_id
+        or expires_at is None
+        or expires_at.tzinfo is None
+        or scope is None
+        or not scope.project_id
+        or not scope.quote_id
+    ):
+        return "UNVERIFIED_RESERVATION"
+    if project_id != scope.project_id or quote_id != scope.quote_id:
+        return "RESERVATION_SCOPE_MISMATCH"
+    if now >= expires_at:
+        return "EXPIRED_RESERVATION"
+    return None
 
 
 def evaluate_inventory(
@@ -120,6 +160,7 @@ def evaluate_inventory(
     dependencies: tuple[Dependency, ...],
     *,
     now: datetime,
+    scope: QuoteScope | None = None,
     thresholds: RiskThresholds | None = None,
 ) -> InventoryAssessment:
     """Evaluate documented supply, preserving public and stale claims as evidence only.
@@ -148,6 +189,7 @@ def evaluate_inventory(
     assessed: list[ClaimAssessment] = []
     unpooled_total = 0
     pooled: dict[str, int] = {}
+    seen_reservations: dict[str, tuple[int, str | None]] = {}
     reasons: set[str] = set()
     unresolved = False
     for claim in claims:
@@ -161,15 +203,46 @@ def evaluate_inventory(
             reason = "UNKNOWN_STOCK"
         elif claim.state == StockState.PUBLISHED:
             reason = "PUBLIC_ONLY"
+        elif claim.state == StockState.RESERVED:
+            reservation_issue = _reservation_reason(
+                claim.reservation_id,
+                claim.reservation_project_id,
+                claim.reservation_quote_id,
+                claim.reservation_expires_at,
+                scope,
+                now,
+            )
+            if not claim.source or not claim.evidence_id:
+                reason = "UNSOURCED_RESERVATION"
+            elif reservation_issue:
+                reason = reservation_issue
+            elif stale:
+                reason = "STALE_STOCK"
+            else:
+                reason = "RESERVED"
         elif stale:
             reason = "STALE_STOCK"
         elif not claim.source or not claim.evidence_id:
             reason = "UNSOURCED_CONFIRMATION"
         else:
-            reason = "CONFIRMED" if claim.state == StockState.SUPPLIER_CONFIRMED else "RESERVED"
+            reason = "CONFIRMED"
         usable = claim.quantity if reason in ("CONFIRMED", "RESERVED") else None
+        if reason == "RESERVED":
+            assert claim.reservation_id is not None
+            previous = seen_reservations.get(claim.reservation_id)
+            if previous is not None:
+                if previous != (claim.quantity, claim.pool_id):
+                    unresolved = True
+                    reason = "CONFLICTING_RESERVATION"
+                else:
+                    reason = "DUPLICATE_RESERVATION"
+                usable = None
+            else:
+                assert claim.quantity is not None
+                seen_reservations[claim.reservation_id] = (claim.quantity, claim.pool_id)
         if usable is None:
-            unresolved = True
+            if reason != "DUPLICATE_RESERVATION":
+                unresolved = True
             reasons.add(reason)
         elif claim.pool_id:
             pooled[claim.pool_id] = pooled.get(claim.pool_id, 0) + usable
@@ -180,6 +253,18 @@ def evaluate_inventory(
     total = unpooled_total
     for pool_id, offer_total in pooled.items():
         pool = pools.get(pool_id)
+        pool_reservation_issue = (
+            _reservation_reason(
+                pool.reservation_id,
+                pool.reservation_project_id,
+                pool.reservation_quote_id,
+                pool.reservation_expires_at,
+                scope,
+                now,
+            )
+            if pool is not None and pool.state == StockState.RESERVED
+            else None
+        )
         if (
             pool is None
             or pool.quantity is None
@@ -191,9 +276,12 @@ def evaluate_inventory(
             or not pool.source
             or not pool.evidence_id
             or not _fresh(pool.observed_at, pool.valid_until, now)
+            or pool_reservation_issue is not None
         ):
             unresolved = True
             reasons.add("UNVERIFIED_SHARED_POOL")
+            if pool_reservation_issue:
+                reasons.add(f"POOL_{pool_reservation_issue}")
             continue
         total += min(offer_total, pool.quantity)
         reasons.add("SHARED_POOL_CAP")

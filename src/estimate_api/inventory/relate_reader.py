@@ -42,7 +42,11 @@ def read_inventory(
         "RETURN s.offerId AS offerId,s.poolId AS poolId, "
         "s.state AS state,s.quantity AS quantity,s.observedAt AS observedAt, "
         "s.validUntil AS validUntil,s.supplierId AS supplierId,s.branchId AS branchId, "
-        "s.restockAt AS restockAt,e.source AS source,e.id AS evidenceId"
+        "s.restockAt AS restockAt,s.reservationId AS reservationId, "
+        "s.reservationProjectId AS reservationProjectId, "
+        "s.reservationQuoteId AS reservationQuoteId, "
+        "s.reservationExpiresAt AS reservationExpiresAt, "
+        "e.source AS source,e.id AS evidenceId"
     ).data()
     observed_keys = [(row["offerId"], row["poolId"]) for row in observation_rows]
     if len(observed_keys) != len(set(observed_keys)):
@@ -82,6 +86,10 @@ def read_inventory(
                     row["evidenceId"],
                     offer["poolId"],
                     _date(row["restockAt"]),
+                    row["reservationId"],
+                    row["reservationProjectId"],
+                    row["reservationQuoteId"],
+                    _date(row["reservationExpiresAt"]),
                 )
             )
     pool_ids = {row["poolId"] for row in offers if row["poolId"]}
@@ -111,6 +119,10 @@ def read_inventory(
                     _date(row["validUntil"]),
                     row["source"],
                     row["evidenceId"],
+                    row["reservationId"],
+                    row["reservationProjectId"],
+                    row["reservationQuoteId"],
+                    _date(row["reservationExpiresAt"]),
                 )
             )
         elif legacy is not None:
