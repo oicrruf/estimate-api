@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "packages": [
+    {
+      "id": "catalog:camera-v1",
+      "namespace": "example.camera",
+      "version": "1.0.0",
+      "taxonomy": "synthetic camera taxonomy v1",
+      "source": {"ref": "synthetic://camera-catalog", "version": "draft-1"},
+      "applicability": {
+        "jurisdictions": ["TEST-ZONE-A"],
+        "categories": ["fictional-camera"],
+        "scopes": [{"kind": "project", "id": "camera:project"}]
+      },
+      "limits": ["Demostración sintética; no representa requisitos profesionales reales."],
+      "review": {
+        "state": "unverified",
+        "requiredReviewer": "fictional domain specialist",
+        "evidenceRefs": []
+      },
+      "categorySpecs": [{"category": "fictional-camera", "schemaRef": "synthetic://camera-schema/v1"}],
+      "installationPatterns": [{"id": "fictional-pattern", "category": "fictional-camera", "ref": "synthetic://pattern/v1"}],
+      "ruleSets": [{"id": "fictional-rules", "rules": [{"topic": "fictional-choice", "choice": "alpha", "sourceRef": "synthetic://rule/alpha"}]}]
+    }
+  ]
+}
