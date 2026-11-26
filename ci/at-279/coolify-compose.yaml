@@ -1,11 +1,11 @@
 # Git-based Coolify Application, not Docker Compose Empty. No published host ports.
-# Base Directory: /ci/at-279/package/runtime
+# Base Directory: /ci/at-279
 # Docker Compose Location (relative to Base Directory): /coolify-compose.yaml
 services:
   seed:
     build:
       context: .
-      dockerfile: Dockerfile.api.coolify
+      dockerfile: coolify/Dockerfile.api
     user: "10001:10001"
     entrypoint: ["/app/.venv/bin/python", "/app/container_seed.py"]
     volumes:
@@ -24,7 +24,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api.coolify
+      dockerfile: coolify/Dockerfile.api
     depends_on:
       seed:
         condition: service_completed_successfully
@@ -56,7 +56,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.web.coolify
+      dockerfile: coolify/Dockerfile.web
     depends_on:
       api:
         condition: service_healthy

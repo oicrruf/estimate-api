@@ -29,7 +29,7 @@ RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin demo \
 COPY --from=build /app/.venv /app/.venv
 COPY --from=source /source/src ./src
 COPY --from=source /source/demo ./demo
-COPY container_api.py container_seed.py ./
+COPY package/runtime/container_api.py package/runtime/container_seed.py ./
 RUN chmod -R a+rX /app/.venv /app/src /app/demo /app/container_api.py /app/container_seed.py
 USER 10001:10001
 EXPOSE 8001

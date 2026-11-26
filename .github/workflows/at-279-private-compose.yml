@@ -57,17 +57,17 @@ jobs:
         with:
           persist-credentials: false
       - name: Validate Git candidate without host ports or published images
-        working-directory: ci/at-279/package/runtime
+        working-directory: ci/at-279
         run: docker compose -f coolify-compose.yaml config --quiet
       - name: Build API and web from fixed public Git commits
-        working-directory: ci/at-279/package/runtime
+        working-directory: ci/at-279
         run: docker compose -f coolify-compose.yaml build
       - name: Start candidate and check real synthetic graph
-        working-directory: ci/at-279/package/runtime
+        working-directory: ci/at-279
         run: |
           docker compose -f coolify-compose.yaml up --no-build -d
-          python3 ../../verify_coolify_git.py
+          python3 verify_coolify_git.py
       - name: Remove only this disposable Git candidate stack
         if: always()
-        working-directory: ci/at-279/package/runtime
+        working-directory: ci/at-279
         run: docker compose -f coolify-compose.yaml down -v --remove-orphans

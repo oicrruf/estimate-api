@@ -7,7 +7,7 @@ import subprocess
 import time
 from pathlib import Path
 
-RUNTIME = Path(__file__).resolve().parent / "package" / "runtime"
+RUNTIME = Path(__file__).resolve().parent
 COMPOSE = "coolify-compose.yaml"
 STORE = "/data/estimate-at278.rl"
 PROBE = r"""

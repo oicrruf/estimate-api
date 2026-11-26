@@ -1,6 +1,6 @@
 # Diseño
 
-La aplicación de Coolify usa Build strategy Docker Compose desde el repositorio público `oicrruf/estimate-api`, con Base Directory `/ci/at-279/package/runtime` y Docker Compose Location `/coolify-compose.yaml` (ruta relativa a ese Base Directory). El servicio Empty no dispone de contexto Git para `COPY container_api.py`, `container_seed.py` o `nginx.conf`; una adaptación inline alteraría el paquete probado y multiplicaría el código pegado al panel.
+La aplicación de Coolify usa Build strategy Docker Compose desde el repositorio público `oicrruf/estimate-api`, con Base Directory `/ci/at-279` y Docker Compose Location `/coolify-compose.yaml` (ruta relativa a ese Base Directory). El servicio Empty no dispone de contexto Git para `COPY package/runtime/container_api.py`, `container_seed.py` o `nginx.conf`; una adaptación inline alteraría el paquete probado y multiplicaría el código pegado al panel. El candidato queda fuera de `package/`, cuyo manifiesto fija los bytes del paquete privado.
 
 Dos Dockerfiles en esa carpeta obtienen los commits públicos `dac8c64c314bb362c6254825c65640ba732ca168` y `d8a6d359bf909872ebfe48d52dfe5d8980c2c68b`. Cada build compara `FETCH_HEAD` con el SHA literal antes de copiar fuentes. `uv sync --frozen` y `npm ci` consumen locks de esos commits. Las imágenes base usan digests. Compose construye localmente, sin registry de aplicación.
 
