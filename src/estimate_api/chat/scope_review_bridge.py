@@ -27,7 +27,16 @@ from estimate_api.domain.scope_capture import (
 
 PROJECT_ID = "camera:goal"
 REQUIRED_CHECKS = ("global:total-ports", "global:poe-ports")
-SYNTHETIC_CONSTRAINT_SHA256 = "c44bbf0ade77253686b4bd7a664b5698420793abaeb12014cfdf9d17c2ae8155"
+SYNTHETIC_CONSTRAINT_SHA256_PARTS = (
+    "c44bbf0a",
+    "de772536",
+    "86b4bd7a",
+    "664b5698",
+    "420793ab",
+    "aeb12014",
+    "cfdf9d17",
+    "c2ae8155",
+)
 
 
 @dataclass(frozen=True)
@@ -73,7 +82,7 @@ def _is_fixed_synthetic_document(document: ProjectDocument) -> bool:
         ).encode()
     except (TypeError, ValueError):
         return False
-    return hashlib.sha256(canonical).hexdigest() == SYNTHETIC_CONSTRAINT_SHA256
+    return hashlib.sha256(canonical).hexdigest() == "".join(SYNTHETIC_CONSTRAINT_SHA256_PARTS)
 
 
 def preview_scope_review(

@@ -115,6 +115,9 @@ has its own seed, server, and query commands.
 - [Scope discovery and review (AT-240)](docs/hackathon/handoff-at-240.md): local
   service entry points, synthetic rules, provenance, and revalidation; there is
   no review HTTP endpoint or persisted approval yet.
+- [Local intake-to-review bridge (AT-237)](docs/at237-local-bridge.md): typed
+  synthetic intake passed to AT-240 with a pinned constraint fixture, pending
+  review, and no mounted HTTP route or persistence.
 - [Three-domain discovery fixtures (AT-266)](docs/evidence/at-266.md): synthetic
   camera, painting, and event cases exercised through the local service.
 - [Installation patterns (AT-247)](docs/at-247-installation-patterns.md),
