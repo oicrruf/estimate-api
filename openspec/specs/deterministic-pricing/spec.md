@@ -8,7 +8,7 @@ Calcular importes comerciales desde políticas declaradas y entradas monetarias 
 
 ### Requirement: Aritmética monetaria determinista
 
-El motor SHALL usar `Decimal`, SHALL rechazar valores no finitos y `float`, y SHALL redondear el precio unitario según moneda y política antes de multiplicar la cantidad. SHALL conservar insumos y componentes en la salida.
+El motor SHALL usar `Decimal`, SHALL rechazar valores no finitos y `float`, y SHALL redondear el precio unitario según moneda y política antes de multiplicar la cantidad. SHALL conservar insumos y componentes en la salida. El resultado SHALL ser independiente del contexto Decimal del llamador dentro de los límites admitidos.
 
 #### Scenario: Mano de obra ficticia
 - **GIVEN** base 40.00, contingencia 5%, impuesto excluido 13%, moneda con dos decimales y tres unidades
@@ -19,6 +19,11 @@ El motor SHALL usar `Decimal`, SHALL rechazar valores no finitos y `float`, y SH
 - **GIVEN** un importe unitario que requiere redondeo y varias unidades
 - **WHEN** se calcula el total
 - **THEN** el total multiplica el unitario redondeado, sin redondear sólo el agregado.
+
+#### Scenario: Contexto hostil y descuento diminuto
+- **GIVEN** precisión baja, trampas y límites de exponente del llamador, y un descuento fijo de `1E-200` sobre `0.005`
+- **WHEN** se calcula la partida y se suma la cotización
+- **THEN** se obtiene el mismo resultado que con el contexto normal y el unitario redondea hacia `0.00`.
 
 ### Requirement: Tratamiento explícito de precios
 

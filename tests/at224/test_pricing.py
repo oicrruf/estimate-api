@@ -1,7 +1,17 @@
 """Standalone AT-224 pricing entry point with entirely fictitious policies."""
 
 from dataclasses import replace
-from decimal import ROUND_HALF_EVEN, Decimal
+from decimal import (
+    ROUND_HALF_EVEN,
+    Clamped,
+    Decimal,
+    Inexact,
+    Rounded,
+    Subnormal,
+    Underflow,
+    localcontext,
+)
+from fractions import Fraction
 
 import pytest
 
@@ -228,3 +238,89 @@ def test_reject_malformed_numbers_and_ambiguous_policy() -> None:
         Discount(" ", rate=Decimal("0.05"))
     with pytest.raises(ValueError, match="added tax"):
         _line(basis=PriceBasis.CONFIRMED_FINAL, tax=EXCLUDED, contingency="0")
+
+
+def test_results_ignore_caller_precision_exponents_and_traps() -> None:
+    final_a = _line(
+        "FINAL-FICT-A",
+        amount="1000.00",
+        basis=PriceBasis.CONFIRMED_FINAL,
+        tax=INCLUDED,
+        quantity=1,
+        contingency="0",
+    )
+    final_b = replace(final_a, line_id="FINAL-FICT-B")
+    labor = _line()
+    expected = price_quote(QuoteInput(USD, (final_a, final_b, labor)))
+    with localcontext() as hostile:
+        hostile.prec = 2
+        hostile.Emin = -2
+        hostile.Emax = 2
+        for signal in (Inexact, Rounded, Underflow, Subnormal, Clamped):
+            hostile.traps[signal] = True
+        assert USD.quantum == Decimal("0.01")
+        assert _line(
+            "FINAL-FICT-C",
+            amount="1000.00",
+            basis=PriceBasis.CONFIRMED_FINAL,
+            tax=INCLUDED,
+            quantity=1,
+            contingency="0",
+        ).unit_price.amount == Decimal("1000.00")
+        actual = price_quote(QuoteInput(USD, (final_a, final_b, labor)))
+    assert actual == expected
+    assert actual.total == Decimal("2142.38")
+
+
+def test_tiny_fixed_discount_changes_half_cent_rounding() -> None:
+    line = _line(
+        "BOUNDARY-FICT",
+        amount="0.005",
+        tax=NO_TAX,
+        contingency="0",
+        quantity=1,
+        discount=Discount("DISC-FICT-TINY", amount_per_unit=Money(Decimal("1E-200"), USD)),
+    )
+    result = price_line(line)
+    assert result.discount_unit == Decimal("1E-200")
+    assert result.amount_after_discount < Decimal("0.005")
+    assert result.rounded_unit == Decimal("0.00")
+    with localcontext() as hostile:
+        hostile.prec = 2
+        hostile.Emin = -2
+        hostile.Emax = 2
+        for signal in (Inexact, Rounded, Underflow, Subnormal, Clamped):
+            hostile.traps[signal] = True
+        assert price_line(line) == result
+
+
+def test_reject_malformed_discount_objects() -> None:
+    with pytest.raises(ValueError, match="Discount object"):
+        replace(_line(), discount="5%")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="Money"):
+        Discount("DISC-FICT", amount_per_unit="1")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="exactly one"):
+        Discount("DISC-FICT", rate=Decimal("0.05"), amount_per_unit=Money(Decimal(1), USD))
+    with pytest.raises(ValueError, match="finite"):
+        Discount("DISC-FICT", rate=float("nan"))  # type: ignore[arg-type]
+
+
+def test_accepted_scale_limit_matches_exact_rational_oracle() -> None:
+    near_one = Decimal("0." + "9" * 1000)
+    line = PriceLine(
+        "SCALE-FICT",
+        LineKind.EQUIPMENT,
+        PriceBasis.NET,
+        Money(near_one, USD),
+        1,
+        TaxPolicy(TaxTreatment.EXCLUDED, near_one, "RULE-FICT-SCALE"),
+        "PRICE-FICT-SCALE",
+        near_one,
+        Discount("DISC-FICT-SCALE", rate=near_one),
+    )
+    result = price_line(line)
+    exact = Fraction(near_one) * (1 + Fraction(near_one))
+    exact *= (1 - Fraction(near_one)) * (1 + Fraction(near_one))
+    assert result.unrounded_unit is not None
+    assert Fraction(result.unrounded_unit) == exact
+    assert result.rounded_unit == Decimal("0.00")

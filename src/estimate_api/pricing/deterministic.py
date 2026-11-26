@@ -7,11 +7,36 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal, InvalidOperation, localcontext
+from decimal import (
+    ROUND_HALF_EVEN,
+    ROUND_HALF_UP,
+    Context,
+    Decimal,
+    DivisionByZero,
+    InvalidOperation,
+    Overflow,
+    localcontext,
+)
 from enum import StrEnum
 
 MAX_UNIT_AMOUNT = Decimal("1000000000000000000")
 MAX_QUANTITY = 1_000_000_000
+MAX_QUOTE_LINES = 1_000_000
+
+# Accepted inputs have <=1000 coefficient digits and |exponent|<=1000.
+# Unit amount <=10^18; contingency, discount and tax rates <=1. The deepest
+# multiplication is (price * contingency * discount * tax), so its scale can
+# reach 4000 places. Every intermediate is <=4*10^18, hence <4020 digits.
+# 4096 significant digits and exponent limits wider than +/-4000 guarantee
+# exact intermediates before the one intentional currency quantization.
+# A quote has <=10^6 lines of <=10^9 units, bounding its total below 4*10^33.
+_CALC_CONTEXT = Context(
+    prec=4096,
+    rounding=ROUND_HALF_EVEN,
+    Emin=-10000,
+    Emax=10000,
+    traps=[InvalidOperation, DivisionByZero, Overflow],
+)
 
 
 def _ref(value: object, name: str) -> None:
@@ -48,7 +73,20 @@ class CurrencyPolicy:
 
     @property
     def quantum(self) -> Decimal:
-        return Decimal(1).scaleb(-self.minor_units)
+        return Decimal((0, (1,), -self.minor_units))
+
+
+def _fits_currency_precision(amount: Decimal, currency: CurrencyPolicy) -> bool:
+    """Check final-price precision from coefficient/exponent without arithmetic context."""
+    if amount.is_zero():
+        return True
+    digits = amount.as_tuple().digits
+    exponent = amount.as_tuple().exponent
+    assert isinstance(exponent, int)
+    trailing_needed = -currency.minor_units - exponent
+    return trailing_needed <= 0 or (
+        trailing_needed <= len(digits) and all(digit == 0 for digit in digits[-trailing_needed:])
+    )
 
 
 @dataclass(frozen=True)
@@ -147,6 +185,8 @@ class PriceLine:
         ):
             raise ValueError("quantity must be a positive bounded integer")
         _decimal(self.contingency_rate, "contingency rate", maximum=Decimal(1))
+        if self.discount is not None and not isinstance(self.discount, Discount):
+            raise ValueError("discount must be a Discount object")
         if self.discount and self.discount.amount_per_unit:
             if self.discount.amount_per_unit.currency != self.unit_price.currency:
                 raise ValueError("discount and price currencies differ")
@@ -157,9 +197,7 @@ class PriceLine:
                 raise ValueError("confirmed final prices cannot receive another adjustment")
             if self.tax.treatment == TaxTreatment.EXCLUDED:
                 raise ValueError("confirmed final price cannot require added tax")
-            if self.unit_price.amount != self.unit_price.amount.quantize(
-                self.unit_price.currency.quantum
-            ):
+            if not _fits_currency_precision(self.unit_price.amount, self.unit_price.currency):
                 raise ValueError("confirmed final price exceeds currency precision")
         elif self.basis == PriceBasis.TAX_INCLUDED:
             if self.tax.treatment != TaxTreatment.INCLUDED:
@@ -194,6 +232,8 @@ class QuoteInput:
             isinstance(line, PriceLine) for line in self.lines
         ):
             raise ValueError("quote lines must be a tuple of PriceLine")
+        if len(self.lines) > MAX_QUOTE_LINES:
+            raise ValueError("quote exceeds supported line count")
 
 
 @dataclass(frozen=True)
@@ -207,17 +247,7 @@ class PricedQuote:
 
 def price_line(line: PriceLine) -> PricedLine:
     """Calculate exactly one unit, quantize, then multiply its rounded price."""
-    with localcontext() as context:
-        numeric_inputs = [line.unit_price.amount, line.contingency_rate]
-        if line.discount is not None:
-            if line.discount.rate is not None:
-                numeric_inputs.append(line.discount.rate)
-            else:
-                assert line.discount.amount_per_unit is not None
-                numeric_inputs.append(line.discount.amount_per_unit.amount)
-        if line.tax.rate is not None:
-            numeric_inputs.append(line.tax.rate)
-        context.prec = max(50, sum(len(value.as_tuple().digits) for value in numeric_inputs) + 20)
+    with localcontext(_CALC_CONTEXT):
         contingency = line.unit_price.amount * line.contingency_rate
         adjusted = line.unit_price.amount + contingency
         discount = Decimal(0)
@@ -292,11 +322,14 @@ def price_quote(quote: QuoteInput) -> PricedQuote:
         raise ValueError("quote cannot mix currencies or rounding policies")
     priced = tuple(price_line(line) for line in quote.lines)
     pending = tuple(line.input.line_id for line in priced if line.status == PriceStatus.PENDING)
-    total = (
-        None
-        if pending
-        else sum((line.line_total for line in priced if line.line_total is not None), Decimal(0))
-    )
+    with localcontext(_CALC_CONTEXT):
+        total = (
+            None
+            if pending
+            else sum(
+                (line.line_total for line in priced if line.line_total is not None), Decimal(0)
+            )
+        )
     return PricedQuote(
         quote, PriceStatus.PENDING if pending else PriceStatus.PRICED, priced, total, pending
     )
