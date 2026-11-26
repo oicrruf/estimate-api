@@ -4,7 +4,7 @@ Estimate Agent API bootstrap (AT-207), based on [ADR 0001](docs/adr/0001-arquite
 
 ## Contract
 
-`contracts/openapi.json` is the canonical deterministic OpenAPI 3.1 artifact, version `0.1.0`. The only application operation is `GET /health` (`operationId: health`), returning HTTP 200 JSON `{"status":"ok"}`. `/openapi.json` and FastAPI documentation routes are framework documentation. Health reports process liveness only.
+`contracts/openapi.json` is the canonical deterministic OpenAPI 3.1 artifact, version `0.1.0`. `GET /health` (`operationId: health`) returns HTTP 200 JSON `{"status":"ok"}`. `POST /v1/chat/intake-preview` (`operationId: previewChatIntake`) returns an unpersisted scope proposal for review. `/openapi.json` and FastAPI documentation routes are framework documentation. Health reports process liveness only.
 
 The `estimate-app` repository must pin this file from a known API commit or `develop` and generate its TypeScript client from it. Its CI should fetch the canonical API artifact live, compare it to the tracked frontend reference, regenerate TypeScript, and fail on either drift. Comparing a digest of only the local copy cannot detect upstream API changes. If a pinned commit is used, update it deliberately in a coordinated PR. No other domain endpoints are specified here.
 
@@ -38,6 +38,17 @@ Follow [AGENTS.md](AGENTS.md). OpenSpec uses `spec-driven` in `openspec/config.y
 ## AT-246 scope capture
 
 `src/estimate_api/domain/scope_capture` contains a versioned scope-draft contract and an adapter to the universal project document. It uses synthetic examples and has no persistence or external service access. See `openspec/changes/archive/2026-11-26-at-246-scope-capture/` for the specification.
+
+## AT-237 vista previa desde chat
+
+La ruta `POST /v1/chat/intake-preview` recibe el objeto estructurado `operation: "create_project"` e `intake` del contrato AT-246. La descripción sirve de contexto y no se interpreta con un modelo. Prueba local, sin cuentas ni claves:
+
+```sh
+uv run --frozen --extra dev uvicorn estimate_api.app:app --host 127.0.0.1 --port 8000
+curl -sS -X POST http://127.0.0.1:8000/v1/chat/intake-preview -H 'Content-Type: application/json' -d '{"operation":"create_project","intake":{"description":"Instalar cámaras en una oficina ficticia."}}'
+```
+
+La respuesta indica `scope_review_pending`, `review_required: true`, `persisted: false` y `project_id: null`; las preguntas y los posibles artículos de compra son propuestas, no aprobaciones. Se rechazan campos de confirmación y cambios a proyectos existentes. La dependencia `ScopePreviewService` permite conectar descubrimiento AT-240 sin duplicar sus reglas. A2UI AT-248 consumirá esta salida; guardar o modificar alcance requerirá SQL/RBAC AT-208/209 y el control de confirmación/concurrencia AT-254. Este tramo no conserva conversación ni crea BOM o escenarios.
 
 ## AT-227 demo local
 
