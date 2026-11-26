@@ -1,0 +1,44 @@
+{
+  "notice": "DATOS Y PRECIOS FICTICIOS; no representan catálogo, inventario ni clientes reales",
+  "datasetId": "estimate-hackathon-v1",
+  "requirements": [
+    {"id":"REQ-SWITCH","domain":"network","name":"Switch para ocho cámaras PoE y uplink separado","quantity":1,"constraints":{"poePortsMin":8,"distinctUplinkPorts":1,"totalPortsMin":9,"poeBudgetWMin":48}},
+    {"id":"REQ-CAMERA","domain":"network","name":"Cuatro cámaras de 4 MP con alimentación PoE","quantity":4,"constraints":{"resolutionMpMin":4,"power":"PoE"}},
+    {"id":"REQ-NVR","domain":"network","name":"Grabador para cuatro cámaras","quantity":1,"constraints":{"channelsMin":4}},
+    {"id":"REQ-UPS-SMOKE","domain":"power","name":"UPS de al menos 1000 VA","quantity":1,"constraints":{"capacityVaMin":1000}}
+  ],
+  "products": [
+    {"id":"SW-8","kind":"switch","name":"Switch 8 puertos ficticio","capabilities":{"totalPorts":8,"poePorts":8,"poeBudgetW":120}},
+    {"id":"SW-16","kind":"switch","name":"Switch 16 puertos ficticio","capabilities":{"totalPorts":16,"poePorts":8,"poeBudgetW":150}},
+    {"id":"CAM-POE","kind":"camera","name":"Cámara 4 MP PoE ficticia","poolId":"POOL-CAM-POE","poolCapacity":2,"capabilities":{"resolutionMp":4,"power":"PoE","drawW":12}},
+    {"id":"CAM-12V","kind":"camera","name":"Cámara 4 MP 12 V ficticia","requiredAccessories":["AD-12V"],"capabilities":{"resolutionMp":4,"power":"12V","drawW":10}},
+    {"id":"CAM-ALT","kind":"camera","name":"Cámara alternativa 4 MP PoE ficticia","capabilities":{"resolutionMp":4,"power":"PoE","drawW":10}},
+    {"id":"CAM-UNKNOWN","kind":"camera","name":"Cámara con consumo sin documentar","capabilities":{"resolutionMp":4,"power":"PoE"}},
+    {"id":"NVR-8","kind":"recorder","name":"Grabador 8 canales ficticio","capabilities":{"channels":8}},
+    {"id":"NVR-4","kind":"recorder","name":"Grabador 4 canales ficticio","capabilities":{"channels":4}},
+    {"id":"UPS-1500","kind":"ups","name":"UPS 1500 VA ficticio","capabilities":{"capacityVa":1500}},
+    {"id":"UPS-600","kind":"ups","name":"UPS 600 VA ficticio","capabilities":{"capacityVa":600}}
+  ],
+  "accessories": [
+    {"id":"AD-12V","name":"Adaptador 12 V ficticio","requiredFor":"CAM-12V","offered":false}
+  ],
+  "offers": [
+    {"id":"OFF-SW8","productId":"SW-8","priceUsd":80,"quantity":5,"seller":"Proveedor ficticio A"},
+    {"id":"OFF-SW16","productId":"SW-16","priceUsd":160,"quantity":3,"seller":"Proveedor ficticio B"},
+    {"id":"OFF-CAM-A","productId":"CAM-POE","priceUsd":42,"quantity":2,"poolId":"POOL-CAM-POE","seller":"Proveedor ficticio A"},
+    {"id":"OFF-CAM-B","productId":"CAM-POE","priceUsd":45,"quantity":2,"poolId":"POOL-CAM-POE","seller":"Proveedor ficticio B"}
+  ],
+  "evidence": [
+    {"id":"EV-SW8","productId":"SW-8","source":"ficha técnica ficticia SW-8","claims":{"totalPorts":8,"poePorts":8,"poeBudgetW":120}},
+    {"id":"EV-SW16","productId":"SW-16","source":"ficha técnica ficticia SW-16","claims":{"totalPorts":16,"poePorts":8,"poeBudgetW":150}},
+    {"id":"EV-CAM-POE","productId":"CAM-POE","source":"ficha técnica ficticia CAM-POE","claims":{"resolutionMp":4,"power":"PoE","drawW":12}},
+    {"id":"EV-CAM-12V","productId":"CAM-12V","source":"ficha técnica ficticia CAM-12V","claims":{"resolutionMp":4,"power":"12V","drawW":10,"adapter":"AD-12V"}},
+    {"id":"EV-CAM-ALT","productId":"CAM-ALT","source":"ficha técnica ficticia CAM-ALT","claims":{"resolutionMp":4,"power":"PoE","drawW":10}},
+    {"id":"EV-CAM-UNKNOWN","productId":"CAM-UNKNOWN","source":"ficha técnica ficticia incompleta CAM-UNKNOWN","claims":{"resolutionMp":4,"power":"PoE"}},
+    {"id":"EV-NVR-8","productId":"NVR-8","source":"ficha técnica ficticia NVR-8","claims":{"channels":8}},
+    {"id":"EV-NVR-4","productId":"NVR-4","source":"ficha técnica ficticia NVR-4","claims":{"channels":4}},
+    {"id":"EV-UPS-1500","productId":"UPS-1500","source":"ficha técnica ficticia UPS-1500","claims":{"capacityVa":1500}},
+    {"id":"EV-UPS-600","productId":"UPS-600","source":"ficha técnica ficticia UPS-600","claims":{"capacityVa":600}},
+    {"id":"EV-POOL-CAM","productId":"CAM-POE","source":"inventario conjunto ficticio","claims":{"poolId":"POOL-CAM-POE","capacity":2}}
+  ]
+}
