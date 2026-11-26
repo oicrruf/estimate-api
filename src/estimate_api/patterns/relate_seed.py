@@ -36,6 +36,10 @@ def seed_patterns(connection: Any, patterns: list[Pattern]) -> None:
             f"MERGE (a)-[:HAS_ROOT]->(b)"
         )
         for edge in pattern["dependencies"]:
+            connection.execute(
+                f"MERGE (n:PATTERN_SOURCE {{id: {_literal(edge['sourceRef'])}}}) "
+                f"SET n.kind = 'synthetic_fixture'"
+            )
             for item_id in (edge["fromId"], edge["toId"]):
                 connection.execute(f"MERGE (n:PATTERN_ITEM {{id: {_literal(item_id)}}})")
             connection.execute(f"MERGE (n:PATTERN_RULE {{id: {_literal(edge['ruleId'])}}})")

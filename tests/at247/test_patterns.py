@@ -279,3 +279,16 @@ def test_relate_seed_idempotent_and_evidence_path(tmp_path: Path) -> None:
     conn = relate.connect(str(tmp_path / "patterns.db"))
     assert conn.execute("MATCH (n) RETURN count(n) AS n").single()["n"] == nodes
     conn.close()
+
+
+def test_relate_preserves_dependency_specific_source(tmp_path: Path) -> None:
+    pattern = copy.deepcopy(BY_NAME["power"])
+    pattern["dependencies"][0]["sourceRef"] = "synthetic://at-247/power-rule/1.0.0"
+    conn = relate.connect(str(tmp_path / "rule-source.db"))
+    seed_patterns(conn, [pattern])
+    rows = conn.execute(
+        "MATCH (r:PATTERN_RULE {id: 'AT247-POWER_SOURCE'})-[:SUPPORTED_BY]->"
+        "(s:PATTERN_SOURCE) RETURN s.id AS source"
+    ).data()
+    assert rows == [{"source": "synthetic://at-247/power-rule/1.0.0"}]
+    conn.close()
