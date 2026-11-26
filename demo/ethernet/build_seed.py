@@ -57,11 +57,10 @@ for endpoint in fixture["topology"]["endpoints"]:
         ("EVIDENCE", endpoint["evidenceId"]),
         "RULE-INPUT",
     )
+node("ENDPOINT", "SWITCH", medium="switch")
 for port_id, port in fixture["topology"]["ports"].items():
     node("PORT", port_id, poeCapable=port["poeCapable"])
-    if port["endpointId"] != "SWITCH":
-        edge(("ENDPOINT", port["endpointId"]), "CONNECTS_TO", ("PORT", port_id), "RULE-PORT-OWNER")
-node("ENDPOINT", "SWITCH", medium="switch")
+    edge(("ENDPOINT", port["endpointId"]), "CONNECTS_TO", ("PORT", port_id), "RULE-PORT-OWNER")
 node("REQUIREMENT", "REQ-POE-CABLE", kind="poe_cable")
 node("REQUIREMENT", "REQ-CAT6", kind="category")
 for cable in fixture["catalog"]["cables"]:

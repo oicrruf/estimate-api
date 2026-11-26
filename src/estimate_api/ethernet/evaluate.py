@@ -109,6 +109,9 @@ def evaluate_topology(catalog: dict[str, Any], topology: dict[str, Any]) -> dict
                 }
             )
             continue
+        count = _integer(run.get("cableCount", 1), "cableCount")
+        if count != 1:
+            raise ValueError("Cada enlace punto a punto requiere exactamente un cable")
         link["originPortId"] = run.get("originPortId")
         link["destinationPortId"] = run.get("destinationPortId")
         for side in ("originPortId", "destinationPortId"):
@@ -253,16 +256,13 @@ def evaluate_topology(catalog: dict[str, Any], topology: dict[str, Any]) -> dict
                     "evidenceIds": [run["evidenceId"]],
                 }
             )
-        count = _integer(run.get("cableCount", 1), "cableCount")
-        if count == 0:
-            raise ValueError("cableCount debe ser positivo")
         route_m = sum((_number(value, "sectionLengthM") for value in sections), Decimal(0))
         slack_m = _number(run.get("slackPerEndM", 0), "slackPerEndM", zero=True)
         waste = _number(run.get("wasteFraction", 0), "wasteFraction", zero=True)
-        required_m = (route_m + 2 * slack_m) * (1 + waste) * count
+        required_m = (route_m + 2 * slack_m) * (1 + waste)
         link["requiredLengthM"] = str(required_m)
         totals[cable["id"]] += required_m
-        cut_lengths[cable["id"]].extend([required_m / count] * count)
+        cut_lengths[cable["id"]].append(required_m)
         if run.get("channelLimitVerified") is not True:
             result["pending"].append(
                 {"linkId": link_id, "field": "channel_limit", "evidenceIds": [run["evidenceId"]]}

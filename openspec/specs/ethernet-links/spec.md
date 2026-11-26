@@ -21,6 +21,8 @@ El sistema SHALL exigir enlace para cada extremo PoE, backhaul cableado confirma
 
 El sistema SHALL sumar longitudes de secciones medidas, holgura y desperdicio explícitos por enlace. SHALL conservar rutas no medidas como pendientes sin añadir metros ficticios.
 
+Cada enlace punto a punto SHALL asignar exactamente un cable a un par de puertos. Los cables paralelos SHALL requerir enlaces y puertos distintos.
+
 #### Scenario: Aumento de cámaras
 
 - **GIVEN** una ruta medida y cámaras nuevas sin trayecto
@@ -40,6 +42,7 @@ El sistema SHALL identificar cable, terminaciones, puerto y ambiente incompatibl
 ### Requirement: Relate reproducible
 
 La fixture SHALL crear caminos de extremo a enlace, cable y evidencia mediante `MERGE`, sin borrar otros datos.
+También SHALL conservar la propiedad del switch sobre sus puertos en el grafo.
 
 #### Scenario: Segunda carga
 

@@ -30,10 +30,15 @@ MATCH (a:ENDPOINT {id: "MESH-2"}), (b:EVIDENCE {id: "EV-MESH-2"}) MERGE (a)-[:SU
 MERGE (n:ENDPOINT {id: "ROUTER"}) SET n += {datasetId: "at-239-synthetic-v1", medium: "wifi_solar"};
 MERGE (n:EVIDENCE {id: "EV-ROUTER"}) SET n += {datasetId: "at-239-synthetic-v1", kind: "synthetic_topology"};
 MATCH (a:ENDPOINT {id: "ROUTER"}), (b:EVIDENCE {id: "EV-ROUTER"}) MERGE (a)-[:SUPPORTED_BY {ruleId: "RULE-INPUT"}]->(b);
+MERGE (n:ENDPOINT {id: "SWITCH"}) SET n += {datasetId: "at-239-synthetic-v1", medium: "switch"};
 MERGE (n:PORT {id: "SW-1"}) SET n += {datasetId: "at-239-synthetic-v1", poeCapable: true};
+MATCH (a:ENDPOINT {id: "SWITCH"}), (b:PORT {id: "SW-1"}) MERGE (a)-[:CONNECTS_TO {ruleId: "RULE-PORT-OWNER"}]->(b);
 MERGE (n:PORT {id: "SW-2"}) SET n += {datasetId: "at-239-synthetic-v1", poeCapable: true};
+MATCH (a:ENDPOINT {id: "SWITCH"}), (b:PORT {id: "SW-2"}) MERGE (a)-[:CONNECTS_TO {ruleId: "RULE-PORT-OWNER"}]->(b);
 MERGE (n:PORT {id: "SW-3"}) SET n += {datasetId: "at-239-synthetic-v1", poeCapable: false};
+MATCH (a:ENDPOINT {id: "SWITCH"}), (b:PORT {id: "SW-3"}) MERGE (a)-[:CONNECTS_TO {ruleId: "RULE-PORT-OWNER"}]->(b);
 MERGE (n:PORT {id: "SW-UP"}) SET n += {datasetId: "at-239-synthetic-v1", poeCapable: false};
+MATCH (a:ENDPOINT {id: "SWITCH"}), (b:PORT {id: "SW-UP"}) MERGE (a)-[:CONNECTS_TO {ruleId: "RULE-PORT-OWNER"}]->(b);
 MERGE (n:PORT {id: "CAM-1-P"}) SET n += {datasetId: "at-239-synthetic-v1", poeCapable: true};
 MATCH (a:ENDPOINT {id: "CAM-1"}), (b:PORT {id: "CAM-1-P"}) MERGE (a)-[:CONNECTS_TO {ruleId: "RULE-PORT-OWNER"}]->(b);
 MERGE (n:PORT {id: "CAM-2-P"}) SET n += {datasetId: "at-239-synthetic-v1", poeCapable: true};
@@ -42,7 +47,6 @@ MERGE (n:PORT {id: "MESH-2-P"}) SET n += {datasetId: "at-239-synthetic-v1", poeC
 MATCH (a:ENDPOINT {id: "MESH-2"}), (b:PORT {id: "MESH-2-P"}) MERGE (a)-[:CONNECTS_TO {ruleId: "RULE-PORT-OWNER"}]->(b);
 MERGE (n:PORT {id: "ROUTER-P"}) SET n += {datasetId: "at-239-synthetic-v1", poeCapable: false};
 MATCH (a:ENDPOINT {id: "ROUTER"}), (b:PORT {id: "ROUTER-P"}) MERGE (a)-[:CONNECTS_TO {ruleId: "RULE-PORT-OWNER"}]->(b);
-MERGE (n:ENDPOINT {id: "SWITCH"}) SET n += {datasetId: "at-239-synthetic-v1", medium: "switch"};
 MERGE (n:REQUIREMENT {id: "REQ-POE-CABLE"}) SET n += {datasetId: "at-239-synthetic-v1", kind: "poe_cable"};
 MERGE (n:REQUIREMENT {id: "REQ-CAT6"}) SET n += {datasetId: "at-239-synthetic-v1", kind: "category"};
 MERGE (n:CABLE_TYPE {id: "CAT6-IN"}) SET n += {datasetId: "at-239-synthetic-v1", category: "Cat6", conductor: "solid_copper"};

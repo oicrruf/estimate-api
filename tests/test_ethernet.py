@@ -143,16 +143,27 @@ def test_unconfirmed_route_with_tentative_lengths_has_no_purchase_quantity() -> 
 
 def test_commercial_rolls_allocate_individual_cuts() -> None:
     topology = copy.deepcopy(FIXTURE["topology"])
-    first = topology["runs"][0]
-    first["sectionLengthsM"] = ["200"]
-    first["slackPerEndM"] = "0"
-    first["wasteFraction"] = "0"
-    first["cableCount"] = 2
+    for run in topology["runs"]:
+        run["routeConfirmed"] = True
+        run["sectionLengthsM"] = ["200"]
+        run["slackPerEndM"] = "0"
+        run["wasteFraction"] = "0"
     result = evaluate_topology(FIXTURE["catalog"], topology)
     material = result["materials"][0]
     assert material["requiredLengthM"] == "400"
     assert material["commercialRolls"] == 2
     assert material["purchasedLengthM"] == "610"
+
+
+def test_multi_cable_run_requires_distinct_links_and_ports() -> None:
+    topology = copy.deepcopy(FIXTURE["topology"])
+    topology["runs"][0]["cableCount"] = 2
+    try:
+        evaluate_topology(FIXTURE["catalog"], topology)
+    except ValueError as exc:
+        assert "exactamente un cable" in str(exc)
+    else:
+        raise AssertionError("Se aceptaron dos cables con un solo par de puertos")
 
 
 def _statements() -> list[str]:
@@ -194,4 +205,9 @@ def test_real_relate_paths_and_idempotence() -> None:
             {"link": "LINK-CAM-1", "cable": "CAT6-IN", "evidence": "EV-CAT6-IN"},
             {"link": "LINK-CAM-2", "cable": "CAT6-IN", "evidence": "EV-CAT6-IN"},
         ]
+        ownership = conn.execute(
+            'MATCH (e:ENDPOINT {id: "SWITCH"})-[:CONNECTS_TO]->(p:PORT) '
+            "RETURN p.id AS port ORDER BY port"
+        ).data()
+        assert [row["port"] for row in ownership] == ["SW-1", "SW-2", "SW-3", "SW-UP"]
         conn.close()

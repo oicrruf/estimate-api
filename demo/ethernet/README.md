@@ -20,3 +20,5 @@ La medida de ejemplo de CAM-1 suma 12 + 8 m, 1 m de holgura en cada extremo y 5 
 de desperdicio: 23,10 m requeridos. El resto de enlaces conserva longitud desconocida.
 Los rollos son una asignación determinista de cortes individuales; el sobrante es
 potencialmente recuperable, sujeto a revisión de instalación.
+Cada enlace punto a punto acepta un cable y un par de puertos; los cables paralelos
+requieren enlaces y asignaciones de puertos separados.
