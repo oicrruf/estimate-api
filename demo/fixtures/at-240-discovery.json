@@ -1,0 +1,34 @@
+{
+  "notice": "Proyecto y reglas totalmente ficticios; no son consejo técnico ni catálogo comercial",
+  "project": {
+    "project_id": "camera:goal",
+    "domain": "synthetic_network",
+    "jurisdiction": "TEST-ZONE-A",
+    "goal": "Instalar ocho cámaras IP PoE, dos nodos mesh y un switch en una oficina ficticia",
+    "needs": [
+      {"key": "camera", "quantity": 8, "unit": "each"},
+      {"key": "mesh_node", "quantity": 2, "unit": "each"},
+      {"key": "switch", "quantity": 1, "unit": "each"}
+    ],
+    "facts": {"link_design": "wired", "pathway": "EMT"},
+    "assumptions": {"site": "Oficina ficticia; distancias y condiciones aún no medidas"}
+  },
+  "package": {
+    "domain": "synthetic_network",
+    "jurisdiction": "TEST-ZONE-A",
+    "version": "1.0.0",
+    "registry_package_id": "catalog:camera-v1",
+    "source": "AT-229 synthetic evidence + AT-240 illustrative pattern",
+    "rules": [
+      {"id":"r01","source_key":"camera","target_key":"ethernet_link","kind":"material","work_package":"links","relation":"CONNECTS_TO","evidence":"REQ-CAMERA/EV-CAM-POE; illustrative topology only","evidence_ids":["EV-CAM-POE"],"quantity_mode":"same","unit":"link","when_fact":"link_design","when_value":"wired"},
+      {"id":"r02","source_key":"ethernet_link","target_key":"cable_length","kind":"material","work_package":"links","relation":"REQUIRES","evidence":"Link length requires site measurement","quantity_mode":"pending","unit":"m","question":"¿Cuál es la longitud medida de cada enlace y su ruta?"},
+      {"id":"r03","source_key":"ethernet_link","target_key":"termination","kind":"accessory","work_package":"terminations","relation":"TERMINATES_AT","evidence":"Two ends per illustrated link, subject to specialist validation","quantity_mode":"multiply","factor":2,"unit":"each"},
+      {"id":"r04","source_key":"camera","target_key":"mount","kind":"accessory","work_package":"mounting","relation":"MOUNTED_ON","evidence":"Illustrative mount dependency; verify site surface","quantity_mode":"same","unit":"each"},
+      {"id":"r05","source_key":"ethernet_link","target_key":"pathway_length","kind":"material","work_package":"pathway","relation":"INSTALLED_WITH","evidence":"EMT path requires site measurement","quantity_mode":"pending","unit":"m","question":"¿Qué tramo requiere EMT según el recorrido y las condiciones del sitio?","when_fact":"pathway","when_value":"EMT"},
+      {"id":"r06","source_key":"switch","target_key":"power_protection","kind":"equipment","work_package":"power","relation":"REQUIRES_POWER","evidence":"Illustrative powered equipment dependency; sizing pending","quantity_mode":"pending","unit":"each","question":"¿Cuál es la carga y protección eléctrica existente?"},
+      {"id":"r07","source_key":"switch","target_key":"cabinet","kind":"equipment","work_package":"cabinet","relation":"INSTALLED_WITH","evidence":"Illustrative cabinet option for this fixture; validate placement","quantity_mode":"fixed","factor":1,"unit":"each","required":false},
+      {"id":"r08","source_key":"camera","target_key":"configure_test","kind":"service","work_package":"commissioning","relation":"REQUIRES","evidence":"Illustrative commissioning work package","quantity_mode":"fixed","factor":1,"unit":"service"},
+      {"id":"r09","source_key":"mesh_node","target_key":"mesh_power","kind":"equipment","work_package":"power","relation":"REQUIRES_POWER","evidence":"Power arrangement pending","quantity_mode":"pending","unit":"each","question":"¿Cómo se alimentarán los nodos mesh?"}
+    ]
+  }
+}

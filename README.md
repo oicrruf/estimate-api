@@ -112,6 +112,9 @@ has its own seed, server, and query commands.
 - [Scope capture (AT-246)](openspec/specs/scope-capture/spec.md) and
   [global consistency checks (AT-267)](openspec/specs/global-solution-consistency/spec.md):
   local contracts and checks that keep unknown facts pending.
+- [Scope discovery and review (AT-240)](docs/hackathon/handoff-at-240.md): local
+  service entry points, synthetic rules, provenance, and revalidation; there is
+  no review HTTP endpoint or persisted approval yet.
 - [Installation patterns (AT-247)](docs/at-247-installation-patterns.md),
   [service templates (AT-259)](docs/at-259-service-templates.md), and
   [synthetic Ethernet links (AT-239)](demo/ethernet/README.md): local technical

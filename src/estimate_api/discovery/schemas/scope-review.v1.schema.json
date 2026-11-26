@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://estimate-agent.invalid/schemas/scope-review.v1.schema.json",
+  "title": "Scope review v1 transport contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "projectId", "revision", "status", "commercialReady", "lines", "questions", "blockingFacts", "technicalBlockers", "workPackages", "evidencePaths", "changes", "hardware", "ethernet", "coverage", "constraints"],
+  "properties": {
+    "schemaVersion": {"const": "scope-review.v1"},
+    "projectId": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "status": {"enum": ["proposed", "approved", "blocked", "pending_specialist"]},
+    "commercialReady": {"type": "boolean"},
+    "lines": {"type": "array", "items": {"$ref": "#/$defs/line"}},
+    "questions": {"type": "array", "items": {"type": "string"}},
+    "blockingFacts": {"type": "array", "items": {"type": "string"}},
+    "technicalBlockers": {"type": "array", "items": {"type": "string"}},
+    "workPackages": {"type": "object", "additionalProperties": {"enum": ["complete", "incomplete", "pending"]}},
+    "evidencePaths": {"type": "array", "items": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "string"}}},
+    "changes": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["key", "change"], "properties": {"key": {"type": "string"}, "change": {"enum": ["added", "removed", "changed", "approval_stale"]}}}},
+    "hardware": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/hardware"}]},
+    "ethernet": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ethernet"}]},
+    "constraints": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/constraints"}]},
+    "coverage": {"type": "object", "additionalProperties": false, "required": ["status", "packageIds", "reasons"], "properties": {"status": {"enum": ["cataloged", "unsupported", "pending_specialist"]}, "packageIds": {"type": "array", "items": {"type": "string"}}, "reasons": {"type": "array", "items": {"type": "string"}}}}
+  },
+  "$defs": {
+    "constraints": {"type": "object", "additionalProperties": false, "required": ["status", "requiredCheckIds", "missingCheckIds", "reason", "findings"], "properties": {"status": {"enum": ["pass", "fail", "pending"]}, "requiredCheckIds": {"type": "array", "items": {"type": "string"}}, "missingCheckIds": {"type": "array", "items": {"type": "string"}}, "reason": {"type": ["string", "null"]}, "findings": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["checkId", "kind", "status", "blocking", "reason", "subjectId", "packageId", "sources"], "properties": {"checkId": {"type": "string"}, "kind": {"type": "string"}, "status": {"enum": ["pass", "fail", "pending"]}, "blocking": {"type": "boolean"}, "reason": {"type": "string"}, "subjectId": {"type": "string"}, "packageId": {"type": "string"}, "sources": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["entityId", "revision", "evidenceIds"], "properties": {"entityId": {"type": "string"}, "revision": {"type": "integer"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}}}}}}},
+    "ethernet": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "links", "materials", "pending", "incompatible", "professionalValidationRequired", "graphLinkPaths", "materialTotalsComplete"],
+      "properties": {
+        "status": {"enum": ["PENDING", "REVIEW_REQUIRED", "DERIVED"]},
+        "links": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "reason", "requiredLengthM", "evidenceIds"], "properties": {"id": {"type": "string"}, "status": {"type": "string"}, "reason": {"type": "string"}, "requiredLengthM": {"type": ["string", "null"]}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}},
+        "materials": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["cableId", "requiredLengthM", "commercialRolls", "ruleId", "evidenceIds"], "properties": {"cableId": {"type": "string"}, "requiredLengthM": {"type": "string"}, "commercialRolls": {"type": ["integer", "null"], "minimum": 0}, "ruleId": {"type": "string"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}},
+        "pending": {"type": "array", "items": {"type": "string"}},
+        "incompatible": {"type": "array", "items": {"type": "string"}},
+        "professionalValidationRequired": {"type": "boolean"},
+        "materialTotalsComplete": {"type": "boolean"},
+        "graphLinkPaths": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["linkId", "endpointId", "evidenceId", "status"], "properties": {"linkId": {"type": "string"}, "endpointId": {"type": ["string", "null"]}, "evidenceId": {"type": ["string", "null"]}, "status": {"enum": ["required_link_context", "unknown"]}}}}
+      }
+    },
+    "hardware": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "lines", "missing", "incompatible", "pending", "professionalValidationRequired"],
+      "properties": {
+        "status": {"enum": ["PENDING", "REVIEW_REQUIRED", "DERIVED"]},
+        "lines": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["materialId", "family", "quantity", "unit", "ruleId", "evidenceIds"], "properties": {"materialId": {"type": "string"}, "family": {"type": "string"}, "quantity": {"type": "integer", "minimum": 1}, "unit": {"type": "string"}, "ruleId": {"type": "string"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}},
+        "missing": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["family", "quantity", "ruleId", "evidenceIds", "alternatives"], "properties": {"family": {"type": "string"}, "quantity": {"type": "integer", "minimum": 1}, "ruleId": {"type": "string"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}, "alternatives": {"type": "array", "items": {"type": "string"}}}}},
+        "incompatible": {"type": "array", "items": {"type": "string"}},
+        "pending": {"type": "array", "items": {"type": "string"}},
+        "professionalValidationRequired": {"type": "boolean"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "source", "capabilityPaths"],
+      "properties": {
+        "id": {"type": "string"},
+        "status": {"enum": ["capability_context", "node_only", "unknown"]},
+        "source": {"type": ["string", "null"]},
+        "capabilityPaths": {"type": "array", "items": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "string"}}}
+      }
+    },
+    "line": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key", "kind", "workPackage", "quantity", "unit", "state", "required", "justification", "ruleId", "packageVersion", "jurisdiction", "source", "parentKey", "relation", "evidence", "evidenceStatus", "actions", "ruleIds", "sourceRefs", "candidatePaths", "patternId", "graphRulePaths", "ruleProvenance"],
+      "properties": {
+        "key": {"type": "string"},
+        "kind": {"enum": ["equipment", "material", "accessory", "consumable", "service", null]},
+        "workPackage": {"type": "string"},
+        "quantity": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "unit": {"type": "string"},
+        "state": {"enum": ["user_requested", "agent_proposed", "user_approved", "rejected", "pending_measurement"]},
+        "required": {"type": "boolean"},
+        "justification": {"type": "string"},
+        "ruleId": {"type": ["string", "null"]},
+        "packageVersion": {"type": ["string", "null"]},
+        "jurisdiction": {"type": ["string", "null"]},
+        "source": {"type": ["string", "null"]},
+        "parentKey": {"type": ["string", "null"]},
+        "relation": {"type": ["string", "null"]},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "evidenceStatus": {"enum": ["capability_context", "unknown"]},
+        "actions": {"type": "array", "uniqueItems": true, "items": {"enum": ["approve", "reject", "modify"]}},
+        "ruleIds": {"type": "array", "items": {"type": "string"}},
+        "sourceRefs": {"type": "array", "items": {"type": "string"}},
+        "candidatePaths": {"type": "array", "items": {"type": "array", "minItems": 2, "items": {"type": "string"}}},
+        "patternId": {"type": ["string", "null"]},
+        "graphRulePaths": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["patternId", "ruleId", "sourceRef", "status"], "properties": {"patternId": {"type": "string"}, "ruleId": {"type": "string"}, "sourceRef": {"type": ["string", "null"]}, "status": {"enum": ["rule_context", "unknown"]}}}},
+        "ruleProvenance": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["parentKey", "ruleId", "patternId", "evidenceIds", "ruleIds", "sourceRefs", "candidatePaths"], "properties": {"parentKey": {"type": "string"}, "ruleId": {"type": "string"}, "patternId": {"type": ["string", "null"]}, "evidenceIds": {"type": "array", "items": {"type": "string"}}, "ruleIds": {"type": "array", "items": {"type": "string"}}, "sourceRefs": {"type": "array", "items": {"type": "string"}}, "candidatePaths": {"type": "array", "items": {"type": "array", "minItems": 2, "items": {"type": "string"}}}}}}
+      }
+    }
+  }
+}

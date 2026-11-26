@@ -1,0 +1,256 @@
+{
+  "schemaVersion": "reviewed-packages.v1",
+  "synthetic": true,
+  "packages": [
+    {
+      "id": "catalog:camera-at266-v1",
+      "domain": "synthetic_network",
+      "jurisdiction": "TEST-ZONE-A",
+      "category": "fictional-camera",
+      "scope": {
+        "kind": "project",
+        "id": "camera:project"
+      },
+      "version": "1.0.0",
+      "source": "synthetic://at266/cameras",
+      "pattern": {
+        "id": "cameras-fixture-pattern",
+        "category": "fictional-camera",
+        "ref": "synthetic://at266/cameras/pattern"
+      },
+      "rules": [
+        {
+          "id": "camera:camera-to-link",
+          "sourceKey": "camera:camera",
+          "targetKey": "camera:link",
+          "quantityMode": "multiply",
+          "factor": 1,
+          "unit": "each",
+          "sourceRef": "synthetic://at266/cameras/camera:camera-to-link"
+        },
+        {
+          "id": "camera:link-to-termination",
+          "sourceKey": "camera:link",
+          "targetKey": "camera:termination",
+          "quantityMode": "multiply",
+          "factor": 2,
+          "unit": "each",
+          "sourceRef": "synthetic://at266/cameras/camera:link-to-termination"
+        },
+        {
+          "id": "camera:camera-to-conduit",
+          "sourceKey": "camera:camera",
+          "targetKey": "camera:conduit",
+          "quantityMode": "multiply",
+          "factor": 5,
+          "unit": "m",
+          "sourceRef": "synthetic://at266/cameras/camera:camera-to-conduit"
+        },
+        {
+          "id": "camera:camera-to-mount",
+          "sourceKey": "camera:camera",
+          "targetKey": "camera:mount",
+          "quantityMode": "multiply",
+          "factor": 1,
+          "unit": "each",
+          "sourceRef": "synthetic://at266/cameras/camera:camera-to-mount"
+        }
+      ],
+      "projectId": "camera:goal"
+    },
+    {
+      "id": "catalog:painting-at266-v1",
+      "domain": "synthetic_painting",
+      "jurisdiction": "TEST-ZONE-A",
+      "category": "fictional-paint",
+      "scope": {
+        "kind": "project",
+        "id": "painting:project"
+      },
+      "version": "1.0.0",
+      "source": "synthetic://at266/painting",
+      "pattern": {
+        "id": "painting-fixture-pattern",
+        "category": "fictional-paint",
+        "ref": "synthetic://at266/painting/pattern"
+      },
+      "rules": [
+        {
+          "id": "painting:area-to-coat",
+          "sourceKey": "painting:area",
+          "targetKey": "painting:coat",
+          "quantityMode": "multiply",
+          "factor": 2,
+          "unit": "m2",
+          "sourceRef": "synthetic://at266/painting/painting:area-to-coat"
+        },
+        {
+          "id": "painting:coat-to-paint",
+          "sourceKey": "painting:coat",
+          "targetKey": "painting:paint",
+          "quantityMode": "multiply",
+          "factor": 0.1,
+          "unit": "L",
+          "sourceRef": "synthetic://at266/painting/painting:coat-to-paint"
+        },
+        {
+          "id": "painting:area-to-masking",
+          "sourceKey": "painting:area",
+          "targetKey": "painting:masking",
+          "quantityMode": "fixed",
+          "factor": 2,
+          "unit": "roll",
+          "sourceRef": "synthetic://at266/painting/painting:area-to-masking"
+        }
+      ],
+      "projectId": "painting:goal"
+    },
+    {
+      "id": "catalog:event-at266-v1",
+      "domain": "synthetic_event",
+      "jurisdiction": "TEST-ZONE-A",
+      "category": "fictional-event",
+      "scope": {
+        "kind": "project",
+        "id": "event:project"
+      },
+      "version": "1.0.0",
+      "source": "synthetic://at266/event",
+      "pattern": {
+        "id": "event-fixture-pattern",
+        "category": "fictional-event",
+        "ref": "synthetic://at266/event/pattern"
+      },
+      "rules": [
+        {
+          "id": "event:speaker-to-cable",
+          "sourceKey": "event:speaker",
+          "targetKey": "event:cable",
+          "quantityMode": "multiply",
+          "factor": 1,
+          "unit": "each",
+          "sourceRef": "synthetic://at266/event/event:speaker-to-cable"
+        },
+        {
+          "id": "event:speaker-to-stand",
+          "sourceKey": "event:speaker",
+          "targetKey": "event:stand",
+          "quantityMode": "multiply",
+          "factor": 1,
+          "unit": "each",
+          "sourceRef": "synthetic://at266/event/event:speaker-to-stand"
+        },
+        {
+          "id": "event:speaker-to-mixer",
+          "sourceKey": "event:speaker",
+          "targetKey": "event:mixer",
+          "quantityMode": "fixed",
+          "factor": 1,
+          "unit": "each",
+          "sourceRef": "synthetic://at266/event/event:speaker-to-mixer"
+        },
+        {
+          "id": "event:mixer-to-technician",
+          "sourceKey": "event:mixer",
+          "targetKey": "event:technician",
+          "quantityMode": "fixed",
+          "factor": 2,
+          "unit": "person",
+          "sourceRef": "synthetic://at266/event/event:mixer-to-technician"
+        },
+        {
+          "id": "event:speaker-to-power-load",
+          "sourceKey": "event:speaker",
+          "targetKey": "event:power-load",
+          "quantityMode": "multiply",
+          "factor": 100,
+          "unit": "W",
+          "sourceRef": "synthetic://at266/event/event:speaker-to-power-load"
+        }
+      ],
+      "projectId": "event:goal"
+    }
+  ],
+  "patterns": [
+    {
+      "id": "at247:pattern:poe-camera",
+      "version": "1.0.0",
+      "category": "fictional-camera",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "sha256Parts": [
+        "e0b73c5c",
+        "e26bfd0d",
+        "4cf5a7c5",
+        "4540d285",
+        "a0dbdb80",
+        "0d991f42",
+        "01d70d88",
+        "078df5e4"
+      ]
+    },
+    {
+      "id": "at247:pattern:mesh",
+      "version": "1.0.0",
+      "category": "fictional-mesh",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "sha256Parts": [
+        "807ebc67",
+        "43439246",
+        "609b3f6b",
+        "089a9220",
+        "d740a1bb",
+        "2cc14c67",
+        "4aaa7cf0",
+        "d2ec538f"
+      ]
+    },
+    {
+      "id": "at247:pattern:emt-route",
+      "version": "1.0.0",
+      "category": "fictional-route",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "sha256Parts": [
+        "0f7c6d00",
+        "dde6f44b",
+        "7bbc51f3",
+        "a2f1a494",
+        "a3042c10",
+        "0ff6b388",
+        "eac1c021",
+        "0934d98d"
+      ]
+    },
+    {
+      "id": "at247:pattern:enclosure",
+      "version": "1.0.0",
+      "category": "fictional-enclosure",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "sha256Parts": [
+        "a5f4c726",
+        "e6bc9517",
+        "eabefcf6",
+        "8d8aabfc",
+        "ea9d8544",
+        "f71933fa",
+        "6fe38b5b",
+        "be565d03"
+      ]
+    },
+    {
+      "id": "at247:pattern:power",
+      "version": "1.0.0",
+      "category": "fictional-power",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "sha256Parts": [
+        "4215c339",
+        "a087723c",
+        "a1b59278",
+        "e64278b4",
+        "b7f1484a",
+        "03720f7d",
+        "6fa98e3d",
+        "c5819064"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+# scope-discovery Specification
+
+## Purpose
+
+Descubrir y revisar el alcance técnico a partir de una intención de proyecto y conocimiento especializado trazable.
+
+## ADDED Requirements
+
+### Requirement: Ingreso neutral y cobertura especializada
+El sistema SHALL conservar objetivo, necesidades, hechos y supuestos separados y SHALL resolver un paquete por rubro, versión y jurisdicción. Sin cobertura aplicable SHALL devolver `pending_specialist`.
+
+#### Scenario: Nuevo rubro
+- **GIVEN** un proyecto de un rubro distinto y un paquete sintético válido
+- **WHEN** se descubre su alcance
+- **THEN** el núcleo conserva el mismo contrato y cita la fuente y versión del paquete.
+
+### Requirement: Expansión acotada y explicable
+El sistema SHALL producir líneas solicitadas, propuestas y pendientes, con cantidad o ausencia explícita, unidad, regla, evidencia, relación y paquete de trabajo. SHALL detener ciclos y respetar límites configurables.
+
+#### Scenario: Proyecto ficticio de red
+- **GIVEN** la solicitud de ocho cámaras, nodos y switch y un patrón versionado de ejemplo
+- **WHEN** se descubre el alcance
+- **THEN** aparecen enlaces, terminaciones, montaje, canalización, energía y servicios con preguntas sobre mediciones desconocidas.
+
+### Requirement: Puerta de revisión
+El sistema SHALL exigir aprobación de líneas añadidas y cantidades conocidas antes de permitir necesidades comerciales. SHALL bloquear una propuesta cuando se rechaza una dependencia requerida.
+
+#### Scenario: Accesorio necesario rechazado
+- **GIVEN** una BOM propuesta con terminaciones requeridas
+- **WHEN** el usuario las rechaza
+- **THEN** la propuesta queda bloqueada y no está lista para investigación comercial.
+
+### Requirement: Revalidación
+Al cambiar requisitos o arquitectura, el sistema SHALL repetir descubrimiento, señalar altas, bajas y cambios, e invalidar aprobaciones comerciales previas.
+
+#### Scenario: Aumento de cámaras
+- **GIVEN** una propuesta revisada para ocho cámaras
+- **WHEN** la entrada cambia a doce
+- **THEN** se recalculan las cantidades derivadas y se exige nueva revisión.
+
+### Requirement: Contrato de revisión y evidencia conservadora
+El sistema SHALL producir una salida de servicio versionada que distinga solicitud, propuesta, pendiente, rechazo y cambios. SHALL conservar `unknown` si falta evidencia o medición. Una ruta Relate de capacidad SHALL identificarse como contexto y no como validación de una regla de instalación.
+
+#### Scenario: Grafo sintético AT-229
+- **GIVEN** el seed sintético en un store local aislado
+- **WHEN** el servicio evalúa un proyecto y consulta referencias de evidencia
+- **THEN** muestra la ruta de capacidad presente, mantiene desconocidas las dependencias sin evidencia y no habilita cotización comercial.
+
+#### Scenario: Evidencia compartida excede el límite por consulta
+- **GIVEN** varios bindings válidos que aportan más de cien evidencias distintas a una línea compartida
+- **WHEN** se produce el contrato de revisión con un lector limitado a cien IDs por consulta
+- **THEN** se consultan lotes acotados, se conserva el orden y la procedencia completa y una evidencia no disponible sigue bloqueando la preparación comercial.
+
+#### Scenario: Evidencia solicitada fuera de un prefijo global
+- **GIVEN** un grafo sintético con más de doscientas evidencias y quinientas rutas, de varios datasets
+- **WHEN** se consulta una evidencia solicitada fuera de esos prefijos
+- **THEN** Relate filtra por ID y dataset antes de paginar, conserva todas sus rutas y no confunde una evidencia de otro dataset con la solicitada.
+
+### Requirement: Cobertura de paquete fail-closed
+El servicio SHALL consumir el resultado de cobertura del registro versionado y SHALL mantener `pending_specialist` si falta revisión, hay incompatibilidad de identidad, existe una necesidad raíz sin reglas o la cobertura es insuficiente. Un paquete catalogado SHALL no equivaler a validación técnica.
+
+#### Scenario: Necesidad sin patrón
+- **GIVEN** un proyecto con una necesidad adicional sin regla en el paquete aplicable
+- **WHEN** se genera la propuesta
+- **THEN** la necesidad permanece visible, aparece una pregunta de cobertura y no se habilita cotización.
+
+### Requirement: Candidatos versionados y topología medible
+El sistema SHALL conservar como candidatos revisables las rutas, reglas, fuentes y evidencias de patrones versionados, asociadas a cada regla y necesidad de origen aun cuando varias rutas comparten una línea. SHALL mantener cada enlace requerido aunque falte su medida, y SHALL no publicar totales comerciales de cable de una topología parcialmente medida. Una longitud Decimal SHALL ser positiva y representable como número JSON finito antes de incorporarse a una línea.
+
+#### Scenario: Patrón y enlace sintéticos
+- **GIVEN** una necesidad declarada con hechos confirmados AT-247 y topología AT-239 parcialmente medida
+- **WHEN** se descubre el alcance
+- **THEN** aparecen candidatos con procedencia, todos los enlaces exigidos y cable pendiente sin metraje total inventado.
+
+#### Scenario: Dos rutas comparten un candidato
+- **GIVEN** dos necesidades con bindings del mismo patrón y evidencias distintas
+- **WHEN** se propone y luego se confirma la cantidad del candidato compartido
+- **THEN** la línea conserva regla, fuente, evidencia y ruta de ambas necesidades; una evidencia ausente y otros bloqueos permanecen pendientes.
+
+#### Scenario: Dependencia declarada como necesidad
+- **GIVEN** ocho cámaras y ocho enlaces declarados explícitamente, con una única regla revisada que deriva ocho enlaces
+- **WHEN** se descubre y revisa el alcance
+- **THEN** la necesidad conserva su estado solicitado y no queda bloqueada por una cantidad ya coherente, aun si es terminal; una cantidad o unidad incompatible mantiene la pregunta y el bloqueo sin aprobación comercial.
+
+#### Scenario: Cambia el padre de una necesidad explícita
+- **GIVEN** una necesidad declarada cuya cantidad era coherente con la dependencia de un padre aprobado
+- **WHEN** la cantidad o unidad del padre se modifica
+- **THEN** la necesidad conserva el valor declarado, aparece un bloqueo de cantidad y no se reaplica aprobación hasta corregir y redescubrir el intake.
+
+#### Scenario: Longitud Decimal fuera del rango de revisión
+- **GIVEN** una ruta confirmada con longitud Decimal que desborda a infinito o subdesborda a cero al convertirse a float
+- **WHEN** se evalúa o anexa su topología
+- **THEN** el servicio rechaza el valor antes de producir una cantidad o JSON no finitos.
+
+### Requirement: Alternativa condicionada y revalidación
+El sistema SHALL bloquear rechazo de una pieza imprescindible y SHALL mostrar una alternativa únicamente cuando la arquitectura y los hechos que activan el patrón alternativo estén confirmados; SHALL invalidar aprobación anterior y señalar altas y bajas.
+
+#### Scenario: Backhaul mesh
+- **GIVEN** un enlace cableado rechazado
+- **WHEN** el backhaul cambia a inalámbrico con evidencia confirmada
+- **THEN** el diff retira las piezas cableadas, propone las tareas inalámbricas y mantiene la nueva solución pendiente de revisión y validación técnica.
+
+### Requirement: Comprobaciones globales trazables
+El servicio SHALL ejecutar los checks AT-267 aplicables contra el documento del proyecto y SHALL conservar el estado, motivo y fuentes de cada hallazgo. Un check ausente, obsoleto, pendiente o fallido SHALL bloquear aprobación aunque otras restricciones pasen.
+
+#### Scenario: Puertos y potencia independientes
+- **GIVEN** demandas y límites confirmados con evidencia sintética
+- **WHEN** falla solo el límite de puertos totales, puertos PoE o potencia PoE
+- **THEN** el hallazgo correspondiente bloquea la propuesta sin cambiar los otros hallazgos.
+
+#### Scenario: Hecho de patrón pendiente junto a bloqueo técnico
+- **GIVEN** un hecho de patrón sin confirmar y una restricción ausente o topología incompatible
+- **WHEN** el servicio combina sus resultados
+- **THEN** mantiene `blocked` y los bloqueos técnicos; si solo falta el hecho, conserva `proposed`.
+
+### Requirement: Procedencia de reglas y cobertura persistente
+El servicio y su revalidación SHALL resolver reglas únicamente contra contenido sintético versionado y revisado en el repositorio. SHALL verificar identidad, versión, ámbito, reglas y fuentes declaradas; SHALL rechazar líneas derivadas de paquetes o reglas ajenas. SHALL reconstruir una expansión AT-247 y comprobar el digest del patrón al consumirla. Revalidar de forma autónoma SHALL conservar el bloqueo de especialista hasta una verificación nueva de cobertura.
+
+#### Scenario: Regla ajena y revalidación
+- **GIVEN** un proyecto sintético de cámara, pintura o evento con un paquete revisado y una regla adicional sin procedencia
+- **WHEN** se solicita propuesta o se revalida un alcance pendiente
+- **THEN** el paquete revisado produce sus líneas legítimas, la variante contaminada no produce la línea inyectada y no se habilita aprobación comercial ni se pierde el bloqueo de especialista.
