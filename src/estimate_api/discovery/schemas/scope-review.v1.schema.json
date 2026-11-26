@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://estimate-agent.invalid/schemas/scope-review.v1.schema.json",
+  "title": "Scope review v1 transport contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "projectId", "revision", "status", "commercialReady", "lines", "questions", "blockingFacts", "workPackages", "evidencePaths", "changes", "hardware", "coverage"],
+  "properties": {
+    "schemaVersion": {"const": "scope-review.v1"},
+    "projectId": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "status": {"enum": ["proposed", "approved", "blocked", "pending_specialist"]},
+    "commercialReady": {"type": "boolean"},
+    "lines": {"type": "array", "items": {"$ref": "#/$defs/line"}},
+    "questions": {"type": "array", "items": {"type": "string"}},
+    "blockingFacts": {"type": "array", "items": {"type": "string"}},
+    "workPackages": {"type": "object", "additionalProperties": {"enum": ["complete", "incomplete", "pending"]}},
+    "evidencePaths": {"type": "array", "items": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "string"}}},
+    "changes": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["key", "change"], "properties": {"key": {"type": "string"}, "change": {"enum": ["added", "removed", "changed", "approval_stale"]}}}},
+    "hardware": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/hardware"}]},
+    "coverage": {"type": "object", "additionalProperties": false, "required": ["status", "packageIds", "reasons"], "properties": {"status": {"enum": ["cataloged", "unsupported", "pending_specialist"]}, "packageIds": {"type": "array", "items": {"type": "string"}}, "reasons": {"type": "array", "items": {"type": "string"}}}}
+  },
+  "$defs": {
+    "hardware": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "lines", "missing", "incompatible", "pending", "professionalValidationRequired"],
+      "properties": {
+        "status": {"enum": ["PENDING", "REVIEW_REQUIRED", "DERIVED"]},
+        "lines": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["materialId", "family", "quantity", "unit", "ruleId", "evidenceIds"], "properties": {"materialId": {"type": "string"}, "family": {"type": "string"}, "quantity": {"type": "integer", "minimum": 1}, "unit": {"type": "string"}, "ruleId": {"type": "string"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}},
+        "missing": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["family", "quantity", "ruleId", "evidenceIds", "alternatives"], "properties": {"family": {"type": "string"}, "quantity": {"type": "integer", "minimum": 1}, "ruleId": {"type": "string"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}, "alternatives": {"type": "array", "items": {"type": "string"}}}}},
+        "incompatible": {"type": "array", "items": {"type": "string"}},
+        "pending": {"type": "array", "items": {"type": "string"}},
+        "professionalValidationRequired": {"type": "boolean"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "source", "capabilityPaths"],
+      "properties": {
+        "id": {"type": "string"},
+        "status": {"enum": ["capability_context", "node_only", "unknown"]},
+        "source": {"type": ["string", "null"]},
+        "capabilityPaths": {"type": "array", "items": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "string"}}}
+      }
+    },
+    "line": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key", "kind", "workPackage", "quantity", "unit", "state", "required", "justification", "ruleId", "packageVersion", "jurisdiction", "source", "parentKey", "relation", "evidence", "evidenceStatus", "actions"],
+      "properties": {
+        "key": {"type": "string"},
+        "kind": {"enum": ["equipment", "material", "accessory", "consumable", "service", null]},
+        "workPackage": {"type": "string"},
+        "quantity": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "unit": {"type": "string"},
+        "state": {"enum": ["user_requested", "agent_proposed", "user_approved", "rejected", "pending_measurement"]},
+        "required": {"type": "boolean"},
+        "justification": {"type": "string"},
+        "ruleId": {"type": ["string", "null"]},
+        "packageVersion": {"type": ["string", "null"]},
+        "jurisdiction": {"type": ["string", "null"]},
+        "source": {"type": ["string", "null"]},
+        "parentKey": {"type": ["string", "null"]},
+        "relation": {"type": ["string", "null"]},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "evidenceStatus": {"enum": ["capability_context", "unknown"]},
+        "actions": {"type": "array", "uniqueItems": true, "items": {"enum": ["approve", "reject", "modify"]}}
+      }
+    }
+  }
+}
