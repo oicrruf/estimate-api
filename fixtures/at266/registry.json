@@ -1,0 +1,221 @@
+{
+  "schemaVersion": "1.0.0",
+  "packages": [
+    {
+      "id": "catalog:camera-at266-v1",
+      "namespace": "example.camera",
+      "version": "1.0.0",
+      "taxonomy": "synthetic cameras fixture taxonomy",
+      "source": {
+        "ref": "synthetic://at266/cameras",
+        "version": "1.0.0"
+      },
+      "applicability": {
+        "jurisdictions": [
+          "TEST-ZONE-A"
+        ],
+        "categories": [
+          "fictional-camera"
+        ],
+        "scopes": [
+          {
+            "kind": "project",
+            "id": "camera:project"
+          }
+        ]
+      },
+      "limits": [
+        "Solo cantidades ficticias; sin criterio técnico, normativo ni profesional."
+      ],
+      "review": {
+        "state": "unverified",
+        "requiredReviewer": "fictional specialist",
+        "evidenceRefs": []
+      },
+      "categorySpecs": [
+        {
+          "category": "fictional-camera",
+          "schemaRef": "synthetic://at266/cameras/schema"
+        }
+      ],
+      "installationPatterns": [
+        {
+          "id": "cameras-fixture-pattern",
+          "category": "fictional-camera",
+          "ref": "synthetic://at266/cameras/pattern"
+        }
+      ],
+      "ruleSets": [
+        {
+          "id": "cameras-fixture-rules",
+          "rules": [
+            {
+              "topic": "camera:camera-to-link",
+              "choice": "camera:link",
+              "sourceRef": "synthetic://at266/cameras/camera:camera-to-link"
+            },
+            {
+              "topic": "camera:link-to-termination",
+              "choice": "camera:termination",
+              "sourceRef": "synthetic://at266/cameras/camera:link-to-termination"
+            },
+            {
+              "topic": "camera:camera-to-conduit",
+              "choice": "camera:conduit",
+              "sourceRef": "synthetic://at266/cameras/camera:camera-to-conduit"
+            },
+            {
+              "topic": "camera:camera-to-mount",
+              "choice": "camera:mount",
+              "sourceRef": "synthetic://at266/cameras/camera:camera-to-mount"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "catalog:painting-at266-v1",
+      "namespace": "example.painting",
+      "version": "1.0.0",
+      "taxonomy": "synthetic painting fixture taxonomy",
+      "source": {
+        "ref": "synthetic://at266/painting",
+        "version": "1.0.0"
+      },
+      "applicability": {
+        "jurisdictions": [
+          "TEST-ZONE-A"
+        ],
+        "categories": [
+          "fictional-paint"
+        ],
+        "scopes": [
+          {
+            "kind": "project",
+            "id": "painting:project"
+          }
+        ]
+      },
+      "limits": [
+        "Solo cantidades ficticias; sin criterio técnico, normativo ni profesional."
+      ],
+      "review": {
+        "state": "unverified",
+        "requiredReviewer": "fictional specialist",
+        "evidenceRefs": []
+      },
+      "categorySpecs": [
+        {
+          "category": "fictional-paint",
+          "schemaRef": "synthetic://at266/painting/schema"
+        }
+      ],
+      "installationPatterns": [
+        {
+          "id": "painting-fixture-pattern",
+          "category": "fictional-paint",
+          "ref": "synthetic://at266/painting/pattern"
+        }
+      ],
+      "ruleSets": [
+        {
+          "id": "painting-fixture-rules",
+          "rules": [
+            {
+              "topic": "painting:area-to-coat",
+              "choice": "painting:coat",
+              "sourceRef": "synthetic://at266/painting/painting:area-to-coat"
+            },
+            {
+              "topic": "painting:coat-to-paint",
+              "choice": "painting:paint",
+              "sourceRef": "synthetic://at266/painting/painting:coat-to-paint"
+            },
+            {
+              "topic": "painting:area-to-masking",
+              "choice": "painting:masking",
+              "sourceRef": "synthetic://at266/painting/painting:area-to-masking"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "catalog:event-at266-v1",
+      "namespace": "example.event",
+      "version": "1.0.0",
+      "taxonomy": "synthetic event fixture taxonomy",
+      "source": {
+        "ref": "synthetic://at266/event",
+        "version": "1.0.0"
+      },
+      "applicability": {
+        "jurisdictions": [
+          "TEST-ZONE-A"
+        ],
+        "categories": [
+          "fictional-event"
+        ],
+        "scopes": [
+          {
+            "kind": "project",
+            "id": "event:project"
+          }
+        ]
+      },
+      "limits": [
+        "Solo cantidades ficticias; sin criterio técnico, normativo ni profesional."
+      ],
+      "review": {
+        "state": "unverified",
+        "requiredReviewer": "fictional specialist",
+        "evidenceRefs": []
+      },
+      "categorySpecs": [
+        {
+          "category": "fictional-event",
+          "schemaRef": "synthetic://at266/event/schema"
+        }
+      ],
+      "installationPatterns": [
+        {
+          "id": "event-fixture-pattern",
+          "category": "fictional-event",
+          "ref": "synthetic://at266/event/pattern"
+        }
+      ],
+      "ruleSets": [
+        {
+          "id": "event-fixture-rules",
+          "rules": [
+            {
+              "topic": "event:speaker-to-cable",
+              "choice": "event:cable",
+              "sourceRef": "synthetic://at266/event/event:speaker-to-cable"
+            },
+            {
+              "topic": "event:speaker-to-stand",
+              "choice": "event:stand",
+              "sourceRef": "synthetic://at266/event/event:speaker-to-stand"
+            },
+            {
+              "topic": "event:speaker-to-mixer",
+              "choice": "event:mixer",
+              "sourceRef": "synthetic://at266/event/event:speaker-to-mixer"
+            },
+            {
+              "topic": "event:mixer-to-technician",
+              "choice": "event:technician",
+              "sourceRef": "synthetic://at266/event/event:mixer-to-technician"
+            },
+            {
+              "topic": "event:speaker-to-power-load",
+              "choice": "event:power-load",
+              "sourceRef": "synthetic://at266/event/event:speaker-to-power-load"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

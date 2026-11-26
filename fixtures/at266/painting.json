@@ -1,0 +1,53 @@
+{
+  "fixtureVersion": "1.0.0",
+  "synthetic": true,
+  "projectFile": "fixtures/valid/painting.json",
+  "jurisdiction": "TEST-ZONE-A",
+  "category": "fictional-paint",
+  "scope": {
+    "kind": "project",
+    "id": "painting:project"
+  },
+  "seed": {
+    "item": "painting:area",
+    "quantity": 60,
+    "unit": "m2"
+  },
+  "changedSeedQuantity": 80,
+  "rules": [
+    {
+      "id": "painting:area-to-coat",
+      "packageId": "catalog:painting-at266-v1",
+      "trigger": "painting:area",
+      "output": "painting:coat",
+      "factor": 2,
+      "unit": "m2",
+      "mode": "per_unit"
+    },
+    {
+      "id": "painting:coat-to-paint",
+      "packageId": "catalog:painting-at266-v1",
+      "trigger": "painting:coat",
+      "output": "painting:paint",
+      "factor": 0.1,
+      "unit": "L",
+      "mode": "per_unit"
+    },
+    {
+      "id": "painting:area-to-masking",
+      "packageId": "catalog:painting-at266-v1",
+      "trigger": "painting:area",
+      "output": "painting:masking",
+      "factor": 2,
+      "unit": "roll",
+      "mode": "fixed"
+    }
+  ],
+  "brief": "Salón ficticio: 60 m² de superficie y 2 capas de prueba. Rendimiento 0.1 L por m²-capa y 2 rollos de protección son supuestos de fixture.",
+  "itemLabels": {
+    "painting:area": "superficie de salón",
+    "painting:coat": "área por capa",
+    "painting:paint": "pintura",
+    "painting:masking": "consumible de protección"
+  }
+}
