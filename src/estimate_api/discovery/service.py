@@ -5,14 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Literal, Protocol, TypedDict
 
+from estimate_api.contracts.universal_v1 import ProjectDocument
 from estimate_api.knowledge.registry_v1 import CoverageResult
 
+from .constraint_adapter import ConstraintScope, assess_constraints, attach_constraints
 from .engine import discover
 from .ethernet_adapter import TopologyScope, attach_topology_links
 from .evidence import EvidenceReference, PatternRuleReference, TopologyLinkReference
 from .hardware_adapter import HardwareScope
 from .models import KnowledgePackage, PatternProvider, ProjectIntake, Proposal
-from .pattern_adapter import PatternPlan
+from .pattern_adapter import PatternPlan, build_pattern_plan
 from .registry_adapter import RegistryContext, resolve_pattern_coverage
 
 SCHEMA_VERSION: Literal["scope-review.v1"] = "scope-review.v1"
@@ -78,6 +80,15 @@ class ScopeReviewPayload(TypedDict):
     coverage: CoveragePayload
     ethernet: EthernetPayload | None
     technicalBlockers: list[str]
+    constraints: ConstraintPayload | None
+
+
+class ConstraintPayload(TypedDict):
+    status: str
+    requiredCheckIds: list[str]
+    missingCheckIds: list[str]
+    reason: str | None
+    findings: list[dict[str, object]]
 
 
 class EthernetPayload(TypedDict):
@@ -121,6 +132,7 @@ def to_review_payload(
     hardware_scope: HardwareScope | None = None,
     ethernet_scope: TopologyScope | None = None,
     ethernet_dataset_id: str | None = None,
+    constraint_scope: ConstraintScope | None = None,
 ) -> ScopeReviewPayload:
     """Render contract data; catalog coverage never implies technical validation."""
     if coverage is None:
@@ -274,6 +286,40 @@ def to_review_payload(
     ethernet_ready = ethernet_scope is None or (
         ethernet_scope.status == "DERIVED" and not ethernet_scope.professional_validation_required
     )
+    constraints_payload: ConstraintPayload | None = None
+    if constraint_scope is not None:
+        constraints_payload = ConstraintPayload(
+            status=constraint_scope.status,
+            requiredCheckIds=list(constraint_scope.required_check_ids),
+            missingCheckIds=list(constraint_scope.missing_check_ids),
+            reason=constraint_scope.reason,
+            findings=[
+                {
+                    "checkId": item.check_id,
+                    "kind": item.kind,
+                    "status": item.status,
+                    "blocking": item.blocking,
+                    "reason": item.reason,
+                    "subjectId": item.subject_id,
+                    "packageId": item.package_id,
+                    "sources": [
+                        {
+                            "entityId": ref.entity_id,
+                            "revision": ref.revision,
+                            "evidenceIds": list(ref.evidence_ids),
+                        }
+                        for ref in item.sources
+                    ],
+                }
+                for item in constraint_scope.findings
+            ],
+        )
+    constraint_ready = not proposal.constraint_check_ids or (
+        constraint_scope is not None
+        and constraint_scope.status == "pass"
+        and set(proposal.constraint_check_ids)
+        <= {item.check_id for item in constraint_scope.findings}
+    )
     return ScopeReviewPayload(
         schemaVersion=SCHEMA_VERSION,
         projectId=proposal.project_id,
@@ -284,7 +330,9 @@ def to_review_payload(
         and technical_validated
         and evidence_complete
         and hardware_ready
-        and ethernet_ready,
+        and ethernet_ready
+        and constraint_ready,
+        constraints=constraints_payload,
         lines=rendered,
         questions=list(proposal.questions),
         blockingFacts=list(proposal.blocking_facts),
@@ -312,6 +360,9 @@ def evaluate_scope(
     hardware_scope: HardwareScope | None = None,
     ethernet_scope: TopologyScope | None = None,
     ethernet_dataset_id: str | None = None,
+    constraint_document: ProjectDocument | None = None,
+    required_constraint_ids: tuple[str, ...] = (),
+    _attested_pattern: bool = False,
 ) -> ScopeEvaluation:
     """Call from a future API/chat adapter after intake and specialist validation."""
     package = (
@@ -320,11 +371,31 @@ def evaluate_scope(
         else provider.get(intake.domain, intake.jurisdiction)
     )
     coverage = resolve_pattern_coverage(intake, package, registry_context)
+    # A catalog match alone does not validate arbitrary rules carried in a package.
+    if (
+        package is not None
+        and package.registry_package_id is not None
+        and not _attested_pattern
+        and coverage.status == "cataloged"
+    ):
+        coverage = CoverageResult(
+            "pending_specialist",
+            coverage.package_ids,
+            coverage.conflicts,
+            ("rule_provenance_unverified",),
+        )
+        package = None
+    if _attested_pattern and registry_context is not None and coverage.status != "cataloged":
+        package = None
     proposal = discover(intake, package)
     if coverage.status != "cataloged":
         proposal = replace(proposal, status="pending_specialist", commercial_ready=False)
     if ethernet_scope is not None:
         proposal = attach_topology_links(proposal, ethernet_scope)
+    constraint_scope = assess_constraints(
+        constraint_document, required_constraint_ids, intake.project_id
+    )
+    proposal = attach_constraints(proposal, constraint_scope)
     return ScopeEvaluation(
         proposal,
         to_review_payload(
@@ -335,6 +406,7 @@ def evaluate_scope(
             hardware_scope=hardware_scope,
             ethernet_scope=ethernet_scope,
             ethernet_dataset_id=ethernet_dataset_id,
+            constraint_scope=constraint_scope,
         ),
     )
 
@@ -348,6 +420,8 @@ def evaluate_pattern_scope(
     previous: Proposal | None = None,
     ethernet_scope: TopologyScope | None = None,
     ethernet_dataset_id: str | None = None,
+    constraint_document: ProjectDocument | None = None,
+    required_constraint_ids: tuple[str, ...] = (),
 ) -> ScopeEvaluation:
     """Evaluate actual AT-247 candidates; always retain pending and stale-review state."""
     from .engine import diff_proposals
@@ -358,6 +432,20 @@ def evaluate_pattern_scope(
         and any(line.work_package == "ethernet" for line in previous.lines)
     ):
         raise ValueError("Topology is required when revalidating prior Ethernet scope")
+    if previous is not None:
+        required_constraint_ids = tuple(
+            dict.fromkeys((*required_constraint_ids, *previous.constraint_check_ids))
+        )
+    if not plan.bindings:
+        raise ValueError("Pattern plan lacks evidenced bindings")
+    regenerated = build_pattern_plan(
+        intake,
+        plan.bindings,
+        registry_package_id=plan.package.registry_package_id or "",
+        source=plan.package.source,
+    )
+    if regenerated != plan:
+        raise ValueError("Pattern plan differs from evidenced candidate expansion")
     evaluated = evaluate_scope(
         intake,
         plan.package,
@@ -365,6 +453,9 @@ def evaluate_pattern_scope(
         registry_context=registry_context,
         ethernet_scope=ethernet_scope,
         ethernet_dataset_id=ethernet_dataset_id,
+        constraint_document=constraint_document,
+        required_constraint_ids=required_constraint_ids,
+        _attested_pattern=True,
     )
     proposal = evaluated.proposal
     pending = tuple(dict.fromkeys((*proposal.blocking_facts, *plan.pending)))
@@ -386,6 +477,9 @@ def evaluate_pattern_scope(
     if previous is not None:
         proposal = diff_proposals(previous, proposal)
     coverage = resolve_pattern_coverage(intake, plan.package, registry_context)
+    constraint_scope = assess_constraints(
+        constraint_document, required_constraint_ids, intake.project_id
+    )
     return ScopeEvaluation(
         proposal,
         to_review_payload(
@@ -394,5 +488,6 @@ def evaluate_pattern_scope(
             coverage=coverage,
             ethernet_scope=ethernet_scope,
             ethernet_dataset_id=ethernet_dataset_id,
+            constraint_scope=constraint_scope,
         ),
     )

@@ -114,3 +114,4 @@ class Proposal:
     blocking_facts: tuple[str, ...] = ()
     technical_blockers: tuple[str, ...] = ()
     commercial_ready: bool = False
+    constraint_check_ids: tuple[str, ...] = ()

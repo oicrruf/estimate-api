@@ -14,7 +14,7 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from estimate_api.discovery.engine import revalidate, review  # noqa: E402
+from estimate_api.discovery.engine import discover, revalidate, review  # noqa: E402
 from estimate_api.discovery.evidence import RelateEvidenceReader  # noqa: E402
 from estimate_api.discovery.hardware_adapter import evaluate_hardware_scope  # noqa: E402
 from estimate_api.discovery.models import (  # noqa: E402
@@ -90,16 +90,24 @@ def main() -> None:
             registry_context=registry_context,
             hardware_scope=confirmed_hardware,
         )
-        lines = {line["key"]: line for line in evaluated.payload["lines"]}
-        assert evaluated.payload["coverage"]["status"] == "cataloged"
+        assert evaluated.payload["coverage"]["reasons"] == ["rule_provenance_unverified"]
+        assert {line["key"] for line in evaluated.payload["lines"]} == {
+            need.key for need in intake.needs
+        }
+        proposal = discover(intake, package)
+        coverage = resolve_pattern_coverage(intake, package, registry_context)
+        rendered = to_review_payload(
+            proposal, reader, coverage=coverage, hardware_scope=confirmed_hardware
+        )
+        lines = {line["key"]: line for line in rendered["lines"]}
         assert lines["ethernet_link"]["evidenceStatus"] == "capability_context"
         assert lines["ethernet_link"]["evidence"][0]["id"] == "EV-CAM-POE"
         assert lines["termination"]["evidenceStatus"] == "unknown"
-        assert evaluated.payload["hardware"]["missing"][0]["quantity"] == 2
-        assert not evaluated.payload["commercialReady"]
-        blocked = review(evaluated.proposal, (ReviewAction("termination", "reject"),))
+        assert rendered["hardware"]["missing"][0]["quantity"] == 2
+        assert not rendered["commercialReady"]
+        blocked = review(proposal, (ReviewAction("termination", "reject"),))
         assert blocked.status == "blocked" and not blocked.commercial_ready
-        reviewed = review(evaluated.proposal, (ReviewAction("termination", "approve"),))
+        reviewed = review(proposal, (ReviewAction("termination", "approve"),))
         assert next(line for line in reviewed.lines if line.key == "termination").quantity == 16
         changed_needs = tuple(
             replace(need, quantity=12) if need.key == "camera" else need for need in intake.needs
@@ -108,7 +116,7 @@ def main() -> None:
         assert ("termination", "changed") in changed.changes
         assert next(line for line in changed.lines if line.key == "termination").quantity == 24
         assert {line.key for line in changed.lines if line.required} == {
-            line.key for line in evaluated.proposal.lines if line.required
+            line.key for line in proposal.lines if line.required
         }
         coverage = resolve_pattern_coverage(intake, package, registry_context)
         changed_payload = to_review_payload(

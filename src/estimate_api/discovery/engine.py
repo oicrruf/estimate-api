@@ -286,7 +286,22 @@ def revalidate(
 ) -> Proposal:
     if previous.project_id != intake.project_id:
         raise ValueError("Project mismatch")
-    return diff_proposals(previous, discover(intake, provider))
+    fresh = discover(intake, provider)
+    if previous.constraint_check_ids:
+        from .constraint_adapter import assess_constraints, attach_constraints
+
+        fresh = attach_constraints(fresh, assess_constraints(None, previous.constraint_check_ids))
+    # Standalone rediscovery has no registry context that could verify specialist coverage.
+    if previous.status == "pending_specialist":
+        fresh = replace(
+            fresh,
+            status="pending_specialist",
+            questions=tuple(
+                dict.fromkeys((*fresh.questions, "Specialist coverage requires verification"))
+            ),
+            commercial_ready=False,
+        )
+    return diff_proposals(previous, fresh)
 
 
 def diff_proposals(previous: Proposal, fresh: Proposal) -> Proposal:

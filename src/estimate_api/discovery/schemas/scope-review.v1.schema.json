@@ -4,7 +4,7 @@
   "title": "Scope review v1 transport contract",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "projectId", "revision", "status", "commercialReady", "lines", "questions", "blockingFacts", "technicalBlockers", "workPackages", "evidencePaths", "changes", "hardware", "ethernet", "coverage"],
+  "required": ["schemaVersion", "projectId", "revision", "status", "commercialReady", "lines", "questions", "blockingFacts", "technicalBlockers", "workPackages", "evidencePaths", "changes", "hardware", "ethernet", "coverage", "constraints"],
   "properties": {
     "schemaVersion": {"const": "scope-review.v1"},
     "projectId": {"type": "string", "minLength": 1},
@@ -20,9 +20,11 @@
     "changes": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["key", "change"], "properties": {"key": {"type": "string"}, "change": {"enum": ["added", "removed", "changed", "approval_stale"]}}}},
     "hardware": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/hardware"}]},
     "ethernet": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ethernet"}]},
+    "constraints": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/constraints"}]},
     "coverage": {"type": "object", "additionalProperties": false, "required": ["status", "packageIds", "reasons"], "properties": {"status": {"enum": ["cataloged", "unsupported", "pending_specialist"]}, "packageIds": {"type": "array", "items": {"type": "string"}}, "reasons": {"type": "array", "items": {"type": "string"}}}}
   },
   "$defs": {
+    "constraints": {"type": "object", "additionalProperties": false, "required": ["status", "requiredCheckIds", "missingCheckIds", "reason", "findings"], "properties": {"status": {"enum": ["pass", "fail", "pending"]}, "requiredCheckIds": {"type": "array", "items": {"type": "string"}}, "missingCheckIds": {"type": "array", "items": {"type": "string"}}, "reason": {"type": ["string", "null"]}, "findings": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["checkId", "kind", "status", "blocking", "reason", "subjectId", "packageId", "sources"], "properties": {"checkId": {"type": "string"}, "kind": {"type": "string"}, "status": {"enum": ["pass", "fail", "pending"]}, "blocking": {"type": "boolean"}, "reason": {"type": "string"}, "subjectId": {"type": "string"}, "packageId": {"type": "string"}, "sources": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["entityId", "revision", "evidenceIds"], "properties": {"entityId": {"type": "string"}, "revision": {"type": "integer"}, "evidenceIds": {"type": "array", "items": {"type": "string"}}}}}}}}}},
     "ethernet": {
       "type": "object", "additionalProperties": false,
       "required": ["status", "links", "materials", "pending", "incompatible", "professionalValidationRequired", "graphLinkPaths", "materialTotalsComplete"],

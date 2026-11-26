@@ -22,6 +22,7 @@ class PatternPlan:
     pending: tuple[str, ...]
     limit_reached: bool
     professional_validation_required: bool
+    bindings: tuple[PatternBinding, ...] = ()
 
 
 def build_pattern_plan(
@@ -81,4 +82,4 @@ def build_pattern_plan(
             for binding in bindings
         ),
     )
-    return PatternPlan(package, tuple(sorted(pending)), limited, True)
+    return PatternPlan(package, tuple(sorted(pending)), limited, True, bindings)

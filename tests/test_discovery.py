@@ -301,8 +301,9 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
     )
     verified_context = replace(context, registry=verified_registry)
     cataloged = evaluate_scope(intake, package, registry_context=verified_context)
-    assert cataloged.payload["coverage"]["status"] == "cataloged"
-    assert cataloged.proposal.status == "proposed"
+    assert cataloged.payload["coverage"]["status"] == "pending_specialist"
+    assert cataloged.payload["coverage"]["reasons"] == ["rule_provenance_unverified"]
+    assert {line.key for line in cataloged.proposal.lines} == {need.key for need in intake.needs}
     assert not cataloged.payload["commercialReady"]  # catalog status is not technical approval
     mismatch = evaluate_scope(
         intake,
@@ -376,7 +377,8 @@ def test_second_domain_uses_same_coverage_contract_without_assumed_quantity() ->
             {"kind": "project", "id": "painting:project"},
         ),
     )
-    assert result.payload["coverage"]["status"] == "cataloged"
+    assert result.payload["coverage"]["status"] == "pending_specialist"
+    assert result.payload["coverage"]["reasons"] == ["rule_provenance_unverified"]
     assert result.payload["lines"][0]["quantity"] is None
-    assert result.payload["lines"][1]["quantity"] is None
+    assert len(result.payload["lines"]) == 1
     assert not result.payload["commercialReady"]

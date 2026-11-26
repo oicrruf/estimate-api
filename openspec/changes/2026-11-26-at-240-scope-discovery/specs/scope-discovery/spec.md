@@ -69,3 +69,19 @@ El sistema SHALL bloquear rechazo de una pieza imprescindible y SHALL mostrar un
 - **GIVEN** un enlace cableado rechazado
 - **WHEN** el backhaul cambia a inalámbrico con evidencia confirmada
 - **THEN** el diff retira las piezas cableadas, propone las tareas inalámbricas y mantiene la nueva solución pendiente de revisión y validación técnica.
+
+### Requirement: Comprobaciones globales trazables
+El servicio SHALL ejecutar los checks AT-267 aplicables contra el documento del proyecto y SHALL conservar el estado, motivo y fuentes de cada hallazgo. Un check ausente, obsoleto, pendiente o fallido SHALL bloquear aprobación aunque otras restricciones pasen.
+
+#### Scenario: Puertos y potencia independientes
+- **GIVEN** demandas y límites confirmados con evidencia sintética
+- **WHEN** falla solo el límite de puertos totales, puertos PoE o potencia PoE
+- **THEN** el hallazgo correspondiente bloquea la propuesta sin cambiar los otros hallazgos.
+
+### Requirement: Procedencia de reglas y cobertura persistente
+El servicio SHALL rechazar líneas derivadas de un paquete catalogado cuyas reglas no provengan de una expansión de patrón comprobable. SHALL reconstruir una expansión AT-247 al consumirla y SHALL impedir que una regla ajena se mezcle en el plan. Revalidar de forma autónoma un alcance pendiente de especialista SHALL conservar el bloqueo hasta una verificación nueva de cobertura.
+
+#### Scenario: Regla ajena y revalidación
+- **GIVEN** un proyecto sintético de cámara, pintura o evento con una regla sin procedencia en un paquete aplicable
+- **WHEN** se solicita propuesta o se revalida un alcance pendiente
+- **THEN** no aparece la línea inyectada y no se habilita aprobación comercial ni se pierde el bloqueo de especialista.
