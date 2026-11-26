@@ -105,7 +105,13 @@ def main() -> None:
         raise RuntimeError("API did not recover")
     probe()
     assert compose("exec", "-T", "api", "sha256sum", STORE).split()[0] == before
-    print("Git Compose: host ports 0; private API; seed reused; store unchanged; five real cases")
+    compose("down")  # Keep the named volume, as a normal Compose replacement does.
+    compose("up", "--no-build", "-d")
+    redeploy_seed_id, _ = assert_layout()
+    assert '"store": "reused"' in command("docker", "logs", redeploy_seed_id)
+    probe()
+    assert compose("exec", "-T", "api", "sha256sum", STORE).split()[0] == before
+    print("Git Compose: host ports 0; private API; seed reused; store stable after redeploy")
 
 
 if __name__ == "__main__":

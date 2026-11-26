@@ -28,7 +28,9 @@ class Driver:
             headers={"Content-Type": "application/json"} if body is not None else {},
             method=method,
         )
-        with urlopen(req, timeout=15) as response:
+        # A fresh Chrome session may take longer on a loaded hosted runner.
+        timeout = 45 if path == "/session" else 15
+        with urlopen(req, timeout=timeout) as response:
             answer = json.load(response)
         value: Any = answer["value"]
         if isinstance(value, dict) and value.get("error"):
