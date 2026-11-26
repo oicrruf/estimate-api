@@ -1,18 +1,31 @@
-## Linear y OpenSpec
+## Seguimiento
 
-- Issue: https://linear.app/oicrruf/issue/AT-207/inicializar-dos-repositorios-ci-entornos-y-contratos-openapi
-- Cambio archivado: `openspec/changes/archive/2026-11-26-at-207-api-bootstrap/`
+- Issue: AT-___
+- OpenSpec (si aplica): `openspec/changes/...`
 
 ## Resumen
 
+<!-- Qué cambió y por qué. Indique los límites de integración. -->
+
+## Documentación
+
+Marque una opción:
+
+- [ ] Este PR cambia comportamiento visible, comandos, configuración/env, contratos, pruebas o despliegue. Actualicé en este mismo PR el README o una guía enlazada desde él y comprobé el enlace.
+- [ ] No aplica actualizar documentación. Motivo: <!-- explicar -->
+
+Ruta del README o guía revisada: <!-- enlace relativo, si aplica -->
+
 ## Pruebas y evidencia
 
-- [ ] Lint, tipos, tests, OpenAPI drift y OpenSpec
-- [ ] Escaneo de secretos y revisión de dependencias
-- [ ] CI verde y comentarios accionables resueltos
+- [ ] Ejecuté los checks aplicables y anoté resultados concretos.
+- [ ] Revisé el diff, el contrato OpenAPI y OpenSpec si aplican.
+- [ ] CI verde y comentarios accionables resueltos antes de integrar.
 
 ## Riesgo de migración
 
-Ninguna migración en este cambio.
+<!-- Indique si hay migración y cómo se verificó; si no hay, escriba "Ninguna". -->
 
-El título de PR y el commit final Squash & Merge usan `type(scope): imperative summary (AT-207)`. Revisar título, autor aprobado y ausencia de trailers opcionales de IA antes de integrar.
+Antes de integrar, verifique que el título y el commit final Squash & Merge usen
+`type(scope): imperative summary (AT-XXX)`, el autor aprobado y ningún tráiler
+opcional de IA.
