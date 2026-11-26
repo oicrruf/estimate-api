@@ -85,3 +85,16 @@ def test_submitted_commit_policy(tmp_path: Path, monkeypatch: MonkeyPatch) -> No
         wrong_issue, "AT-207"
     )
     assert check_commit("HEAD", "AT-207") == ["commit must be an explicit 40-character SHA"]
+
+
+def test_successor_issue_submitted_commit(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    repo = tmp_path / "successor"
+    repo.mkdir()
+    subprocess.run(["git", "-C", str(repo), "init", "-q", "-b", "develop"], check=True)
+    monkeypatch.chdir(repo)
+    title = "feat(auth): add login (AT-208)"
+    head = synthetic_commit(repo, title)
+    assert check_title(title, "AT-208")
+    assert check_branch("feature/AT-208-login", "AT-208")
+    assert check_commit(head, "AT-208") == []
+    assert not check_branch("feature/AT-207-login", "AT-208")
