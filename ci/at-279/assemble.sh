@@ -3,8 +3,9 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 package="$repo_root/ci/at-279/package"
-api_sha='dac8c64c314bb362c6254825c65640ba732ca168'
-app_sha='d8a6d359bf909872ebfe48d52dfe5d8980c2c68b'
+api_sha="$(awk '$1 == "oicrruf/estimate-api" && $2 == "develop" { print $3 }' "$package/SOURCE-SHAS.txt")"
+app_sha="$(awk '$1 == "oicrruf/estimate-app" && $2 == "develop" { print $3 }' "$package/SOURCE-SHAS.txt")"
+[[ "$api_sha" =~ ^[0-9a-f]{40}$ && "$app_sha" =~ ^[0-9a-f]{40}$ ]]
 
 mkdir -p "$package/sources/api" "$package/sources/app"
 test -z "$(find "$package/sources" -mindepth 2 -print -quit)" || {

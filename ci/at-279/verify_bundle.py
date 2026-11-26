@@ -9,7 +9,7 @@ import tarfile
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parent / "package"
-EXPECTED_SHA256 = "18fda4a6fdd3a167d7c95b76d6b3cb3c83fc06c593c58d3cc91425f2b4484e67"
+EXPECTED_SHA256 = (Path(__file__).resolve().parent / "ARCHIVE-SHA256.txt").read_text().strip()
 EXCLUDED = {
     ".git",
     "node_modules",
@@ -40,6 +40,8 @@ def package_files() -> list[Path]:
 
 
 def main() -> None:
+    if len(EXPECTED_SHA256) != 64 or any(c not in "0123456789abcdef" for c in EXPECTED_SHA256):
+        raise ValueError("Invalid expected archive SHA256")
     files = package_files()
     manifest_path = Path("MANIFEST.sha256")
     assert manifest_path in files
