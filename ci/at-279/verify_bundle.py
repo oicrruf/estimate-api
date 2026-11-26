@@ -67,6 +67,8 @@ def main() -> None:
                 info.uid = info.gid = 0
                 info.uname = info.gname = ""
                 info.mtime = 0
+                # Original private tar used mode 0600 for every regular file.
+                info.mode = 0o600
                 with (PACKAGE / rel).open("rb") as source:
                     archive.addfile(info, source)
     digest = hashlib.sha256(output.getvalue()).hexdigest()
