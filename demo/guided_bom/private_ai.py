@@ -8,6 +8,7 @@ import json
 import re
 import sys
 from collections.abc import AsyncGenerator
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Protocol, cast
 
@@ -27,8 +28,8 @@ MODEL = DEFAULT_MODEL
 PROMPT = (
     "Extrae solamente datos explícitos de esta descripción ficticia en español. "
     "cable_count es la cantidad de UTP en el tramo, no la cantidad de cámaras. "
-    "cable_variant es thick solo si consta OD 0.278 in o 10GXS32; slim solo si "
-    "consta OD 0.224 in o 2412; de otro modo unknown. "
+    "cable_variant es thick solo con OD 0.278 in explícito; slim solo con "
+    "OD 0.224 in explícito; un código de producto no reemplaza la unidad. "
     "route_length es known solo si constan tramos de 2 m y 1.5 m; de otro modo unknown. "
     "Nunca inventes cantidades, precios, compatibilidades, mediciones ni evidencia. "
     "Devuelve preguntas faltantes como IDs cable_count, cable_od o route_length."
@@ -52,6 +53,37 @@ QUESTIONS = {
     "cable_od": "¿Cuál es el diámetro exterior nominal del cable elegido?",
     "route_length": "¿Cuáles son las longitudes medidas de los tramos?",
 }
+NUMBER = r"\d+(?:\.\d+)?"
+COUNT_TOKEN = rf"(?:{NUMBER}|tres|seis|three|six)"
+UTP_COUNT = re.compile(
+    rf"\b(?:(?P<before>{COUNT_TOKEN})\s+(?:cables?\s+)?utp(?:\s+cables?)?"
+    rf"|utp\s+(?P<after>{COUNT_TOKEN}))\b"
+)
+OD_MEASUREMENT = re.compile(
+    rf"(?<![\w.+-])(?P<value>{NUMBER})\s*"
+    r"(?P<unit>inches|inch|in|pulgadas|pulgada|mm)\b"
+)
+ROUTE_MEASUREMENT = re.compile(
+    rf"(?<![\w.+-])(?P<value>{NUMBER})\s*"
+    r"(?:meters|meter|metres|metre|metros|metro|m)\b"
+)
+
+
+def _utp_counts(text: str) -> set[Decimal]:
+    words = {"tres": 3, "seis": 6, "three": 3, "six": 6}
+    tokens = (match.group("before") or match.group("after") for match in UTP_COUNT.finditer(text))
+    return {Decimal(words[token] if token in words else token) for token in tokens}
+
+
+def _od_values(text: str) -> set[tuple[Decimal, str]]:
+    return {
+        (Decimal(match.group("value")), "in" if match.group("unit") != "mm" else "mm")
+        for match in OD_MEASUREMENT.finditer(text)
+    }
+
+
+def _route_values(text: str) -> list[Decimal]:
+    return [Decimal(match.group("value")) for match in ROUTE_MEASUREMENT.finditer(text)]
 
 
 class ScopeExtractor(Protocol):
@@ -76,21 +108,37 @@ def _validated_scope(description: str, raw: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Selección no permitida")
     if not isinstance(missing, list) or not all(x in QUESTIONS for x in missing):
         raise ValueError("Preguntas no permitidas")
-    normalized = description.lower().replace(",", ".")
-    if count is not None:
-        number = "tres" if count == 3 else "seis"
-        pattern = (
-            rf"(?:\b(?:{count}|{number})\s+(?:cables?\s+)?utp\b|"
-            rf"\butp\s+(?:{count}|{number})\b)"
-        )
-        if not re.search(pattern, normalized):
-            raise ValueError("Cantidad UTP sin respaldo literal")
-    if variant == "thick" and not re.search(r"0\.278|10gxs32", normalized):
-        raise ValueError("OD grueso sin respaldo literal")
-    if variant == "slim" and not re.search(r"0\.224|2412", normalized):
-        raise ValueError("OD delgado sin respaldo literal")
-    if length == "known" and not ("2 m" in normalized and "1.5 m" in normalized):
-        raise ValueError("Longitud sin respaldo literal")
+    normalized = description.casefold().replace(",", ".")
+    counts = _utp_counts(normalized)
+    if len(counts) > 1 or any(value not in (3, 6) for value in counts):
+        raise ValueError("Cantidad UTP incompatible con el fixture")
+    if count is not None and counts != {Decimal(count)}:
+        raise ValueError("Cantidad UTP sin respaldo literal completo")
+    od_values = _od_values(normalized)
+    if len(od_values) > 1:
+        raise ValueError("OD contradictorios")
+    if od_values and (
+        not re.search(r"\bod\b|\bouter\s+diameter\b|\bdi[aá]metro\s+exterior\b", normalized)
+        or next(iter(od_values)) not in {(Decimal("0.278"), "in"), (Decimal("0.224"), "in")}
+    ):
+        raise ValueError("OD fuera del fixture o sin unidad válida")
+    expected_od = {
+        "thick": (Decimal("0.278"), "in"),
+        "slim": (Decimal("0.224"), "in"),
+    }
+    if variant != "unknown" and od_values != {expected_od[variant]}:
+        raise ValueError("OD sin respaldo literal completo y unidad explícita")
+    route_values = _route_values(normalized)
+    if route_values and (
+        len(route_values) > 2
+        or any(value not in (Decimal("2"), Decimal("1.5")) for value in route_values)
+    ):
+        raise ValueError("Longitudes fuera del fixture")
+    if length == "known" and (
+        not re.search(r"\btramos?\b|\bsegments?\b|\bruns?\b", normalized)
+        or sorted(route_values) != [Decimal("1.5"), Decimal("2")]
+    ):
+        raise ValueError("Longitudes sin respaldo literal completo y unidad explícita")
     required = set()
     if count is None:
         required.add("cable_count")
@@ -118,24 +166,28 @@ class PrivateGuidedAgent(BaseAgent):
         description = ctx.session.state["description"]
         raw, usage = await self.extractor.extract(description)
         scope = _validated_scope(description, raw)
-        rows = await FunctionTool(graph_evidence).run_async(
-            args={"store_path": ctx.session.state["store_path"]},
-            tool_context=ToolContext(ctx),
-        )
-        evidence_ids = sorted({row["evidenceId"] for group in rows.values() for row in group})
-        if not evidence_ids or len(rows["route"]) != 3:
-            raise ValueError("Relate no devolvió evidencia completa")
+        evidence_ids: list[str] = []
         preview = None
-        if scope["cableCount"] is not None:
+        tool_calls = 0
+        if scope["cableCount"] is not None and scope["cableVariant"] != "unknown":
+            rows = await FunctionTool(graph_evidence).run_async(
+                args={"store_path": ctx.session.state["store_path"]},
+                tool_context=ToolContext(ctx),
+            )
+            evidence_ids = sorted({row["evidenceId"] for group in rows.values() for row in group})
+            if not evidence_ids or len(rows["route"]) != 3:
+                raise ValueError("Relate no devolvió evidencia completa")
             preview = evaluate(
                 rows, scope["cableCount"], scope["cableVariant"], scope["routeLength"]
             )
+            tool_calls = 1
         result = {
             "scenarioId": "guided-bom-private-ai.v1",
-            "status": "PENDING_REVIEW",
+            "status": "NEEDS_INPUT" if preview is None else "PENDING_REVIEW",
             "scope": scope,
             "evidenceIds": evidence_ids,
             "preview": preview,
+            "toolCalls": tool_calls,
             "model": getattr(self.extractor, "model", MODEL),
             "usage": usage,
         }

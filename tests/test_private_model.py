@@ -128,6 +128,8 @@ def test_missing_key_blocks_request_before_sdk(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_pinned_sdk_parses_mock_http_without_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    pytest.importorskip("httpx2")
+    pytest.importorskip("openai")
     import httpx2
     import openai
 
