@@ -65,7 +65,9 @@ docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208
 expect_guard_failure 'isolated NOLOGIN at208_policy_owner membership required' at208_owner
 docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_guard \
   -c 'alter role at208_policy_owner nologin; grant at208_policy_owner to authenticated'
-expect_guard_failure 'helper at208_policy_owner exposed to runtime role authenticated' at208_owner
+# En Supabase, authenticator hereda authenticated y puede ser el primer rol
+# reportado; ambos indican que el auxiliar quedó expuesto.
+expect_guard_failure 'helper at208_policy_owner exposed to' at208_owner
 docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_guard \
   -c 'revoke at208_policy_owner from authenticated; grant at208_policy_owner to at208_backend'
 expect_guard_failure 'helper at208_policy_owner exposed to runtime role at208_backend' at208_owner
