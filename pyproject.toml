@@ -5,7 +5,15 @@ requires-python = "==3.12.*"
 dependencies = ["fastapi==0.115.12", "uvicorn==0.34.2", "jsonschema==4.26.0"]
 
 [project.optional-dependencies]
-dev = ["httpx==0.28.1", "pytest==8.3.5", "ruff==0.11.10", "mypy==1.15.0", "detect-secrets==1.5.0", "types-jsonschema==4.26.0.20261006"]
+dev = [
+    "httpx==0.28.1",
+    "pytest==8.3.5",
+    "ruff==0.11.10",
+    "mypy==1.15.0",
+    "detect-secrets==1.5.0",
+    "types-jsonschema==4.26.0.20261006",
+    "relate-db==1.3.0",
+]
 
 [build-system]
 requires = ["hatchling==1.27.0"]

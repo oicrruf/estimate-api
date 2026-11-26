@@ -1,0 +1,26 @@
+{
+  "datasetId": "at-238-synthetic-v1",
+  "catalog": {
+    "items": [
+      {"id": "GEN-EMT-1", "family": "emt", "diameter": "1", "commercialLengthM": "3", "evidenceId": "EV-CAT-EMT-1"},
+      {"id": "GEN-EMT-3-4", "family": "emt", "diameter": "3/4", "commercialLengthM": "3", "evidenceId": "EV-CAT-EMT-3-4"},
+      {"id": "GEN-COUPLING-1", "family": "coupling", "diameter": "1", "evidenceId": "EV-CAT-COUPLING-1"},
+      {"id": "GEN-COUPLING-3-4", "family": "coupling", "diameter": "3/4", "evidenceId": "EV-CAT-COUPLING-3-4"},
+      {"id": "GEN-CONNECTOR-1", "family": "connector", "diameter": "1", "evidenceId": "EV-CAT-CONNECTOR-1"},
+      {"id": "GEN-CONNECTOR-3-4", "family": "connector", "diameter": "3/4", "evidenceId": "EV-CAT-CONNECTOR-3-4"},
+      {"id": "GEN-SUPPORT-1", "family": "support", "diameter": "1", "evidenceId": "EV-CAT-SUPPORT-1"},
+      {"id": "GEN-SUPPORT-3-4", "family": "support", "diameter": "3/4", "evidenceId": "EV-CAT-SUPPORT-3-4"},
+      {"id": "GEN-LB-1", "family": "lb", "diameter": "1", "evidenceId": "EV-CAT-LB-1"},
+      {"id": "GEN-OUTLET", "family": "outlet", "evidenceId": "EV-CAT-OUTLET"}
+    ]
+  },
+  "routes": {
+    "confirmed": {
+      "id": "SEG-DEMO", "confirmed": true, "diameter": "1", "evidenceId": "EV-ROUTE-CONFIRMED",
+      "sectionLengthsM": ["2.0", "1.5"], "confirmedJoins": 1, "confirmedBoxEntries": 2,
+      "confirmedSupportPoints": 3, "lbRequired": false, "interiorOutletRequired": false,
+      "selectedAccessories": {"coupling": "GEN-COUPLING-1", "support": "GEN-SUPPORT-1"}
+    },
+    "unknown": {"id": "SEG-UNKNOWN", "confirmed": false, "evidenceId": "EV-ROUTE-UNKNOWN"}
+  }
+}
