@@ -15,7 +15,7 @@ def literal(value):
         return "true" if value else "false"
     if isinstance(value, str):
         return json.dumps(value, ensure_ascii=False)
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return str(value)
     if isinstance(value, list):
         return "[" + ", ".join(map(literal, value)) + "]"
@@ -29,7 +29,10 @@ lines = [
     "// Idempotente para los IDs estimate-hackathon-v1; no borra otros datos.",
 ]
 for label in ("REQUIREMENT", "PRODUCT", "CAPABILITY", "OFFER", "EVIDENCE", "ACCESSORY"):
-    lines.append(f"CREATE CONSTRAINT {label.lower()}_id IF NOT EXISTS FOR (n:{label}) REQUIRE n.id IS UNIQUE;")
+    lines.append(
+        f"CREATE CONSTRAINT {label.lower()}_id IF NOT EXISTS "
+        f"FOR (n:{label}) REQUIRE n.id IS UNIQUE;"
+    )
 
 
 def node(label, id_, props):
@@ -38,7 +41,8 @@ def node(label, id_, props):
 
 def relation(from_label, from_id, rel, to_label, to_id):
     lines.append(
-        f"MATCH (a:{from_label} {{id: {literal(from_id)}}}), (b:{to_label} {{id: {literal(to_id)}}}) "
+        f"MATCH (a:{from_label} {{id: {literal(from_id)}}}), "
+        f"(b:{to_label} {{id: {literal(to_id)}}}) "
         f"MERGE (a)-[:{rel}]->(b);"
     )
 
@@ -51,7 +55,11 @@ for req in DATA["requirements"]:
         relation("REQUIREMENT", req["id"], "REQUIRES", "CAPABILITY", cap_id)
 
 for evidence in DATA["evidence"]:
-    node("EVIDENCE", evidence["id"], {"id": evidence["id"], "source": evidence["source"], "datasetId": DATA["datasetId"]})
+    node(
+        "EVIDENCE",
+        evidence["id"],
+        {"id": evidence["id"], "source": evidence["source"], "datasetId": DATA["datasetId"]},
+    )
 
 technical_evidence = {
     evidence["productId"]: evidence["id"]
@@ -70,7 +78,16 @@ for product in DATA["products"]:
         relation("CAPABILITY", cap_id, "SUPPORTED_BY", "EVIDENCE", evidence_id)
     if "poolCapacity" in product:
         cap_id = f"{product['id']}:poolCapacity"
-        node("CAPABILITY", cap_id, {"id": cap_id, "key": "poolCapacity", "value": product["poolCapacity"], "role": "measured"})
+        node(
+            "CAPABILITY",
+            cap_id,
+            {
+                "id": cap_id,
+                "key": "poolCapacity",
+                "value": product["poolCapacity"],
+                "role": "measured",
+            },
+        )
         relation("PRODUCT", product["id"], "SUPPORTS", "CAPABILITY", cap_id)
         relation("CAPABILITY", cap_id, "SUPPORTED_BY", "EVIDENCE", "EV-POOL-CAM")
 
@@ -91,7 +108,8 @@ for product_id, req_id, reason in (
     ("UPS-600", "REQ-UPS-SMOKE", "CAPACITY_600_LT_1000"),
 ):
     lines.append(
-        f"MATCH (p:PRODUCT {{id: {literal(product_id)}}}), (r:REQUIREMENT {{id: {literal(req_id)}}}) "
+        f"MATCH (p:PRODUCT {{id: {literal(product_id)}}}), "
+        f"(r:REQUIREMENT {{id: {literal(req_id)}}}) "
         f"MERGE (p)-[x:INCOMPATIBLE_WITH]->(r) SET x.reasonCode = {literal(reason)};"
     )
 

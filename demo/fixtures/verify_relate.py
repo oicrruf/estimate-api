@@ -14,7 +14,8 @@ EXPECTED = json.loads((BASE / "expected.json").read_text(encoding="utf-8"))
 def statements(name):
     # Las líneas de comentario se retiran antes de separar por ';'.
     source = "\n".join(
-        line for line in (BASE / name).read_text(encoding="utf-8").splitlines()
+        line
+        for line in (BASE / name).read_text(encoding="utf-8").splitlines()
         if not line.lstrip().startswith("//")
     )
     return [query.strip() for query in source.split(";") if query.strip()]
@@ -29,10 +30,11 @@ def counts(conn):
 def check_row(actual, expected):
     for key, value in expected.items():
         if key == "evidenceEnd":
-            assert any(
-                path["nodes"][-1] == value
-                for path in actual["evidencePaths"]
-            ), (key, value, actual)
+            assert any(path["nodes"][-1] == value for path in actual["evidencePaths"]), (
+                key,
+                value,
+                actual,
+            )
         elif key == "offerIds":
             assert sorted(actual[key]) == sorted(value), (key, value, actual[key])
         else:
@@ -73,7 +75,10 @@ def main():
         conn = relate.connect(db_path)
         assert counts(conn) == first, "Cambió tras segunda reapertura"
         conn.close()
-    print(f"Relate {getattr(relate, '__version__', '1.3.0')}: OK; {first[0]} nodos, {first[1]} relaciones; seed x2; reapertura x2")
+    print(
+        f"Relate {getattr(relate, '__version__', '1.3.0')}: OK; "
+        f"{first[0]} nodos, {first[1]} relaciones; seed x2; reapertura x2"
+    )
 
 
 if __name__ == "__main__":
