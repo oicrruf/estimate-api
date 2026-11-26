@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "1.0.0",
+  "sourceRef": "synthetic://at-247/patterns/1.0.0",
+  "patterns": [
+    {
+      "id": "at247:pattern:poe-camera",
+      "version": "1.0.0",
+      "category": "fictional-camera",
+      "rootId": "at247:item:poe-camera",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "maxDepth": 6,
+      "maxEdges": 64,
+      "dependencies": [
+        {
+          "id": "at247:edge:camera-utp",
+          "fromId": "at247:item:poe-camera",
+          "toId": "at247:item:utp",
+          "ruleId": "AT247-CAMERA_UTP",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "wired_run",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:camera-mount",
+          "fromId": "at247:item:poe-camera",
+          "toId": "at247:item:camera-mount",
+          "ruleId": "AT247-CAMERA_MOUNT",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "mount_required",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:camera-poe",
+          "fromId": "at247:item:poe-camera",
+          "toId": "at247:item:poe-power",
+          "ruleId": "AT247-CAMERA_POE",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "poe_source",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:camera-link-test",
+          "fromId": "at247:item:utp",
+          "toId": "at247:item:link-test",
+          "ruleId": "AT247-CAMERA_LINK_TEST",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": null,
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:camera-ends",
+          "fromId": "at247:item:utp",
+          "toId": "at247:item:utp-connector",
+          "ruleId": "AT247-CAMERA_ENDS",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": null,
+          "quantityFact": "utp_ends"
+        }
+      ]
+    },
+    {
+      "id": "at247:pattern:mesh",
+      "version": "1.0.0",
+      "category": "fictional-mesh",
+      "rootId": "at247:item:mesh",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "maxDepth": 6,
+      "maxEdges": 64,
+      "dependencies": [
+        {
+          "id": "at247:edge:mesh-wired",
+          "fromId": "at247:item:mesh",
+          "toId": "at247:item:utp",
+          "ruleId": "AT247-MESH_WIRED",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "backhaul",
+            "equals": "wired"
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:mesh-wireless",
+          "fromId": "at247:item:mesh",
+          "toId": "at247:item:wireless-survey",
+          "ruleId": "AT247-MESH_WIRELESS",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "backhaul",
+            "equals": "wireless"
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:mesh-mount",
+          "fromId": "at247:item:mesh",
+          "toId": "at247:item:mesh-mount",
+          "ruleId": "AT247-MESH_MOUNT",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "mount_required",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:mesh-power",
+          "fromId": "at247:item:mesh",
+          "toId": "at247:item:power-source",
+          "ruleId": "AT247-MESH_POWER",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "power_required",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:mesh-ends",
+          "fromId": "at247:item:utp",
+          "toId": "at247:item:utp-connector",
+          "ruleId": "AT247-MESH_ENDS",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": null,
+          "quantityFact": "utp_ends"
+        },
+        {
+          "id": "at247:edge:mesh-link-test",
+          "fromId": "at247:item:utp",
+          "toId": "at247:item:link-test",
+          "ruleId": "AT247-MESH_LINK_TEST",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": null,
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:mesh-wireless-test",
+          "fromId": "at247:item:wireless-survey",
+          "toId": "at247:item:wireless-test",
+          "ruleId": "AT247-MESH_WIRELESS_TEST",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": null,
+          "quantityFact": null
+        }
+      ]
+    },
+    {
+      "id": "at247:pattern:emt-route",
+      "version": "1.0.0",
+      "category": "fictional-route",
+      "rootId": "at247:item:emt-route",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "maxDepth": 6,
+      "maxEdges": 64,
+      "dependencies": [
+        {
+          "id": "at247:edge:emt-measured",
+          "fromId": "at247:item:emt-route",
+          "toId": "at247:item:at238-route-evaluation",
+          "ruleId": "AT247-EMT_MEASURED",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "route_measured",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:emt-lb",
+          "fromId": "at247:item:emt-route",
+          "toId": "at247:item:lb",
+          "ruleId": "AT247-EMT_LB",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "lb_required",
+            "equals": true
+          },
+          "quantityFact": "lb_points"
+        }
+      ]
+    },
+    {
+      "id": "at247:pattern:enclosure",
+      "version": "1.0.0",
+      "category": "fictional-enclosure",
+      "rootId": "at247:item:enclosure",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "maxDepth": 6,
+      "maxEdges": 64,
+      "dependencies": [
+        {
+          "id": "at247:edge:enclosure-mount",
+          "fromId": "at247:item:enclosure",
+          "toId": "at247:item:enclosure-mount",
+          "ruleId": "AT247-ENCLOSURE_MOUNT",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "mount_required",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:enclosure-outlet",
+          "fromId": "at247:item:enclosure",
+          "toId": "at247:item:interior-outlet",
+          "ruleId": "AT247-ENCLOSURE_OUTLET",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "interior_outlet_required",
+            "equals": true
+          },
+          "quantityFact": "outlet_points"
+        },
+        {
+          "id": "at247:edge:enclosure-power",
+          "fromId": "at247:item:enclosure",
+          "toId": "at247:item:power-source",
+          "ruleId": "AT247-ENCLOSURE_POWER",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "power_required",
+            "equals": true
+          },
+          "quantityFact": null
+        }
+      ]
+    },
+    {
+      "id": "at247:pattern:power",
+      "version": "1.0.0",
+      "category": "fictional-power",
+      "rootId": "at247:item:power",
+      "sourceRef": "synthetic://at-247/patterns/1.0.0",
+      "maxDepth": 6,
+      "maxEdges": 64,
+      "dependencies": [
+        {
+          "id": "at247:edge:power-source",
+          "fromId": "at247:item:power",
+          "toId": "at247:item:power-source",
+          "ruleId": "AT247-POWER_SOURCE",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "power_required",
+            "equals": true
+          },
+          "quantityFact": null
+        },
+        {
+          "id": "at247:edge:power-test",
+          "fromId": "at247:item:power-source",
+          "toId": "at247:item:power-test",
+          "ruleId": "AT247-POWER_TEST",
+          "sourceRef": "synthetic://at-247/patterns/1.0.0",
+          "condition": {
+            "fact": "test_required",
+            "equals": true
+          },
+          "quantityFact": null
+        }
+      ]
+    }
+  ]
+}

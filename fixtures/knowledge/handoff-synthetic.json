@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0.0",
+  "packages": [
+    {
+      "id": "catalog:painting-v1",
+      "namespace": "example.painting",
+      "version": "1.0.0",
+      "taxonomy": "fictitious painting taxonomy",
+      "source": {"ref": "synthetic://handoff/painting", "version": "1.0.0"},
+      "applicability": {
+        "jurisdictions": ["TEST-ZONE-A"],
+        "categories": ["fictional-painting"],
+        "scopes": [{"kind": "project", "id": "painting:project"}]
+      },
+      "limits": ["Demo sintética; no valida sustratos, humedad ni normativa."],
+      "review": {
+        "state": "unverified",
+        "requiredReviewer": "fictional painting specialist",
+        "evidenceRefs": []
+      },
+      "categorySpecs": [
+        {"category": "fictional-painting", "schemaRef": "synthetic://handoff/painting-schema/1.0.0"}
+      ],
+      "installationPatterns": [],
+      "ruleSets": []
+    },
+    {
+      "id": "catalog:event-v1",
+      "namespace": "example.event",
+      "version": "1.0.0",
+      "taxonomy": "fictitious event taxonomy",
+      "source": {"ref": "synthetic://handoff/event", "version": "1.0.0"},
+      "applicability": {
+        "jurisdictions": ["TEST-ZONE-A"],
+        "categories": ["fictional-event"],
+        "scopes": [{"kind": "project", "id": "event:project"}]
+      },
+      "limits": ["Demo sintética; no valida permisos, aforo ni seguridad."],
+      "review": {
+        "state": "unverified",
+        "requiredReviewer": "fictional event specialist",
+        "evidenceRefs": []
+      },
+      "categorySpecs": [
+        {"category": "fictional-event", "schemaRef": "synthetic://handoff/event-schema/1.0.0"}
+      ],
+      "installationPatterns": [],
+      "ruleSets": []
+    }
+  ]
+}

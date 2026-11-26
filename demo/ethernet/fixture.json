@@ -1,0 +1,40 @@
+{
+  "datasetId": "at-239-synthetic-v1",
+  "catalog": {
+    "cables": [
+      {"id":"CAT6-IN","category":"Cat6","pairs":4,"conductor":"solid_copper","environment":["interior"],"commercialLengthM":"305","evidenceId":"EV-CAT6-IN"},
+      {"id":"CAT6-OUT","category":"Cat6","pairs":4,"conductor":"solid_copper","environment":["interior","exterior_uv"],"commercialLengthM":"305","evidenceId":"EV-CAT6-OUT"},
+      {"id":"CAT6-CCA","category":"Cat6","pairs":4,"conductor":"cca","environment":["interior"],"commercialLengthM":"305","evidenceId":"EV-CAT6-CCA"}
+    ],
+    "terminations": [
+      {"id":"JACK-CAT6-SOLID","kind":"jack","categories":["Cat6"],"conductors":["solid_copper"],"evidenceId":"EV-JACK"},
+      {"id":"RJ45-CAT6-SOLID","kind":"connector","categories":["Cat6"],"conductors":["solid_copper"],"evidenceId":"EV-RJ45"},
+      {"id":"RJ45-STRANDED","kind":"connector","categories":["Cat6"],"conductors":["stranded_copper"],"evidenceId":"EV-RJ45-STRANDED"}
+    ]
+  },
+  "topology": {
+    "endpoints": [
+      {"id":"CAM-1","medium":"poe_ethernet","evidenceId":"EV-CAM-1"},
+      {"id":"CAM-2","medium":"poe_ethernet","evidenceId":"EV-CAM-2"},
+      {"id":"CAM-WIFI","medium":"wifi_solar","evidenceId":"EV-CAM-WIFI"},
+      {"id":"MESH-1","medium":"mesh","wiredBackhaulRequired":false,"evidenceId":"EV-MESH-1"},
+      {"id":"MESH-2","medium":"mesh","wiredBackhaulRequired":true,"evidenceId":"EV-MESH-2"},
+      {"id":"ROUTER","medium":"wifi_solar","evidenceId":"EV-ROUTER"}
+    ],
+    "ports": {
+      "SW-1":{"endpointId":"SWITCH","poeCapable":true},
+      "SW-2":{"endpointId":"SWITCH","poeCapable":true},
+      "SW-3":{"endpointId":"SWITCH","poeCapable":false},
+      "SW-UP":{"endpointId":"SWITCH","poeCapable":false},
+      "CAM-1-P":{"endpointId":"CAM-1","poeCapable":true},
+      "CAM-2-P":{"endpointId":"CAM-2","poeCapable":true},
+      "MESH-2-P":{"endpointId":"MESH-2","poeCapable":false},
+      "ROUTER-P":{"endpointId":"ROUTER","poeCapable":false}
+    },
+    "uplinkRequired":true,"uplinkEndpointId":"ROUTER","uplinkEvidenceId":"EV-UPLINK",
+    "runs": [
+      {"id":"LINK-CAM-1","originPortId":"SW-1","destinationPortId":"CAM-1-P","routeConfirmed":true,"sectionLengthsM":["12","8"],"slackPerEndM":"1","wasteFraction":"0.05","cableCount":1,"cableId":"CAT6-IN","terminationIds":["JACK-CAT6-SOLID","RJ45-CAT6-SOLID"],"environment":"interior","pathwayId":"SEG-DEMO","conduitOccupancyVerified":false,"powerSeparationVerified":true,"channelLimitVerified":false,"evidenceId":"EV-RUN-CAM-1"},
+      {"id":"LINK-CAM-2","originPortId":"SW-2","destinationPortId":"CAM-2-P","routeConfirmed":false,"cableId":"CAT6-IN","terminationIds":["JACK-CAT6-SOLID","RJ45-CAT6-SOLID"],"environment":"interior","powerSeparationVerified":false,"evidenceId":"EV-RUN-CAM-2"}
+    ]
+  }
+}

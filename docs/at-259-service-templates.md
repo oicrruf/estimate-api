@@ -1,0 +1,11 @@
+# AT-259: plantillas de servicios
+
+`estimate_api.services.evaluate_service` evalúa una `ServiceRequest` inmutable. La plantilla declara complejidad, trabajo incluido y excluido, materiales con cantidad y uso (`purchase`, `client_asset` o `excluded`) y pasos de verificación. La solicitud aporta un `ScopeIntake` AT-246, evidencia de trabajos existentes y, cuando se reutiliza un activo del cliente, evidencia de cantidad. La evaluación vuelve a construir el borrador de alcance para obtener preguntas bloqueantes.
+
+Un material del cliente nunca entra en compras. Para reutilizarlo se requiere disponibilidad, validación y cantidad suficiente verificadas; una compra propuesta para un artículo del cliente queda pendiente por conflicto de propiedad. Los materiales excluidos permanecen explícitos. Una compra sin precio queda visible pero pendiente, porque este módulo no inventa costo de materiales. Una compra requerida en AT-246 que no figure en la plantilla también queda pendiente para conciliación.
+
+Las exclusiones del cliente se suman a las de la plantilla sin duplicados. Si contradicen trabajo incluido, la proyección deja de prometer ese trabajo y el total queda pendiente hasta resolver el conflicto.
+
+La política de precios declara la base de mano de obra, fuente, tratamiento tributario y aplicabilidad de contingencia. `APPLIES` pasa exactamente `0.05` una vez a `PriceLine` AT-224; `NOT_APPLICABLE` pasa cero; `UNKNOWN` bloquea el precio. AT-224 realiza toda la aritmética. En el caso ficticio estipulado, `40.00 × 1.05 × 1.13` da `47.46` por unidad y `142.38` para tres unidades. El `0.13` es un parámetro del ejemplo, no una tasa legal consultada.
+
+La `CustomerServiceProjection` muestra alcance, materiales, pruebas y un total sólo cuando no hay pendientes. No contiene `contingency_unit`, la decisión interna de contingencia ni otros componentes internos; éstos sólo están en `ServiceEvaluation.internal_pricing` y `internal_pending_fields`. Los pasos de verificación representan trabajo futuro, no resultados de pruebas ya realizadas. No hay compras, persistencia, proveedor, red ni interfaz en este contrato.
