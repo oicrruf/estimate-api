@@ -1,0 +1,63 @@
+{
+  "fixtureVersion": "1.0.0",
+  "synthetic": true,
+  "projectFile": "fixtures/valid/cameras.json",
+  "jurisdiction": "TEST-ZONE-A",
+  "category": "fictional-camera",
+  "scope": {
+    "kind": "project",
+    "id": "camera:project"
+  },
+  "seed": {
+    "item": "camera:camera",
+    "quantity": 8,
+    "unit": "each"
+  },
+  "changedSeedQuantity": 10,
+  "rules": [
+    {
+      "id": "camera:camera-to-link",
+      "packageId": "catalog:camera-at266-v1",
+      "trigger": "camera:camera",
+      "output": "camera:link",
+      "factor": 1,
+      "unit": "each",
+      "mode": "per_unit"
+    },
+    {
+      "id": "camera:link-to-termination",
+      "packageId": "catalog:camera-at266-v1",
+      "trigger": "camera:link",
+      "output": "camera:termination",
+      "factor": 2,
+      "unit": "each",
+      "mode": "per_unit"
+    },
+    {
+      "id": "camera:camera-to-conduit",
+      "packageId": "catalog:camera-at266-v1",
+      "trigger": "camera:camera",
+      "output": "camera:conduit",
+      "factor": 5,
+      "unit": "m",
+      "mode": "per_unit"
+    },
+    {
+      "id": "camera:camera-to-mount",
+      "packageId": "catalog:camera-at266-v1",
+      "trigger": "camera:camera",
+      "output": "camera:mount",
+      "factor": 1,
+      "unit": "each",
+      "mode": "per_unit"
+    }
+  ],
+  "brief": "Oficina ficticia: 8 cámaras IP PoE, enlace UTP y tramo EMT. Cada cámara tiene 5 m ficticios de EMT; duplicar terminaciones por enlace es una hipótesis de prueba, no una regla profesional.",
+  "itemLabels": {
+    "camera:camera": "cámara IP PoE",
+    "camera:link": "enlace UTP",
+    "camera:termination": "terminación UTP",
+    "camera:conduit": "tubo EMT",
+    "camera:mount": "soporte"
+  }
+}
