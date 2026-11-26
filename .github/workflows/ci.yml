@@ -86,3 +86,19 @@ jobs:
           PR_BRANCH: ${{ github.head_ref }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: uv run --no-sync python scripts/check_policy.py --title "$PR_TITLE" --branch "$PR_BRANCH" --commit "$PR_HEAD_SHA"
+
+  at208_supabase_postgres:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify on pinned disposable Supabase PostgreSQL
+        env:
+          AT208_PG_IMAGE: ghcr.io/supabase/postgres:17.6.1.102@sha256:90c82488dc721a2b6516c1634b2cc000633f972c4eb6100b68c5aef23ee9e275
+          AT208_ADMIN_USER: supabase_admin
+        run: |
+          docker pull "$AT208_PG_IMAGE"
+          bash tests/at208/run_local.sh

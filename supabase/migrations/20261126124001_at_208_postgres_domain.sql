@@ -18,31 +18,32 @@ begin
   if not exists (select 1 from pg_roles
                  where rolname = 'at208_policy_owner' and not rolcanlogin
                    and not rolbypassrls and not rolsuper)
-     or not pg_has_role(current_user, 'at208_policy_owner', 'member') then
+     or not pg_has_role(current_user, 'at208_policy_owner', 'set') then
     raise exception 'isolated NOLOGIN at208_policy_owner membership required'
       using errcode = '42501';
   end if;
   if not exists (select 1 from pg_roles
                  where rolname = 'at208_mutation_owner' and not rolcanlogin
                    and not rolbypassrls and not rolsuper)
-     or not pg_has_role(current_user, 'at208_mutation_owner', 'member') then
+     or not pg_has_role(current_user, 'at208_mutation_owner', 'set') then
     raise exception 'isolated NOLOGIN at208_mutation_owner membership required'
       using errcode = '42501';
   end if;
   if not exists (select 1 from pg_roles
                  where rolname = 'at208_audit_owner' and not rolcanlogin
                    and not rolbypassrls and not rolsuper)
-     or not pg_has_role(current_user, 'at208_audit_owner', 'member') then
+     or not pg_has_role(current_user, 'at208_audit_owner', 'set') then
     raise exception 'isolated NOLOGIN at208_audit_owner membership required'
       using errcode = '42501';
   end if;
   for helper in select unnest(array[
     'at208_policy_owner', 'at208_mutation_owner', 'at208_audit_owner']::name[])
   loop
-    -- El rol conectado que ejecuta la migración es el único LOGIN autorizado
-    -- a asumir estos propietarios. Las sesiones normales no deben heredarlos.
+    -- Un SUPERUSER de plataforma puede asumir todos los roles implícitamente
+    -- aunque no tenga ningún GRANT. El migrador conectado es el único LOGIN
+    -- no superusuario autorizado a asumir estos propietarios.
     select r.rolname into exposed_role from pg_roles r
-    where r.rolcanlogin and r.rolname <> session_user
+    where r.rolcanlogin and not r.rolsuper and r.rolname <> session_user
       and pg_has_role(r.rolname, helper, 'member') limit 1;
     if found then
       raise exception 'helper % exposed to login role %', helper, exposed_role

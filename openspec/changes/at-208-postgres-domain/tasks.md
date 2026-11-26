@@ -25,6 +25,7 @@
 - [x] 4.5 Sustituir propiedad BYPASSRLS de auxiliares/mutadores/auditoría por roles NOLOGIN NOBYPASSRLS con grants/políticas acotadas; verificar localmente que el backend no tiene DML directo.
 - [x] 4.5a Rechazar propietarios auxiliares LOGIN o asumibles por roles de cliente/backend/sesión ordinaria; probar admisión negativa en PostgreSQL descartable.
 - [x] 4.5b Conservar evaluación adversa posterior a selección, superseder la selección activa y ordenar evaluaciones de una transacción por secuencia monotónica; probar reintento y selección vigente.
+- [x] 4.5c Probar preflight con un segundo LOGIN SUPERUSER de plataforma sin GRANT y con un migrador ordinario sin `SET ROLE`; conservar fallo cerrado de cliente/backend.
 - [ ] 4.6 Probar topología exacta de conexión SQL, membresía del migrador, grants y roles en un stack Supabase local compatible; no atribuir compatibilidad a la base PostgreSQL simulada.
 - [ ] 4.7 Revisar independientemente SQL, roles, evidencia fijada, modelo de autorización/idempotencia y tests; verificar CI del SHA final antes de integrar.
 

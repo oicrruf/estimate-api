@@ -2,16 +2,17 @@
 set -euo pipefail
 
 container="$1"
+admin_user="${2:-postgres}"
 first_log="$(mktemp)"
 trap 'rm -f "$first_log"' EXIT
 
-docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   -c "set role at208_backend; select private.set_project_member(
     '10000000-0000-0000-0000-000000000003',
     '00000000-0000-0000-0000-000000000005', 'race-editor',
     '00000000-0000-0000-0000-000000000004', 'editor');" >/dev/null
 
-docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test \
+docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   >"$first_log" 2>&1 <<'SQL' &
 begin;
 set role at208_backend;
@@ -39,7 +40,7 @@ if [[ "$ready" != true ]]; then
   exit 1
 fi
 
-docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U postgres -d at208_test <<'SQL'
+docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test <<'SQL'
 set role at208_backend;
 do $$ begin
   begin
@@ -53,7 +54,7 @@ end $$;
 SQL
 wait "$first_pid"
 
-state="$(docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U postgres -d at208_test \
+state="$(docker exec "$container" psql -X -qAt -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   -c "select owner_user_id = '00000000-0000-0000-0000-000000000005' and
       (select role from public.project_memberships
        where project_id='10000000-0000-0000-0000-000000000003'
