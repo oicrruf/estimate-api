@@ -22,15 +22,19 @@ def check_branch(branch: str, issue: str) -> bool:
 
 
 def check_commit(sha: str, issue: str) -> list[str]:
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        return ["commit must be an explicit 40-character SHA"]
     data = subprocess.check_output(
-        ["git", "show", "-s", "--format=%s%n%an%n%ae%n%B", sha], text=True
+        ["git", "show", "-s", "--format=%s%n%an%n%ae%n%cn%n%ce%n%B", sha], text=True
     ).splitlines()
     errors = []
     if not check_title(data[0], issue):
         errors.append("commit subject must be Conventional Commits with issue ID")
     if data[1:3] != ["Víctor M. Reyes", "vm.reyesal@gmail.com"]:
         errors.append("commit author must match approved local identity")
-    if FORBIDDEN.search("\n".join(data[3:])):
+    if data[3:5] != ["Víctor M. Reyes", "vm.reyesal@gmail.com"]:
+        errors.append("commit committer must match approved local identity")
+    if FORBIDDEN.search("\n".join(data[5:])):
         errors.append("commit contains discretionary AI attribution")
     parents = subprocess.check_output(["git", "rev-list", "--parents", "-n", "1", sha], text=True)
     if len(parents.split()) > 2:
