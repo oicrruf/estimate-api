@@ -24,7 +24,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Instalar wheel oficial con hash fijado
-        run: python -m pip install --disable-pip-version-check --no-deps --only-binary=:all: --require-hashes -r demo/fixtures/requirements-ci.txt
+        run: |
+          python -m pip install --disable-pip-version-check --no-deps --only-binary=:all: --require-hashes -r demo/fixtures/requirements-ci.txt
       - name: Regenerar y comparar seed
         shell: bash
         run: |
