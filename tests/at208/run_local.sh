@@ -17,8 +17,8 @@ docker run -d --rm --name "$container" --network none \
   -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_PASSWORD=at208-disposable \
   -e POSTGRES_USER="$admin_user" "$pg_image" >/dev/null
 ready=false
-for _ in {1..120}; do
-  if docker logs "$container" 2>&1 | grep -q 'PostgreSQL init process complete' && \
+for _ in {1..300}; do
+  if docker logs --tail 200 "$container" 2>&1 | grep -q 'PostgreSQL init process complete' && \
     docker exec "$container" psql -X -qAt -U "$admin_user" -d postgres \
       -c 'select 1' >/dev/null 2>&1; then
     ready=true
