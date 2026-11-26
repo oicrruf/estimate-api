@@ -45,6 +45,17 @@ def _named_items(values: object, field: str, *, required: bool = False) -> None:
         raise ValueError(f"{field} contains duplicate names")
 
 
+def _merge_names(first: tuple[str, ...], second: tuple[str, ...]) -> tuple[str, ...]:
+    names: list[str] = []
+    seen: set[str] = set()
+    for name in (*first, *second):
+        key = name.strip().casefold()
+        if key not in seen:
+            names.append(name)
+            seen.add(key)
+    return tuple(names)
+
+
 class Complexity(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
@@ -290,8 +301,28 @@ def evaluate_service(request: ServiceRequest) -> ServiceEvaluation:
         for item in request.existing_work
         if item.status == ExistingWorkStatus.UNKNOWN
     )
+    scope_exclusions = scope.exclusions.value if scope.exclusions is not None else ()
+    exclusion_keys = {item.strip().casefold() for item in scope_exclusions}
+    excluded_work = _merge_names(template.excluded_work, scope_exclusions)
+    included_work = tuple(
+        item for item in template.included_work if item.strip().casefold() not in exclusion_keys
+    )
+    pending.extend(
+        f"scope.exclusions.conflict.{item}"
+        for item in template.included_work
+        if item.strip().casefold() in exclusion_keys
+    )
     assets = {asset.name.strip().casefold(): asset for asset in scope.client_assets}
     supplies = {item.name.strip().casefold(): item for item in scope.supplies}
+    template_materials = {item.name.strip().casefold(): item for item in template.materials}
+    for scope_supply in scope.supplies:
+        if not scope_supply.purchase_required:
+            continue
+        matched = template_materials.get(scope_supply.name.strip().casefold())
+        if matched is None:
+            pending.append(f"supplies.{scope_supply.name}.unmatched_purchase")
+        elif matched.use != MaterialUse.PURCHASE:
+            pending.append(f"supplies.{scope_supply.name}.purchase_conflict")
     allocations = {
         item.material_name.strip().casefold(): item for item in request.client_asset_allocations
     }
@@ -359,8 +390,8 @@ def evaluate_service(request: ServiceRequest) -> ServiceEvaluation:
         template.template_id,
         template.name,
         template.complexity,
-        template.included_work,
-        template.excluded_work,
+        included_work,
+        excluded_work,
         tuple(purchase_items),
         tuple(client_assets),
         tuple(excluded_materials),

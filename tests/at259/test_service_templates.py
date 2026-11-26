@@ -54,6 +54,7 @@ def _scope(
     *,
     assets: tuple[ClientAsset, ...] = (),
     supplies: tuple[SupplyItem, ...] = (),
+    exclusions: tuple[str, ...] = ("Wall repair",),
 ) -> ScopeIntake:
     return ScopeIntake(
         "Fictitious installation",
@@ -63,7 +64,7 @@ def _scope(
         sketch=_confirmed("SKETCH-FICT"),
         measurements=_confirmed((Measurement("clearance", 2.0, "m"),)),
         restrictions=_confirmed(()),
-        exclusions=_confirmed(("Wall repair",)),
+        exclusions=_confirmed(exclusions),
         client_assets=assets,
         supplies=supplies,
         client_assets_absence_evidence=None if assets else "CLIENT-NO-ASSETS-FICT",
@@ -231,6 +232,35 @@ def test_unpriced_purchase_remains_visible_and_blocks_final_total() -> None:
     assert result.projection.pending_fields == ("materials.Bracket.price",)
     assert result.internal_pricing is not None
     assert result.internal_pricing.status == PriceStatus.PRICED
+
+
+def test_extra_scope_purchase_blocks_final_total_until_reconciled() -> None:
+    extra = SupplyItem("Bracket", SupplyOwner.CONTRACTOR, purchase_required=True)
+    result = evaluate_service(_request(scope=_scope(supplies=(extra,))))
+    assert result.scope_draft.purchase_items == ("Bracket",)
+    assert result.projection.status == ServiceStatus.PENDING
+    assert result.projection.total is None
+    assert "supplies.Bracket.unmatched_purchase" in result.projection.pending_fields
+    excluded = MaterialRequirement("Bracket", 1, "unit", MaterialUse.EXCLUDED)
+    result = evaluate_service(
+        _request(template=_template(excluded), scope=_scope(supplies=(extra,)))
+    )
+    assert "supplies.Bracket.purchase_conflict" in result.projection.pending_fields
+    assert result.projection.total is None
+
+
+def test_scope_exclusions_are_preserved_and_conflicts_block_price() -> None:
+    scope = _scope(exclusions=("Wall Repair", "Painting"))
+    result = evaluate_service(_request(scope=scope))
+    assert result.projection.status == ServiceStatus.READY
+    assert result.projection.excluded_work == ("Wall repair", "Painting")
+    scope = _scope(exclusions=("Check operation", "Painting"))
+    result = evaluate_service(_request(scope=scope))
+    assert result.projection.status == ServiceStatus.PENDING
+    assert result.projection.total is None
+    assert result.projection.included_work == ("Mount fixture",)
+    assert result.projection.excluded_work == ("Wall repair", "Check operation", "Painting")
+    assert "scope.exclusions.conflict.Check operation" in result.projection.pending_fields
 
 
 def test_unknown_scope_existing_work_or_tax_remains_pending() -> None:
