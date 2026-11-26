@@ -12,6 +12,8 @@ Keep the README current as the repository entry point. In the same PR, update
 README.md or a guide linked from it when changing user-visible behavior, commands,
 configuration or environment variables, contracts, tests, or deployment. Keep
 capability-specific detail in its guide and check that the README link still works.
+Write the root README and the essential instructions for judges in clear English;
+internal ADRs, technical notes, and Linear content do not need translation.
 When documentation does not apply, state the reason in the PR. For documentation-only
 changes that do not change a capability, validate the existing documentation and
 applicable checks without creating an unrelated OpenSpec delta.

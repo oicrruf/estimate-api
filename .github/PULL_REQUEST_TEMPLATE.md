@@ -1,31 +1,31 @@
-## Seguimiento
+## Tracking
 
 - Issue: AT-___
-- OpenSpec (si aplica): `openspec/changes/...`
+- OpenSpec (if applicable): `openspec/changes/...`
 
-## Resumen
+## Summary
 
-<!-- Qué cambió y por qué. Indique los límites de integración. -->
+<!-- What changed and why? State integration limits. -->
 
-## Documentación
+## Documentation
 
-Marque una opción:
+Select one option:
 
-- [ ] Este PR cambia comportamiento visible, comandos, configuración/env, contratos, pruebas o despliegue. Actualicé en este mismo PR el README o una guía enlazada desde él y comprobé el enlace.
-- [ ] No aplica actualizar documentación. Motivo: <!-- explicar -->
+- [ ] This PR changes visible behavior, commands, configuration/environment variables, contracts, tests, or deployment. I updated the root README or a guide linked from it in this same PR and checked the link. The root README and essential judge instructions remain in English.
+- [ ] No documentation update applies. Reason: <!-- explain -->
 
-Ruta del README o guía revisada: <!-- enlace relativo, si aplica -->
+README or guide path reviewed: <!-- relative link, if applicable -->
 
-## Pruebas y evidencia
+## Tests and evidence
 
-- [ ] Ejecuté los checks aplicables y anoté resultados concretos.
-- [ ] Revisé el diff, el contrato OpenAPI y OpenSpec si aplican.
-- [ ] CI verde y comentarios accionables resueltos antes de integrar.
+- [ ] I ran the applicable checks and recorded concrete results.
+- [ ] I reviewed the diff, OpenAPI contract, and OpenSpec where applicable.
+- [ ] CI is green and actionable review comments are resolved before merge.
 
-## Riesgo de migración
+## Migration risk
 
-<!-- Indique si hay migración y cómo se verificó; si no hay, escriba "Ninguna". -->
+<!-- State whether there is a migration and how it was verified; otherwise write "None". -->
 
-Antes de integrar, verifique que el título y el commit final Squash & Merge usen
-`type(scope): imperative summary (AT-XXX)`, el autor aprobado y ningún tráiler
-opcional de IA.
+Before merging, verify that the PR title and final Squash & Merge commit use
+`type(scope): imperative summary (AT-XXX)`, the approved author, and no optional
+AI attribution trailer.

@@ -1,29 +1,52 @@
 # Estimate API
 
-Backend y contratos de Estimate Agent. Este repositorio contiene una API HTTP mínima,
-paquetes de dominio y pruebas locales con datos ficticios. El [ADR inicial](docs/adr/0001-arquitectura-inicial.md)
-describe la arquitectura; las guías enlazadas abajo detallan cada capacidad y sus límites.
+Estimate Agent's backend, contracts, and local evidence demos. This repository contains a
+minimal HTTP API and separate domain modules. The demos and test data are synthetic.
+The [initial architecture ADR](docs/adr/0001-arquitectura-inicial.md) gives the broader
+context; the linked guides below explain each capability and its limits.
 
-## Qué se puede ejecutar hoy
+## Try what works today
 
-| Entrada | Alcance |
+You need Python 3.12.14 and `uv` 0.7.6. From the repository root, start the canonical
+API locally:
+
+```sh
+uv sync --frozen --extra dev
+uv run --no-sync uvicorn estimate_api.app:app --host 127.0.0.1 --port 8000
+```
+
+In another terminal, run `curl http://127.0.0.1:8000/health`. The expected response is
+`{"status":"ok"}`. **`GET /health` is the only application operation in the canonical
+HTTP API.** It shows that the process responds, not that a database, model, or other
+service is ready. FastAPI also serves its generated `/openapi.json` and documentation
+routes.
+
+For a local, deterministic ADK + Relate demonstration, run:
+
+```sh
+uv run --frozen --extra demo python -m demo.agent.cli demo --store /tmp/estimate-at227.demo.rl
+```
+
+The CLI uses a synthetic graph and fixed Cypher queries. It does not call an LLM or a
+remote service. See the [demo guide](demo/agent/README.md) for its scenarios and local
+store behavior. A [separate HTTP preview](demo/PREVIEW_HTTP.md) offers
+`GET /v1/demo/evaluate` on loopback for local UI testing; it is not mounted on the
+canonical API and is not a hosted demo. Do not connect these examples to real data.
+
+## What is in this repository
+
+| Area | Current state and boundary |
 | --- | --- |
-| `estimate_api.app:app` | API HTTP canónica: sólo `GET /health` como operación de aplicación. Responde `{"status":"ok"}` para indicar que el proceso responde; no comprueba dependencias. `/openapi.json` y las rutas de documentación son propias de FastAPI. |
-| [CLI ADK + Relate](demo/agent/README.md) | Demo local determinista con consultas Cypher y datos ficticios. No usa LLM ni servicios remotos. |
-| [Preview HTTP local](demo/PREVIEW_HTTP.md) | Servidor separado en `127.0.0.1:8001` con `GET /v1/demo/evaluate`; no forma parte del OpenAPI canónico ni está desplegado. |
-| [Migración SQL AT-208](docs/evidence/at-208.md) | Esquema de dominio y RLS con pruebas locales descartables y ensayo en imagen oficial de Supabase PostgreSQL. No es una migración aplicada al proyecto alojado ni una ruta HTTP autenticada. |
-| [Candidato AT-279](ci/at-279/README.md) | Paquete y pruebas de Compose para una demo privada futura. Es un candidato local/CI, sin despliegue Coolify operativo. |
+| [Canonical OpenAPI](contracts/openapi.json) | OpenAPI 3.1, version `0.1.0`; its only application operation is `GET /health`. `estimate-app` should pin a known revision, compare it with the upstream artifact, and regenerate its client when it changes. CLI and preview changes do not automatically extend this contract. |
+| [Local ADK + Relate CLI](demo/agent/README.md) | Reproducible evaluations with fictional product, offer, and inventory evidence; no model provider or production data. |
+| [Local HTTP preview](demo/PREVIEW_HTTP.md) | A separate server, defaulting to `127.0.0.1:8001`, for synthetic demo evaluations. It is not an authenticated or public API. |
+| [AT-208 SQL migration and evidence](docs/evidence/at-208.md) | Domain schema and RLS tested with disposable local PostgreSQL and an official Supabase PostgreSQL image. The migration has not been applied to a hosted project, and there is no authenticated domain HTTP route. |
+| [AT-279 VPS deployment candidate](ci/at-279/README.md) | A Compose package and CI checks for a potential private demo. It has not been deployed to Coolify or a VPS. |
 
-El contrato HTTP canónico es [contracts/openapi.json](contracts/openapi.json), OpenAPI 3.1,
-versión `0.1.0`. `estimate-app` debe fijar una revisión conocida de este artefacto,
-compararla con el origen y regenerar su cliente cuando cambie. Un cambio en la CLI
-o en la preview local no añade por sí mismo una operación a este contrato.
+## Local checks
 
-## Desarrollo local
-
-Requisitos fijados para los checks principales: Python 3.12.14, `uv` 0.7.6 y Node
-24.22.3. La primera instalación requiere acceso a los registros de paquetes. No se
-necesitan cuentas externas ni secretos de producción.
+Node 24.22.3 is also required for the pinned OpenSpec CLI. The first dependency install
+needs package registry access. Local checks need no external account or production secret.
 
 ```sh
 uv sync --frozen --extra dev
@@ -38,51 +61,41 @@ ci/at-206-docs/node_modules/.bin/openspec validate --specs --strict
 ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
 ```
 
-Para iniciar la API canónica local: `uv run --no-sync uvicorn estimate_api.app:app --reload`.
-`docker compose up --build` ofrece el mismo health en el puerto 8000 de loopback,
-sin base de datos ni almacén de objetos. Si cambia intencionalmente la API HTTP,
-regenere el contrato con `uv run --no-sync python scripts/openapi.py` y revise el diff.
+To regenerate the contract after an intentional canonical HTTP API change, run
+`uv run --no-sync python scripts/openapi.py` and review the diff. Alternatively,
+`docker compose up --build` starts the canonical health API on loopback port 8000;
+this Compose file starts no database or object store. The [preview guide](demo/PREVIEW_HTTP.md)
+has its own seed, server, and query commands.
 
-La demo tiene dependencias opcionales:
+## Capability guides
 
-```sh
-uv run --frozen --extra demo python -m demo.agent.cli demo --store /tmp/estimate-at227.demo.rl
-```
+- [Universal project contract (AT-264)](docs/at-264-contract.md) and
+  [knowledge registry (AT-265)](docs/at-265-knowledge-registry.md): versioned schemas,
+  declared coverage, and validation limits.
+- [Scope capture (AT-246)](openspec/specs/scope-capture/spec.md) and
+  [global consistency checks (AT-267)](openspec/specs/global-solution-consistency/spec.md):
+  local contracts and checks that keep unknown facts pending.
+- [Installation patterns (AT-247)](docs/at-247-installation-patterns.md),
+  [service templates (AT-259)](docs/at-259-service-templates.md), and
+  [synthetic Ethernet links (AT-239)](demo/ethernet/README.md): local technical
+  derivations with evidence and pending checks; they do not certify an installation.
+- [Pricing engine (AT-224)](docs/at-224-pricing.md) and
+  [reservation boundary (AT-233)](docs/at-233-reservation-adapter.md): deterministic
+  calculations or evaluations on supplied inputs, with no purchase or real reservation.
+- [Relate evidence (AT-215)](docs/evidence/at-215.md),
+  [local vertical demo (AT-227)](docs/evidence/at-227.md), and
+  [SQL evidence (AT-208)](docs/evidence/at-208.md): reproducible commands, tests,
+  and explicit limits.
 
-Su [guía](demo/agent/README.md) documenta los escenarios y el archivo Relate local.
-Para la preview HTTP, siga [los dos comandos de arranque y consultas](demo/PREVIEW_HTTP.md).
-No conecte estos ejemplos a datos reales.
+[`.env.example`](.env.example) contains placeholders for future integrations, not
+credentials. The unauthenticated preview and AT-279 package are not public services.
+Auth/JWT integration, hosted connections, deployment checks, and professional approvals
+require separate work and evidence.
 
-## Guías por capacidad
+## Keeping documentation current
 
-- [Contrato universal de proyecto AT-264](docs/at-264-contract.md) y
-  [registro de conocimiento AT-265](docs/at-265-knowledge-registry.md): esquemas
-  versionados, cobertura declarada y límites de validación.
-- [Captura de alcance AT-246](openspec/specs/scope-capture/spec.md) y
-  [consistencia global AT-267](openspec/specs/global-solution-consistency/spec.md):
-  contratos y checks locales que conservan hechos desconocidos como pendientes.
-- [Patrones de instalación AT-247](docs/at-247-installation-patterns.md),
-  [plantillas de servicios AT-259](docs/at-259-service-templates.md) y
-  [enlaces Ethernet sintéticos AT-239](demo/ethernet/README.md): derivaciones
-  técnicas locales con pendientes y evidencia; no certifican instalaciones.
-- [Motor de precios AT-224](docs/at-224-pricing.md) y
-  [límite de reservas AT-233](docs/at-233-reservation-adapter.md): cálculos o
-  evaluación local determinista sobre entradas suministradas, sin compra ni
-  reserva real.
-- [Evidencia Relate AT-215](docs/evidence/at-215.md),
-  [vertical local AT-227](docs/evidence/at-227.md) y
-  [SQL AT-208](docs/evidence/at-208.md): comandos reproducibles, pruebas y límites.
-
-`.env.example` contiene marcadores para integraciones futuras; no proporciona
-credenciales. Ni la preview sin autenticación ni el paquete AT-279 constituyen un
-servicio público. La integración Auth/JWT, las conexiones alojadas, las pruebas de
-despliegue y las aprobaciones profesionales requieren sus propios cambios y gates.
-
-## Mantenimiento
-
-Siga [AGENTS.md](AGENTS.md) y la [plantilla de PR](.github/PULL_REQUEST_TEMPLATE.md).
-Cada PR que cambie comportamiento visible, comandos, configuración o entorno,
-contratos, pruebas o despliegue actualiza este README o una guía enlazada desde él
-en el mismo PR. Si no corresponde documentación, el PR explica por qué. Los detalles
-de cada capacidad permanecen en su guía; este README conserva las entradas y los
-límites vigentes.
+Follow [AGENTS.md](AGENTS.md) and the [PR template](.github/PULL_REQUEST_TEMPLATE.md).
+A PR that changes visible behavior, commands, configuration or environment variables,
+contracts, tests, or deployment updates this README or a guide linked from it in the
+same PR. If documentation does not apply, the PR explains why. Capability-specific
+details belong in their guides; this README remains the English entry point for judges.
