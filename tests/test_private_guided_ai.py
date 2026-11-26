@@ -176,6 +176,29 @@ def test_mismatched_or_conflicting_measurements_fail_before_graph(
             asyncio.run(run_private(path, description, FakeExtractor(6, "thick", "known")))
 
 
+@pytest.mark.parametrize(
+    "description",
+    [
+        "Seis UTP de OD 0.278 o 0.224 in; tramos de 2 m y 1.5 m.",
+        "Six UTP with outer diameter 0.278 or 0.224 inches; segments of 2 m and 1.5 m.",
+        "Seis UTP de OD 0.278/0.224 in; tramos de 2 m y 1.5 m.",
+    ],
+)
+def test_shared_unit_od_alternative_rejects_slim_before_graph(
+    description: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "guided.rl"
+        seed(path)
+
+        def forbidden(*args: object, **kwargs: object) -> None:
+            raise AssertionError("No se debe abrir Relate")
+
+        monkeypatch.setattr("demo.guided_bom.private_ai.graph_evidence", forbidden)
+        with pytest.raises(ValueError, match="OD alternativo"):
+            asyncio.run(run_private(path, description, FakeExtractor(6, "slim", "known")))
+
+
 def test_missing_od_skips_graph(monkeypatch: pytest.MonkeyPatch) -> None:
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "guided.rl"
