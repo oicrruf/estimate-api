@@ -1,0 +1,40 @@
+name: AT-206 documentación de arquitectura
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  validate-at-206:
+    name: Validar ADR y OpenSpec AT-206
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Comprobar artefactos del cambio
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            docs/adr/0001-arquitectura-inicial.md
+            docs/evidence/at-206.md
+            openspec/changes/at-206-arquitectura-inicial/proposal.md
+            openspec/changes/at-206-arquitectura-inicial/design.md
+            openspec/changes/at-206-arquitectura-inicial/tasks.md
+            openspec/changes/at-206-arquitectura-inicial/specs/platform-data-boundary/spec.md
+            openspec/changes/at-206-arquitectura-inicial/specs/project-knowledge-boundary/spec.md
+            openspec/changes/at-206-arquitectura-inicial/specs/protected-project-operations/spec.md
+          )
+          for file in "${files[@]}"; do
+            test -s "$file"
+          done
+      - name: Validar OpenSpec AT-206
+        env:
+          OPENSPEC_TELEMETRY: '0'
+        run: npm exec --yes --package=@fission-ai/openspec@2.2.0 -- openspec validate at-206-arquitectura-inicial --strict
