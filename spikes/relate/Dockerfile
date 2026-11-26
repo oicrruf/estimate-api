@@ -6,4 +6,9 @@ COPY requirements-container.txt .
 COPY wheelhouse/ ./wheelhouse/
 RUN python -m pip install --no-index --find-links=wheelhouse --only-binary=:all: --require-hashes -r requirements-container.txt
 COPY catalog.json spike.py container_probe.py ./
+RUN addgroup --system probe && adduser --system --ingroup probe probe \
+    && mkdir -p /data /backup /restored \
+    && chown probe:probe /data /backup /restored \
+    && chmod -R a+rX /probe
+USER probe
 ENTRYPOINT ["python", "/probe/container_probe.py"]

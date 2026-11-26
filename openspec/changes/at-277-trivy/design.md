@@ -1,0 +1,9 @@
+# Diseño AT-277 API
+
+El workflow con `contents: read` hace checkout sin secretos, construye el Dockerfile existente y exporta la imagen a un tar temporal. El ejecutable Trivy oficial 0.76.2 se extrae de una imagen fijada por digest y verificada con Cosign; analiza el checkout y ese tar como proceso sin privilegios en el runner. No recibe socket Docker ni tokens. Dos scans comparten la DB en el mismo directorio temporal para reducir descargas; no se conserva caché entre PR de terceros. El JSON sin depurar nunca se publica como artifact.
+
+Un parser Python con pruebas sintéticas emite solo recuentos e IDs de reglas/CVE. Bloquea cualquier secreto y HIGH/CRITICAL de vulnerabilidad o misconfiguración; MEDIUM se cuenta. JSON inválido, severidad desconocida o fallo de scan bloquea. No hay excepciones activas. El check se incorpora como contexto nuevo sin modificar reglas de protección existentes.
+
+La remediación del gate distingue paquetes de desarrollo en `uv.lock`, paquetes de la imagen final y metadatos `UNKNOWN`. FastAPI se actualiza para admitir Starlette corregido; la imagen usa base Alpine mantenida y dos etapas para dejar la herramienta de build fuera del runtime. El archivo Relate sintético necesita usuario no root sin perder permisos del volumen. La política deduplica por destino, paquete, versión, ID y posición, conserva la severidad más estricta de duplicados sin depender del orden, rechaza identidades malformadas y rotula por separado fuente e imagen. Las correcciones no dispensan hallazgos restantes.
+
+El PR aún controla `scan.sh` y la política que ejecuta este mismo workflow, por lo que el P2 de confianza permanece abierto y el contexto no debe exigirse como gate. La rama predeterminada ahora es `develop`; un verificador anclado a su revisión protegida requeriría un PR y decisión del propietario separados. Una comprobación externa manual del SHA exacto es solo evidencia puntual, no un sustituto automático.
