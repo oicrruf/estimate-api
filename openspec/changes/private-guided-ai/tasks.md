@@ -1,0 +1,6 @@
+- [x] Delimitar el contrato y los casos de fallo sin red.
+- [x] Añadir CLI ADK, extracción OpenAI estructurada y herramienta Relate fija.
+- [x] Fijar Luna/none, modelo explícito, respuesta SDK tipada y métricas saneadas.
+- [x] Probar 4/2/ambiguo con extractor falso y Relate real, sin proveedor.
+- [ ] Verificar una consulta privada real desde esta rama en el entorno autorizado.
+- [ ] Revisar, sincronizar y archivar OpenSpec tras la prueba real.
