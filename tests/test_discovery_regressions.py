@@ -1,5 +1,6 @@
 """AT-266 regressions for rule provenance and specialist revalidation."""
 
+import copy
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -78,7 +79,7 @@ def test_unattested_rule_cannot_inject_cross_domain_line(domain: str) -> None:
     intake, package, context = case(domain)
     result = evaluate_scope(intake, package, registry_context=context)
     assert result.payload["coverage"]["status"] == "pending_specialist"
-    assert result.payload["coverage"]["reasons"] == ["rule_provenance_unverified"]
+    assert result.payload["coverage"]["reasons"] == ["reviewed_package_missing"]
     assert {line.key for line in result.proposal.lines} == {intake.needs[0].key}
     assert not result.payload["commercialReady"]
 
@@ -108,7 +109,7 @@ def test_mutated_attested_plan_is_rejected_before_discovery() -> None:
         intake,
         (PatternBinding("camera", pattern, cast(dict[str, Fact], facts)),),
         registry_package_id="catalog:camera",
-        source="synthetic://pattern",
+        source=pattern["sourceRef"],
     )
     injected = replace(
         plan,
@@ -132,3 +133,16 @@ def test_mutated_attested_plan_is_rejected_before_discovery() -> None:
     )
     with pytest.raises(ValueError, match="differs"):
         evaluate_pattern_scope(intake, injected)
+    spoofed_source = replace(plan, package=replace(plan.package, source="synthetic://spoof"))
+    with pytest.raises(ValueError, match="reviewed source"):
+        evaluate_pattern_scope(intake, spoofed_source)
+    changed_pattern = copy.deepcopy(pattern)
+    changed_pattern["sourceRef"] = "synthetic://unreviewed-change"
+    altered_plan = build_pattern_plan(
+        intake,
+        (PatternBinding("camera", changed_pattern, cast(dict[str, Fact], facts)),),
+        registry_package_id="catalog:camera",
+        source=pattern["sourceRef"],
+    )
+    with pytest.raises(ValueError, match="reviewed source"):
+        evaluate_pattern_scope(intake, altered_plan)

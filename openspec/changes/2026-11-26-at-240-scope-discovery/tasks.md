@@ -12,6 +12,7 @@
 - [x] Probar material omitido, accesorio indispensable rechazado, alternativa confirmada, impacto de cambios y rubro sin cobertura.
 - [x] Integrar hallazgos AT-267 con fuentes y comprobaciones independientes de puertos, PoE y potencia; bloquear evidencia omitida u obsoleta.
 - [x] Rechazar reglas catalogadas sin expansión de patrón comprobable y conservar bloqueo de especialista en revalidación autónoma (AT-266).
+- [x] Resolver paquetes y patrones desde manifiesto/digest revisado; probar los tres rubros AT-266 por el servicio y el rechazo de reglas ajenas en propuesta y revalidación.
 - [ ] Integrar patrones AT-239 validados y relaciones de instalación Relate en ejecución.
 - [ ] Exponer flujo de usuario por API/chat y revisión A2UI AT-248.
 - [ ] Demostrar escenarios comerciales completos y bloqueo de propuestas económicas incompletas.

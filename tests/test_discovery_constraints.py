@@ -188,7 +188,7 @@ def test_revalidation_preserves_required_checks_when_document_is_omitted() -> No
         intake,
         (PatternBinding("camera", pattern, cast(dict[str, Fact], facts)),),
         registry_package_id="catalog:camera-v1",
-        source="synthetic://pattern",
+        source=pattern["sourceRef"],
     )
     first = evaluate_pattern_scope(
         intake,
@@ -212,7 +212,7 @@ def test_standalone_revalidate_requires_fresh_constraint_evidence() -> None:
         assess_constraints(cast(ProjectDocument, sufficient()), CHECKS),
     )
     updated = revalidate(prior, intake, package)
-    assert updated.status == "blocked"
+    assert updated.status == "pending_specialist"
     assert updated.constraint_check_ids == CHECKS
     assert "constraint:document_missing" in updated.technical_blockers
     assert not updated.commercial_ready

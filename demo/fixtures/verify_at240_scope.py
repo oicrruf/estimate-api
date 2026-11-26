@@ -14,7 +14,7 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from estimate_api.discovery.engine import discover, revalidate, review  # noqa: E402
+from estimate_api.discovery.engine import diff_proposals, discover, review  # noqa: E402
 from estimate_api.discovery.evidence import RelateEvidenceReader  # noqa: E402
 from estimate_api.discovery.hardware_adapter import evaluate_hardware_scope  # noqa: E402
 from estimate_api.discovery.models import (  # noqa: E402
@@ -90,7 +90,7 @@ def main() -> None:
             registry_context=registry_context,
             hardware_scope=confirmed_hardware,
         )
-        assert evaluated.payload["coverage"]["reasons"] == ["rule_provenance_unverified"]
+        assert evaluated.payload["coverage"]["reasons"] == ["reviewed_package_missing"]
         assert {line["key"] for line in evaluated.payload["lines"]} == {
             need.key for need in intake.needs
         }
@@ -112,7 +112,7 @@ def main() -> None:
         changed_needs = tuple(
             replace(need, quantity=12) if need.key == "camera" else need for need in intake.needs
         )
-        changed = revalidate(reviewed, replace(intake, needs=changed_needs), package)
+        changed = diff_proposals(reviewed, discover(replace(intake, needs=changed_needs), package))
         assert ("termination", "changed") in changed.changes
         assert next(line for line in changed.lines if line.key == "termination").quantity == 24
         assert {line.key for line in changed.lines if line.required} == {

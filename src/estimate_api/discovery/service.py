@@ -16,6 +16,7 @@ from .hardware_adapter import HardwareScope
 from .models import KnowledgePackage, PatternProvider, ProjectIntake, Proposal
 from .pattern_adapter import PatternPlan, build_pattern_plan
 from .registry_adapter import RegistryContext, resolve_pattern_coverage
+from .trusted import is_reviewed_pattern, resolve_reviewed_package
 
 SCHEMA_VERSION: Literal["scope-review.v1"] = "scope-review.v1"
 
@@ -362,7 +363,7 @@ def evaluate_scope(
     ethernet_dataset_id: str | None = None,
     constraint_document: ProjectDocument | None = None,
     required_constraint_ids: tuple[str, ...] = (),
-    _attested_pattern: bool = False,
+    _pattern_plan: PatternPlan | None = None,
 ) -> ScopeEvaluation:
     """Call from a future API/chat adapter after intake and specialist validation."""
     package = (
@@ -371,18 +372,42 @@ def evaluate_scope(
         else provider.get(intake.domain, intake.jurisdiction)
     )
     coverage = resolve_pattern_coverage(intake, package, registry_context)
-    # A catalog match alone does not validate arbitrary rules carried in a package.
-    if package is not None and package.registry_package_id is not None and not _attested_pattern:
+    if _pattern_plan is not None:
+        if (
+            package != _pattern_plan.package
+            or not _pattern_plan.bindings
+            or any(
+                binding.pattern["sourceRef"] != _pattern_plan.package.source
+                for binding in _pattern_plan.bindings
+            )
+            or any(not is_reviewed_pattern(binding.pattern) for binding in _pattern_plan.bindings)
+            or build_pattern_plan(
+                intake,
+                _pattern_plan.bindings,
+                registry_package_id=_pattern_plan.package.registry_package_id or "",
+                source=_pattern_plan.package.source,
+            )
+            != _pattern_plan
+        ):
+            raise ValueError("Pattern plan differs from reviewed source expansion")
+        trusted: KnowledgePackage | None = package
+        trust_reason = None
+    else:
+        trusted, trust_reason = resolve_reviewed_package(intake, package, registry_context)
+    if trust_reason is not None:
         coverage = CoverageResult(
             "pending_specialist",
             coverage.package_ids,
             coverage.conflicts,
-            tuple(dict.fromkeys((*coverage.reasons, "rule_provenance_unverified"))),
+            tuple(dict.fromkeys((*coverage.reasons, trust_reason))),
         )
-        package = None
-    if _attested_pattern and registry_context is not None and coverage.status != "cataloged":
-        package = None
-    proposal = discover(intake, package)
+    if (
+        _pattern_plan is not None
+        and registry_context is not None
+        and coverage.status != "cataloged"
+    ):
+        trusted = None
+    proposal = discover(intake, trusted)
     if coverage.status != "cataloged":
         proposal = replace(proposal, status="pending_specialist", commercial_ready=False)
     if ethernet_scope is not None:
@@ -431,16 +456,6 @@ def evaluate_pattern_scope(
         required_constraint_ids = tuple(
             dict.fromkeys((*required_constraint_ids, *previous.constraint_check_ids))
         )
-    if not plan.bindings:
-        raise ValueError("Pattern plan lacks evidenced bindings")
-    regenerated = build_pattern_plan(
-        intake,
-        plan.bindings,
-        registry_package_id=plan.package.registry_package_id or "",
-        source=plan.package.source,
-    )
-    if regenerated != plan:
-        raise ValueError("Pattern plan differs from evidenced candidate expansion")
     evaluated = evaluate_scope(
         intake,
         plan.package,
@@ -450,7 +465,7 @@ def evaluate_pattern_scope(
         ethernet_dataset_id=ethernet_dataset_id,
         constraint_document=constraint_document,
         required_constraint_ids=required_constraint_ids,
-        _attested_pattern=True,
+        _pattern_plan=plan,
     )
     proposal = evaluated.proposal
     pending = tuple(dict.fromkeys((*proposal.blocking_facts, *plan.pending)))

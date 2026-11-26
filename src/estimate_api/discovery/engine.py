@@ -286,21 +286,29 @@ def revalidate(
 ) -> Proposal:
     if previous.project_id != intake.project_id:
         raise ValueError("Project mismatch")
-    fresh = discover(intake, provider)
+    from .trusted import resolve_reviewed_package
+
+    supplied = (
+        provider
+        if isinstance(provider, KnowledgePackage) or provider is None
+        else provider.get(intake.domain, intake.jurisdiction)
+    )
+    trusted, trust_reason = resolve_reviewed_package(intake, supplied, None)
+    fresh = discover(intake, trusted)
     if previous.constraint_check_ids:
         from .constraint_adapter import assess_constraints, attach_constraints
 
         fresh = attach_constraints(fresh, assess_constraints(None, previous.constraint_check_ids))
-    # Standalone rediscovery has no registry context that could verify specialist coverage.
-    if previous.status == "pending_specialist":
-        fresh = replace(
-            fresh,
-            status="pending_specialist",
-            questions=tuple(
-                dict.fromkeys((*fresh.questions, "Specialist coverage requires verification"))
-            ),
-            commercial_ready=False,
-        )
+    # Standalone rediscovery has no registry context that could verify coverage.
+    questions = (*fresh.questions, "Specialist coverage requires verification")
+    if trust_reason is not None:
+        questions = (*questions, trust_reason)
+    fresh = replace(
+        fresh,
+        status="pending_specialist",
+        questions=tuple(dict.fromkeys(questions)),
+        commercial_ready=False,
+    )
     return diff_proposals(previous, fresh)
 
 

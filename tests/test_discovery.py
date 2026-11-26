@@ -13,9 +13,9 @@ from estimate_api.discovery import (
     ProjectIntake,
     ReviewAction,
     discover,
-    revalidate,
     review,
 )
+from estimate_api.discovery.engine import diff_proposals
 from estimate_api.discovery.hardware_adapter import evaluate_hardware_scope
 from estimate_api.discovery.models import Need, Rule
 from estimate_api.discovery.registry_adapter import RegistryContext
@@ -111,14 +111,16 @@ def test_revalidation_invalidates_approval_and_reports_quantity_impact() -> None
     changed_needs = tuple(
         replace(need, quantity=12) if need.key == "camera" else need for need in intake.needs
     )
-    changed = revalidate(approved_one, replace(intake, needs=changed_needs), package)
+    changed = diff_proposals(approved_one, discover(replace(intake, needs=changed_needs), package))
     lines = {line.key: line for line in changed.lines}
     assert lines["ethernet_link"].quantity == 12
     assert lines["termination"].quantity == 24
     assert lines["termination"].state == "agent_proposed"
     assert ("termination", "changed") in changed.changes
     assert not changed.commercial_ready
-    no_emt = revalidate(changed, replace(intake, facts={"link_design": "wired"}), package)
+    no_emt = diff_proposals(
+        changed, discover(replace(intake, facts={"link_design": "wired"}), package)
+    )
     assert ("pathway_length", "removed") in no_emt.changes
 
 
@@ -207,7 +209,7 @@ def test_versioned_review_payload_preserves_unknown_and_pending() -> None:
     assert payload["status"] == "pending_specialist"
     assert payload["coverage"]["reasons"] == [
         "registry_mapping_missing",
-        "rule_provenance_unverified",
+        "reviewed_package_missing",
     ]
     assert not payload["commercialReady"]
     lines = {line["key"]: line for line in payload["lines"]}
@@ -295,7 +297,7 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
     assert pending.proposal.status == "pending_specialist"
     assert pending.payload["coverage"]["reasons"] == [
         "unverified_package",
-        "rule_provenance_unverified",
+        "reviewed_package_missing",
     ]
     assert isinstance(context.registry, dict)
     verified_registry = copy.deepcopy(context.registry)
@@ -307,7 +309,7 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
     verified_context = replace(context, registry=verified_registry)
     cataloged = evaluate_scope(intake, package, registry_context=verified_context)
     assert cataloged.payload["coverage"]["status"] == "pending_specialist"
-    assert cataloged.payload["coverage"]["reasons"] == ["rule_provenance_unverified"]
+    assert cataloged.payload["coverage"]["reasons"] == ["reviewed_package_missing"]
     assert {line.key for line in cataloged.proposal.lines} == {need.key for need in intake.needs}
     assert not cataloged.payload["commercialReady"]  # catalog status is not technical approval
     mismatch = evaluate_scope(
@@ -318,7 +320,7 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
     assert mismatch.proposal.status == "pending_specialist"
     assert mismatch.payload["coverage"]["reasons"] == [
         "pattern_package_mismatch",
-        "rule_provenance_unverified",
+        "reviewed_package_missing",
     ]
     wrong_project = evaluate_scope(
         intake,
@@ -330,7 +332,7 @@ def test_registry_coverage_fails_closed_and_matches_pattern_identity() -> None:
     )
     assert wrong_project.payload["coverage"]["reasons"] == [
         "project_mismatch",
-        "rule_provenance_unverified",
+        "reviewed_package_missing",
     ]
 
 
@@ -389,7 +391,7 @@ def test_second_domain_uses_same_coverage_contract_without_assumed_quantity() ->
         ),
     )
     assert result.payload["coverage"]["status"] == "pending_specialist"
-    assert result.payload["coverage"]["reasons"] == ["rule_provenance_unverified"]
+    assert result.payload["coverage"]["reasons"] == ["reviewed_package_missing"]
     assert result.payload["lines"][0]["quantity"] is None
     assert len(result.payload["lines"]) == 1
     assert not result.payload["commercialReady"]

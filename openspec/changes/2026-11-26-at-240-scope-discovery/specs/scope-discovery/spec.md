@@ -79,9 +79,9 @@ El servicio SHALL ejecutar los checks AT-267 aplicables contra el documento del 
 - **THEN** el hallazgo correspondiente bloquea la propuesta sin cambiar los otros hallazgos.
 
 ### Requirement: Procedencia de reglas y cobertura persistente
-El servicio SHALL rechazar líneas derivadas de un paquete catalogado cuyas reglas no provengan de una expansión de patrón comprobable. SHALL reconstruir una expansión AT-247 al consumirla y SHALL impedir que una regla ajena se mezcle en el plan. Revalidar de forma autónoma un alcance pendiente de especialista SHALL conservar el bloqueo hasta una verificación nueva de cobertura.
+El servicio y su revalidación SHALL resolver reglas únicamente contra contenido sintético versionado y revisado en el repositorio. SHALL verificar identidad, versión, ámbito, reglas y fuentes declaradas; SHALL rechazar líneas derivadas de paquetes o reglas ajenas. SHALL reconstruir una expansión AT-247 y comprobar el digest del patrón al consumirla. Revalidar de forma autónoma SHALL conservar el bloqueo de especialista hasta una verificación nueva de cobertura.
 
 #### Scenario: Regla ajena y revalidación
-- **GIVEN** un proyecto sintético de cámara, pintura o evento con una regla sin procedencia en un paquete aplicable
+- **GIVEN** un proyecto sintético de cámara, pintura o evento con un paquete revisado y una regla adicional sin procedencia
 - **WHEN** se solicita propuesta o se revalida un alcance pendiente
-- **THEN** no aparece la línea inyectada y no se habilita aprobación comercial ni se pierde el bloqueo de especialista.
+- **THEN** el paquete revisado produce sus líneas legítimas, la variante contaminada no produce la línea inyectada y no se habilita aprobación comercial ni se pierde el bloqueo de especialista.
