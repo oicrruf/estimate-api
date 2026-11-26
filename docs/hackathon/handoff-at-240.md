@@ -3,8 +3,8 @@
 ## Reconciliación con la base integrada
 
 La rama incorpora `develop` `1c4dcec5e22eaaa5a6bfd2e0e2f1e66fb444a402`
-sin conflictos. Con los extras `dev` y `demo` fijados por CI tras integrar
-AT-232, se comprueban la suite completa, Ruff, mypy, OpenAPI, el escaneo de
+sin conflictos. Con los extras `dev`, `demo` y `private-ai` fijados por CI, se
+comprueban la suite completa, Ruff, mypy, OpenAPI, el escaneo de
 secretos y OpenSpec estricto. Esta comprobación cubre los puntos
 de entrada locales `evaluate_scope` y `evaluate_pattern_scope`; no constituye
 una prueba del chat/API ni de la aprobación A2UI persistida.
@@ -52,13 +52,13 @@ La base integrada probada es `develop` en `c130fda08dd7ae8b69ea45474925bdc0acc1e
 Desde la raíz del repositorio:
 
 ```sh
-UV_CACHE_DIR=/tmp/at240-uv-cache uv sync --frozen --extra dev
-UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev pytest -q
-UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev ruff check .
-UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev mypy src/estimate_api
+UV_CACHE_DIR=/tmp/at240-uv-cache uv sync --frozen --extra dev --extra demo --extra private-ai
+UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev --extra demo --extra private-ai pytest -q
+UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev --extra demo --extra private-ai ruff check .
+UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev --extra demo --extra private-ai mypy src scripts tests
 OPENSPEC_TELEMETRY=0 ci/at-206-docs/node_modules/.bin/openspec validate 2026-11-26-at-240-scope-discovery --strict
-UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev python demo/fixtures/verify_at240_scope.py
-UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev pytest -q tests/test_discovery_integrated.py
+UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev --extra demo --extra private-ai python demo/fixtures/verify_at240_scope.py
+UV_CACHE_DIR=/tmp/at240-uv-cache uv run --frozen --extra dev --extra demo --extra private-ai pytest -q tests/test_discovery_integrated.py
 ```
 
 El harness prueba descubrimiento, cantidades pendientes, rutas de dependencia, rechazo, aprobación, revalidación, límites, contrato de transporte y un segundo rubro sintético. La prueba Relate carga el seed AT-229 en un archivo temporal aislado, ejecuta el adaptador con consultas fijas de solo lectura y verifica que los 60 nodos no cambien. Solo encuentra contexto de capacidad de producto; las reglas de instalación permanecen sin validar. El adaptador tipado AT-238 verifica que la ruta ficticia confirmada conserva EMT, unión y soportes, más conector pendiente; la ruta desconocida no genera cantidades. El registro AT-265 resuelve cobertura con fallo seguro: paquete sin verificar, sin cobertura o desalineado deja `pending_specialist`. El harness recorre entrada→propuesta→revisión→revalidación y conserva todos los insumos requeridos al aumentar cámaras. No prueba una entrada de usuario real porque el API actual solo expone `/health`.
