@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 5
 requires-python = "==3.12.*"
 
 [[package]]
@@ -130,6 +130,7 @@ dev = [
     { name = "httpx" },
     { name = "mypy" },
     { name = "pytest" },
+    { name = "relate-db" },
     { name = "ruff" },
     { name = "types-jsonschema" },
 ]
@@ -142,6 +143,7 @@ requires-dist = [
     { name = "jsonschema", specifier = "==4.26.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==1.15.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==8.3.5" },
+    { name = "relate-db", marker = "extra == 'dev'", specifier = "==1.3.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.11.10" },
     { name = "types-jsonschema", marker = "extra == 'dev'", specifier = "==4.26.0.20261006" },
     { name = "uvicorn", specifier = "==0.34.2" },
@@ -380,6 +382,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/22/f5/df4e9027acead3ecc63e50fe1e36aca1523e1719559c499951bb4b53188f/referencing-0.37.0.tar.gz", hash = "sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8", size = 78036, upload-time = "2025-10-13T15:30:48.871Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl", hash = "sha256:381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231", size = 26766, upload-time = "2025-10-13T15:30:47.625Z" },
+]
+
+[[package]]
+name = "relate-db"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/95/3e8c8ff0b0b6b787bd1380154d96dcdeccab6768a989cbb1a99e490ce904/relate_db-1.3.0.tar.gz", hash = "sha256:c0a37aea9a17574504cf8cf61aaa9b5de407c2cac7b1ac9f1d1f110d257a59aa", size = 5655283, upload-time = "2026-11-25T13:18:21.364Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/6d/f7c645d36ea272c2fdf624fd773f09662b1c8bbfd0a9c4c30a0f11622685/relate_db-1.3.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:2727796b1ec283a64fde447eb3dbc6ed7913105f7154954afbda66e6114581ec", size = 10142723, upload-time = "2026-11-25T13:18:07.297Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/11/5618c554d6be0adb5c19f1f5ba4b180427eb8eee2ad525ff11fbb93d1b62/relate_db-1.3.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:af871c1604d417a57b6286ad295f287a1270e016093a5ac5c91c165a7f466c65", size = 9403994, upload-time = "2026-11-25T13:18:10.167Z" },
+    { url = "https://files.pythonhosted.org/packages/32/6c/4b08e970ad2d6acb32092a77ac510487696f27bc5d2e2dcda0352763749a/relate_db-1.3.0-cp39-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:20db5be79fde04bbb2b94999bded569e1f792ef99c33a6e232a717bf5ca91449", size = 9970956, upload-time = "2026-11-25T13:18:12.969Z" },
+    { url = "https://files.pythonhosted.org/packages/87/17/43c4f61fc4252c7f98d8f0c88117fd9eea5a4d0731f826a531c0a0a53235/relate_db-1.3.0-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:33ba7a6163d3bc2f2220a7ac3719754b091735071ce48c54489978fbacc9d1b4", size = 10507675, upload-time = "2026-11-25T13:18:16.176Z" },
+    { url = "https://files.pythonhosted.org/packages/71/f8/fe17e96125a3456d20a55ebe091b8a00929007c7b5e010c8d099820dbc8c/relate_db-1.3.0-cp39-abi3-win_amd64.whl", hash = "sha256:b8a1e883b6bf59cc9ad688a1dfd063bceb4086f8fc4a8568d2cb26a9734bf3d7", size = 10374851, upload-time = "2026-11-25T13:18:18.885Z" },
 ]
 
 [[package]]
