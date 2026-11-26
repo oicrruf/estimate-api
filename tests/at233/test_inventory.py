@@ -193,8 +193,9 @@ def test_distributor_correlation_never_implies_shared_stock(tmp_path: Path) -> N
     only_distributor = tuple(d for d in dependencies if d.kind == "shared_distributor")
     result = evaluate_inventory(4, independent, (), only_distributor, now=NOW)
     assert result.confirmed_quantity == 4
-    assert result.risk == RiskLevel.LOW
+    assert result.risk == RiskLevel.MEDIUM
     assert "SHARED_DISTRIBUTOR" in result.reasons
+    assert "CORRELATED_DISTRIBUTOR_RISK" in result.reasons
     connection.execute("MATCH (e:EVIDENCE {id:'EV-DIST-OFF-CAM-B'}) DELETE e")
     assert not any(d.kind == "shared_distributor" for d in read_inventory(connection, "CAM-POE")[2])
     connection.close()

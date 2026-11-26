@@ -223,6 +223,11 @@ def evaluate_inventory(
             risk = RiskLevel.MEDIUM
         else:
             risk = RiskLevel.LOW
+        if risk == RiskLevel.LOW and any(
+            dependency.kind == "shared_distributor" for dependency in dependencies
+        ):
+            risk = RiskLevel.MEDIUM
+            reasons.add("CORRELATED_DISTRIBUTOR_RISK")
         if shortage:
             reasons.add("CONFIRMED_SHORTAGE")
     return InventoryAssessment(

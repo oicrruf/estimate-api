@@ -41,7 +41,7 @@ El dominio SHALL exponer dependencia común de pool o distribuidor sólo con fue
 #### Scenario: Distribuidor común
 - **GIVEN** dos relaciones `DISTRIBUTED_BY` con evidencia verificable
 - **WHEN** se evalúan las ofertas
-- **THEN** se informa el distribuidor común, conservando las fuentes, sin inferir pool compartido.
+- **THEN** se informa el distribuidor común, conservando las fuentes y elevando riesgo bajo a medio, sin inferir pool compartido.
 
 ### Requirement: Separación de decisiones
 
