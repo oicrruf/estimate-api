@@ -239,4 +239,4 @@ async def evaluate_offline(store_path: str, request: EvaluationRequest) -> dict[
             raise ValueError("ADK no produjo una respuesta final única")
         return results[0]
     finally:
-        await runner.close()  # type: ignore[no-untyped-call]  # ADK 1.20 no tipa close.
+        await runner.close()

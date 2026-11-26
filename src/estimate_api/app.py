@@ -13,7 +13,6 @@ class HealthResponse(BaseModel):
 app = FastAPI(
     title="Estimate Agent API",
     version="0.1.0",
-    openapi_version="3.1.0",
     description="Versioned bootstrap contract for Estimate Agent.",
 )
 
