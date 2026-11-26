@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 container="at208-pg-$$"
 pg_image="${AT208_PG_IMAGE:-postgres:17-alpine}"
 admin_user="${AT208_ADMIN_USER:-postgres}"
+login_password="$(openssl rand -hex 24)"
 baseline_dump="$(mktemp)"
 domain_dump="$(mktemp)"
 phase="container startup"
@@ -20,8 +21,8 @@ cleanup() {
 trap cleanup EXIT
 
 docker run -d --rm --name "$container" --network none \
-  -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_PASSWORD=at208-disposable \
-  -e PGPASSWORD=at208-disposable \
+  -e POSTGRES_HOST_AUTH_METHOD=scram-sha-256 -e POSTGRES_PASSWORD="$login_password" \
+  -e PGPASSWORD="$login_password" \
   -e POSTGRES_USER="$admin_user" "$pg_image" >/dev/null
 ready=false
 for _ in {1..300}; do
@@ -108,6 +109,29 @@ docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at
 docker exec -i "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
   < "$repo_root/tests/at208/trusted_budget.sql"
 bash "$repo_root/tests/at208/concurrent_membership.sh" "$container" "$admin_user"
+phase="real SQL login and effective role"
+# The disposable login is intentionally distinct from the NOLOGIN backend role.
+# TCP uses SCRAM; no JWT or HTTP identity is asserted by this test.
+docker exec "$container" psql -X -q -v ON_ERROR_STOP=1 -U "$admin_user" -d at208_test \
+  -c "create role at208_login login noinherit nobypassrls password '$login_password'; grant at208_backend to at208_login with inherit false, set true"
+login_psql() {
+  docker exec -e PGPASSWORD="$login_password" "$container" psql -X -qAt \
+    -v ON_ERROR_STOP=1 -h 127.0.0.1 -U at208_login -d at208_test "$@"
+}
+[[ "$(login_psql -c 'select session_user, current_user, pg_has_role(current_user, '\''at208_backend'\'', '\''set'\'')')" == 'at208_login|at208_login|t' ]] || {
+  echo 'Disposable SQL login or SET membership failed' >&2; exit 1;
+}
+if login_psql -c "select private.create_project('10000000-0000-0000-0000-000000000099', '00000000-0000-0000-0000-000000000005', 'login-test', 'Synthetic login project')" >/dev/null 2>&1; then
+  echo 'Login called backend procedure without SET ROLE' >&2; exit 1
+fi
+effective="$(login_psql -c "begin; set local role at208_backend; select session_user, current_user, private.create_project('10000000-0000-0000-0000-000000000099', '00000000-0000-0000-0000-000000000005', 'login-test', 'Synthetic login project'); commit; select current_user")"
+[[ "$effective" == $'at208_login|at208_backend|10000000-0000-0000-0000-000000000099\nat208_login' ]] || {
+  echo "Unexpected effective backend role/result: $effective" >&2; exit 1
+}
+if login_psql -c "begin; set local role at208_backend; insert into public.projects (owner_user_id,name) values ('00000000-0000-0000-0000-000000000005','forbidden')" >/dev/null 2>&1; then
+  echo 'Direct backend SQL DML unexpectedly succeeded' >&2; exit 1
+fi
+echo 'AT-208 disposable SCRAM login and effective backend role passed'
 
 phase="backup and restore"
 docker exec "$container" pg_dump -Fc -U "$admin_user" -d at208_test > "$domain_dump"
