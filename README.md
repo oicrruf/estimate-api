@@ -16,9 +16,8 @@ uv run --no-sync uvicorn estimate_api.app:app --host 127.0.0.1 --port 8000
 ```
 
 In another terminal, run `curl http://127.0.0.1:8000/health`. The expected response is
-`{"status":"ok"}`. **`GET /health` is the only application operation in the canonical
-HTTP API.** It shows that the process responds, not that a database, model, or other
-service is ready. FastAPI also serves its generated `/openapi.json` and documentation
+`{"status":"ok"}`. This route shows that the process responds, not that a database,
+model, or other service is ready. FastAPI also serves its generated `/openapi.json` and documentation
 routes.
 
 For a local, deterministic ADK + Relate demonstration, run:
@@ -68,11 +67,26 @@ stock or BOM evaluation. Independent camera and UTP counts stay separate;
 any preview remains pending review. For an offline test without a provider, run
 `uv run --frozen --extra dev --extra demo --extra private-ai pytest -q tests/test_private_guided_ai.py tests/test_private_model.py tests/test_private_camera_ai.py`.
 
+## Try the structured chat intake preview
+
+With the local API started above, send a synthetic project description:
+
+```sh
+curl -sS http://127.0.0.1:8000/v1/chat/intake-preview \
+  -H 'Content-Type: application/json' \
+  -d '{"operation":"create_project","intake":{"description":"Install cameras in a fictional office."}}'
+```
+
+The result is a deterministic scope proposal with `scope_review_pending`,
+`review_required: true`, `persisted: false` and `project_id: null`. It does not
+call a model, persist a project, approve purchases, or confirm the scope. The
+separate AT-237 local discovery bridge below is not mounted on this route.
+
 ## What is in this repository
 
 | Area | Current state and boundary |
 | --- | --- |
-| [Canonical OpenAPI](contracts/openapi.json) | OpenAPI 3.1, version `0.1.0`; its only application operation is `GET /health`. `estimate-app` should pin a known revision, compare it with the upstream artifact, and regenerate its client when it changes. CLI and preview changes do not automatically extend this contract. |
+| [Canonical OpenAPI](contracts/openapi.json) | OpenAPI 3.1, version `0.1.0`; includes `GET /health` and the structured intake preview. `estimate-app` should pin a known revision, compare it with the upstream artifact, and regenerate its client when it changes. CLI and preview changes do not automatically extend this contract. |
 | [Local ADK + Relate CLI](demo/agent/README.md) | Reproducible evaluations with fictional product, offer, and inventory evidence; no model provider or production data. |
 | [Local HTTP preview](demo/PREVIEW_HTTP.md) | A separate server, defaulting to `127.0.0.1:8001`, for synthetic demo evaluations. It is not an authenticated or public API. |
 | [Synthetic guided BOM (AT-232)](demo/guided_bom/README.md) | Separate loopback server at `127.0.0.1:8002` with a read-only, fixed-scenario GET; local ADK and Relate, no model call or installation advice. |
@@ -100,7 +114,7 @@ ci/at-206-docs/node_modules/.bin/openspec validate --archived --strict
 
 To regenerate the contract after an intentional canonical HTTP API change, run
 `uv run --no-sync python scripts/openapi.py` and review the diff. Alternatively,
-`docker compose up --build` starts the canonical health API on loopback port 8000;
+`docker compose up --build` starts the canonical API on loopback port 8000;
 this Compose file starts no database or object store. The [preview guide](demo/PREVIEW_HTTP.md)
 has its own seed, server, and query commands.
 
