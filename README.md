@@ -108,6 +108,8 @@ has its own seed, server, and query commands.
 
 - [Specialty routing (AT-261)](docs/at-261-specialty-routing.md): local evidence
   assignments and questions across Cameras, Networks, and Raceway.
+- [Local specialist handoff (AT-211)](docs/at-211-local-handoff.md): typed scope
+  to routing questions with caller-admitted evidence; no hosted agent or approval.
 
 - [Universal project contract (AT-264)](docs/at-264-contract.md) and
   [knowledge registry (AT-265)](docs/at-265-knowledge-registry.md): versioned schemas,

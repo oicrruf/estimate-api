@@ -13,7 +13,7 @@ from typing import Any, Literal, cast
 from estimate_api.domain.scope_capture.contract import Certainty, Fact
 
 Specialty = Literal["cameras", "networks", "raceway"]
-CameraMedium = Literal["poe_ethernet", "analog_coax"]
+CameraMedium = Literal["poe_ethernet", "analog_coax", "wifi"]
 
 
 @dataclass(frozen=True)
@@ -24,6 +24,7 @@ class CameraScope:
     existing_switch_poe_w: Fact[float] | None = None
     existing_switch_free_ports: Fact[int] | None = None
     existing_uplink_adequate: Fact[bool] | None = None
+    existing_wifi_capacity_verified: Fact[bool] | None = None
 
 
 @dataclass(frozen=True)
@@ -114,6 +115,15 @@ def route_specialties(
                     if uplink is False
                     else "Confirm whether the existing DVR uplink is adequate."
                 )
+        elif camera.medium == "wifi":
+            assign("networks", "wifi-capacity-review", "camera:count", "network:wifi-capacity")
+            wifi_capacity = _confirmed(camera.existing_wifi_capacity_verified)
+            if wifi_capacity is not True:
+                questions.append(
+                    "Resolve insufficient existing Wi-Fi capacity."
+                    if wifi_capacity is False
+                    else "Confirm existing Wi-Fi capacity with evidence."
+                )
         else:
             raise ValueError("unknown camera medium")
         if prior_camera is not None:
@@ -134,6 +144,11 @@ def route_specialties(
                 invalidated.add("network:poe-link")
             if prior_camera.existing_uplink_adequate != camera.existing_uplink_adequate:
                 invalidated.add("network:uplink")
+            if (
+                prior_camera.existing_wifi_capacity_verified
+                != camera.existing_wifi_capacity_verified
+            ):
+                invalidated.add("network:wifi-capacity")
     elif prior_camera is not None:
         invalidated.update(("camera:scope", "camera:count"))
         if prior_camera.medium == "poe_ethernet":
