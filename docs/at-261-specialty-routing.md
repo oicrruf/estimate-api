@@ -14,7 +14,8 @@ question. The coordinator does not infer switch adequacy, raceway capacity,
 power, distances, product compatibility, or code compliance.
 
 The `previous` argument identifies evidence affected by an edited camera
-count, route, capacity, or outer diameter. A route must explicitly declare
+count or medium, existing switch or uplink facts, route, capacity, or outer diameter.
+Removing the camera scope invalidates its linked route evidence. A route must explicitly declare
 `linked_to_camera` for count changes to invalidate its link evidence. Consumers
 must rerun their own validated specialist checks; this module does not persist
 approvals, invoke ADK or providers, or write a BOM. HTTP and A2UI integration,

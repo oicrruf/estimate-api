@@ -136,3 +136,36 @@ def test_route_change_is_local_and_mixed_project_history_is_rejected() -> None:
     assert all("west" not in question for question in changed.questions)
     with pytest.raises(ValueError, match="another project"):
         route_specialties(replace(before, project_id="other"), previous=before)
+
+
+def test_switch_edit_invalidates_network_evidence() -> None:
+    before_camera = CameraScope(
+        "poe_ethernet", confirmed(4), confirmed("SW-1"), confirmed(100.0), confirmed(8)
+    )
+    before = RoutingRequest("p", before_camera, (RacewayScope("other"),))
+    changes = (
+        replace(before_camera, existing_switch_model=confirmed("SW-2")),
+        replace(before_camera, existing_switch_poe_w=confirmed(120.0)),
+        replace(before_camera, existing_switch_free_ports=confirmed(7)),
+    )
+    for changed_camera in changes:
+        result = route_specialties(replace(before, cameras=changed_camera), previous=before)
+        assert result.invalidated_evidence == ("network:poe-link", "network:switch")
+        assert all("raceway" not in item for item in result.invalidated_evidence)
+
+
+def test_removed_camera_invalidates_only_its_linked_route() -> None:
+    before = RoutingRequest(
+        "p",
+        CameraScope("poe_ethernet", confirmed(4)),
+        (RacewayScope("camera", linked_to_camera=True), RacewayScope("other")),
+    )
+    result = route_specialties(replace(before, cameras=None), previous=before)
+    assert result.invalidated_evidence == (
+        "camera:count",
+        "camera:scope",
+        "network:poe-link",
+        "raceway:camera:link",
+    )
+    assert keys(result) == {("raceway", "camera"), ("raceway", "other")}
+    assert result.proposed_lines == ()

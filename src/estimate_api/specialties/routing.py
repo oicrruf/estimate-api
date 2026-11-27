@@ -125,6 +125,19 @@ def route_specialties(
                 camera.medium == "poe_ethernet" or prior_camera.medium == "poe_ethernet"
             ):
                 invalidated.add("network:poe-link")
+            if camera.medium == "poe_ethernet" and (
+                prior_camera.existing_switch_model != camera.existing_switch_model
+                or prior_camera.existing_switch_poe_w != camera.existing_switch_poe_w
+                or prior_camera.existing_switch_free_ports != camera.existing_switch_free_ports
+            ):
+                invalidated.add("network:switch")
+                invalidated.add("network:poe-link")
+            if prior_camera.existing_uplink_adequate != camera.existing_uplink_adequate:
+                invalidated.add("network:uplink")
+    elif prior_camera is not None:
+        invalidated.update(("camera:scope", "camera:count"))
+        if prior_camera.medium == "poe_ethernet":
+            invalidated.add("network:poe-link")
 
     prior_routes = {r.route_id: r for r in previous.raceways} if previous else {}
     seen_routes: set[str] = set()
@@ -146,8 +159,11 @@ def route_specialties(
         if (
             route.linked_to_camera
             and prior_camera is not None
-            and camera is not None
-            and prior_camera.count != camera.count
+            and (
+                camera is None
+                or prior_camera.count != camera.count
+                or prior_camera.medium != camera.medium
+            )
         ):
             invalidated.add(f"{key}:link")
         if prior is not None:
