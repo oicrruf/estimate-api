@@ -169,3 +169,20 @@ def test_removed_camera_invalidates_only_its_linked_route() -> None:
     )
     assert keys(result) == {("raceway", "camera"), ("raceway", "other")}
     assert result.proposed_lines == ()
+
+
+def test_route_linkage_change_and_route_removal_stale_only_that_link() -> None:
+    routes = (RacewayScope("camera", linked_to_camera=True), RacewayScope("other"))
+    before = RoutingRequest("p", CameraScope("poe_ethernet", confirmed(4)), routes)
+    unlinked = replace(before, raceways=(replace(routes[0], linked_to_camera=False), routes[1]))
+    assert route_specialties(unlinked, previous=before).invalidated_evidence == (
+        "raceway:camera:link",
+    )
+    assert route_specialties(before, previous=unlinked).invalidated_evidence == (
+        "raceway:camera:link",
+    )
+    removed = replace(before, raceways=(routes[1],))
+    assert route_specialties(removed, previous=before).invalidated_evidence == (
+        "raceway:camera:link",
+        "raceway:camera:route",
+    )

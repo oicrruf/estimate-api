@@ -156,6 +156,8 @@ def route_specialties(
         if not _positive_number(od):
             questions.append(f"Confirm cable outer diameter for {route.route_id}.")
         prior = prior_routes.get(route.route_id)
+        if prior is not None and prior.linked_to_camera != route.linked_to_camera:
+            invalidated.add(f"{key}:link")
         if (
             route.linked_to_camera
             and prior_camera is not None
@@ -176,6 +178,7 @@ def route_specialties(
                 invalidated.add(f"{key}:link")
     for removed in prior_routes.keys() - seen_routes:
         invalidated.add(f"raceway:{removed}:route")
+        invalidated.add(f"raceway:{removed}:link")
     for specialty in request.explicit_specialties:
         if specialty not in ("cameras", "networks", "raceway"):
             raise ValueError("unknown specialty")
