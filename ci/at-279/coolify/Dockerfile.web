@@ -3,8 +3,8 @@ RUN apk add --no-cache git ca-certificates
 WORKDIR /source
 RUN git init --quiet \
     && git remote add origin https://github.com/oicrruf/estimate-app.git \
-    && git fetch --quiet --no-tags --depth 1 origin d8a6d359bf909872ebfe48d52dfe5d8980c2c68b \
-    && test "$(git rev-parse FETCH_HEAD)" = d8a6d359bf909872ebfe48d52dfe5d8980c2c68b \
+    && git fetch --quiet --no-tags --depth 1 origin 1b95205596f50d38ba60254319bb12584bde3a5a \
+    && test "$(git rev-parse FETCH_HEAD)" = 1b95205596f50d38ba60254319bb12584bde3a5a \
     && git archive FETCH_HEAD | tar -x
 RUN npm ci --ignore-scripts --no-audit --no-fund \
     && npm run build

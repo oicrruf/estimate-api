@@ -1,21 +1,71 @@
-# AT-279 — candidato Coolify desde Git, sin publicar imágenes
+# AT-279: Git-based Coolify candidate handoff
 
-**Estado:** candidato revisable; no se ha cargado en el panel ni desplegado. El Compose exacto es [`coolify-compose.yaml`](coolify-compose.yaml). Requiere una **Application** desde repositorio público con Build strategy **Docker Compose**, no un Service «Docker Compose Empty». [Coolify documenta](https://coolify.io/docs/applications/builds/docker-compose) que Empty guarda el YAML pegado sin checkout Git, mientras el candidato hace `COPY` de `package/runtime/container_api.py`, `container_seed.py` y `nginx.conf`. Sin publicar imágenes, Empty carece de ese contexto. Podría reescribirse todo con Dockerfiles y scripts inline, pero dejaría de ser el paquete multiarchivo verificado. [La guía de elección](https://coolify.io/docs/applications/choose-deployment-method) recomienda Compose desde Git cuando la definición y los archivos de build están en el repositorio.
+**Status:** review candidate only. No Coolify resource, VPS deployment, hosted route,
+TLS certificate, or access policy has been verified by this PR. The project/environment
+name supplied for a possible handoff is `estimate-agent → production`; it is a name,
+not evidence that anything is running there.
 
-## Fuente y controles fijos
+## Identify the three artifacts
 
-- Repositorio público: `https://github.com/oicrruf/estimate-api.git`.
-- Rama candidata de esta PR: `feature/AT-279-private-compose-verification`. Antes de crear el recurso, fijar el **SHA completo del head revisado**; no usar una rama móvil como prueba de versión. Coolify acepta `git_commit_sha` para aplicaciones públicas en su [API](https://coolify.io/docs/api/endpoints/applications/create-public-application). Si la UI instalada no permite fijarlo o verificarlo en Deployment Logs, el dueño debe detenerse y resolver ese control por una vía aprobada. Tras integrar la PR, usar el SHA del commit integrado en `develop`, no el head previo.
-- Base Directory: `/ci/at-279`.
-- Docker Compose Location: `/coolify-compose.yaml` (relativa al Base Directory). Se debe ver exactamente `ci/at-279/coolify-compose.yaml` del commit elegido.
-- API de datos sintéticos: `dac8c64c314bb362c6254825c65640ba732ca168`; Angular: `d8a6d359bf909872ebfe48d52dfe5d8980c2c68b`. Los Dockerfiles hacen `git fetch` público, comparan `FETCH_HEAD` y consumen `uv.lock` y `package-lock.json`. Python, Node, Nginx y uv están fijados por digest. Se requiere salida HTTPS del servidor de build hacia GitHub, PyPI/npm y registries de imágenes base; la ejecución de la demo no requiere proveedor externo ni secretos.
+| Artifact | Exact identity | What was tested |
+| --- | --- | --- |
+| Portable local package | API `dac8c64c314bb362c6254825c65640ba732ca168`, web `1b95205596f50d38ba60254319bb12584bde3a5a`; [package manifest](package/MANIFEST.sha256) and [archive digest](ARCHIVE-SHA256.txt) | Disposable loopback Compose, five technical cases, static `/demo/review` screen, synthetic store reopen, and browser interactions. It is not a Git-based Coolify resource. |
+| Refreshed Git candidate | The reviewed full SHA of this PR's head, with [`coolify-compose.yaml`](coolify-compose.yaml), API `dac8c64c314bb362c6254825c65640ba732ca168`, and web `1b95205596f50d38ba60254319bb12584bde3a5a` | CI builds the Git-fetched sources and tests the internal web origin without a host port. A temporary **CI-only** overlay binds web to `127.0.0.1:8080` for the same-origin browser test; it is not part of the deployment Compose. |
+| Immutable fallback | Repository commit `46e97c160963bf094f04d3d9eb4319b61c435441`, API `dac8c64c314bb362c6254825c65640ba732ca168`, web `d8a6d359bf909872ebfe48d52dfe5d8980c2c68b` | The previously validated Git Compose candidate. This ref remains unchanged. Its old web source does not contain the refreshed review screen. |
 
-## Preparación en la UI por el dueño
+The candidate Dockerfiles fetch public **exact commit SHAs** and verify `FETCH_HEAD`.
+The Python, Node, Nginx, and uv base images are digest-pinned, and dependency locks
+are consumed. Runtime needs no model provider or secret. Builds need HTTPS access
+to GitHub, package registries, and base-image registries.
 
-1. En el proyecto/entorno **Debut** aislado, elegir **+ New → Public Repository**, pegar la URL pública anterior y seleccionar la rama candidata, sin previews ni despliegue automático. Confirmar el commit exacto del candidato antes de Deploy.
-2. Elegir **Docker Compose** como Build strategy; colocar Base Directory y Docker Compose Location como arriba. Guardar y revisar el Compose generado. Dejar **Raw Compose** desactivado para que Coolify genere las etiquetas/red de proxy; no usar comandos personalizados de build o arranque.
-3. En **Domains**, asignar el dominio HTTPS aprobado **sólo a `web` puerto interno `8080`**. No asignar dominio a `api` o `seed`, no agregar `ports:` ni red predefinida. Revisar que el proxy enrute a `web:8080` y no a la URL administrativa. Aplicar el control de acceso decidido por el dueño.
-4. En **Persistent Storage**, confirmar el volumen Compose gestionado `synthetic_store` y que persiste entre redeploys. Revisar el Compose que Coolify generó: API y seed sin puertos host, API únicamente en `backplane` interna, API con `/data` en lectura, seed con `restart: "no"`, sin Docker socket, contenedores privilegiados o conexiones a recursos productivos. Confirmar límites de memoria/CPU y espacio de build en el VPS.
-5. Tras un Deploy autorizado, comprobar en Deployment Logs el SHA Git usado y los `FETCH_HEAD` esperados; en Runtime Logs, que seed crea o reutiliza sólo datos ficticios y que API está sana. Probar `/demo` y las cinco evaluaciones a través de la **URL HTTPS de la demo**, verificar que API no sea pública. No confundir esto con la URL HTTP administrativa.
+To reproduce the Git candidate on a disposable machine, from `ci/at-279` run:
 
-El [CI descartable](https://github.com/oicrruf/estimate-api/pull/24) compila desde fuentes públicas y valida red, seed, store y consultas; no reproduce las transformaciones del Compose ni las etiquetas, proxy, TLS, volumen y política de acceso concretos del panel Coolify. Esas inspecciones son gates antes de mostrar el enlace a jurados. El workflow de despliegue con `COOLIFY_TOKEN` permanece como [propuesta no instalada](coolify-deploy-proposal.yml); el Environment `coolify` aún requiere política de rama `develop` y el panel requiere HTTPS confiable.
+```sh
+docker compose -f coolify-compose.yaml config --quiet
+docker compose -f coolify-compose.yaml build
+docker compose -f coolify-compose.yaml up --no-build -d
+python3 verify_coolify_git.py
+docker compose -f coolify-compose.yaml down -v --remove-orphans
+```
+
+This default Compose publishes no host port. The PR's CI workflow creates a
+temporary loopback overlay for browser testing and removes the disposable stack.
+
+## Proposed owner handoff, after approval
+
+1. In the intended `estimate-agent → production` project/environment, create a
+   **Public Repository Application** from `https://github.com/oicrruf/estimate-api.git`
+   with the **Docker Compose** build strategy. Do not use **Docker Compose Empty**:
+   that mode lacks the Git checkout needed by the Dockerfiles and local `COPY`
+   instructions. Do not enable automatic deployment or previews.
+2. Select this PR's reviewed **full head SHA**, not a moving branch, if validating
+   before integration. After integration, select and verify the resulting full
+   `develop` commit SHA. Use Base Directory `/ci/at-279` and Docker Compose Location
+   `/coolify-compose.yaml` relative to that directory. Confirm the selected file
+   contains the two source pins in the table. If the installed UI cannot pin a
+   commit, stop and resolve that control before deployment. The proposed UI or API
+   path for pinning is not verified here.
+3. Inspect the **generated** Compose before any authorized deploy. Keep Raw Compose
+   disabled unless its generated proxy/network effects are understood. Only `web`
+   should receive the approved HTTPS demo route at internal port `8080`; `api` and
+   `seed` must have no domain or host `ports:`. Confirm the private `backplane`,
+   `api`'s read-only `/data`, the dedicated `synthetic_store` volume, one-shot seed,
+   resource limits, and absence of Docker socket or privileged access. Apply the
+   owner's access policy before any link is shared.
+4. If deployment is separately authorized, check Deployment Logs for the selected
+   repository SHA and Dockerfile `FETCH_HEAD` pins. Check seed creation/reuse and API
+   health without disclosing logs or data. Through the approved HTTPS demo route,
+   test `/demo`, the five technical cases, and `/demo/review` with its eight,
+   missing-measurement, and changed-ten synthetic cases. Verify API and seed have no
+   direct public route. This PR does **not** perform these hosted checks.
+
+For rollback, retain the last approved release and its volume identity in the
+owner's change record. If the refreshed candidate fails, the owner can select the
+immutable repository commit `46e97c160963bf094f04d3d9eb4319b61c435441`
+and recheck the older five-scenario demo. Its source pins are fixed as shown above;
+rollback is a separate authorized action, not a CI side effect. Do not discard or
+migrate a persistent volume automatically.
+
+The [AT-279 local validation guide](README.md) contains exact CI and disposable
+Compose commands. The uninstalled [deployment workflow proposal](coolify-deploy-proposal.yml)
+is a separate future design; it does not deploy this candidate.

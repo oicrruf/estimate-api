@@ -67,6 +67,32 @@ jobs:
         run: |
           docker compose -f coolify-compose.yaml up --no-build -d
           python3 verify_coolify_git.py
+      - name: Check Git candidate in browser through temporary loopback overlay
+        working-directory: ci/at-279
+        run: |
+          probe="$(mktemp --suffix=.yaml)"
+          trap 'rm -f "$probe"' EXIT
+          cat > "$probe" <<'YAML'
+          services:
+            web:
+              ports:
+                - "127.0.0.1:8080:8080"
+          YAML
+          docker compose -f coolify-compose.yaml -f "$probe" config --format json > /tmp/at279-loopback-config.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          services = json.loads(Path('/tmp/at279-loopback-config.json').read_text())['services']
+          assert not services['api'].get('ports') and not services['seed'].get('ports')
+          assert services['web']['ports'] == [{
+              'mode': 'ingress', 'target': 8080, 'published': '8080',
+              'protocol': 'tcp', 'host_ip': '127.0.0.1'
+          }]
+          PY
+          docker compose -f coolify-compose.yaml -f "$probe" up --no-build -d web
+          python3 package/runtime/smoke.py
+          python3 verify_browser.py
       - name: Remove only this disposable Git candidate stack
         if: always()
         working-directory: ci/at-279

@@ -17,6 +17,15 @@ from urllib.request import urlopen
 base = "http://web:8080"
 with urlopen(base + "/demo", timeout=10) as response:
     assert response.status == 200 and b"<app-root" in response.read()
+with urlopen(base + "/demo/review", timeout=10) as response:
+    assert response.status == 200 and b"<app-root" in response.read()
+with urlopen(base + "/fixtures/at248-review.v1.json", timeout=10) as response:
+    fixture = json.load(response)
+assert fixture["wireVersion"] == "at248.synthetic-review.v1"
+assert fixture["synthetic"] is True
+assert set(fixture["cases"]) == {"eight", "missing", "changed"}
+assert all(case["status"] == "pending_specialist" and not case["commercialReady"]
+           and not case["persisted"] for case in fixture["cases"].values())
 cases = (
     ("switch", "SW-16", "COMPATIBLE"),
     ("switch&poe_ports_min=12", None, "INCOMPATIBLE"),
