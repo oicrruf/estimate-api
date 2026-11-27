@@ -20,7 +20,7 @@ def test_openapi_boundary() -> None:
     schema = client.get("/openapi.json").json()
     assert schema["openapi"].startswith("3.1.")
     assert schema["info"]["version"] == "0.1.0"
-    assert set(schema["paths"]) == {"/health"}
+    assert set(schema["paths"]) == {"/health", "/v1/chat/intake-preview"}
     operation = schema["paths"]["/health"]["get"]
     assert operation["operationId"] == "health"
     assert "200" in operation["responses"]
