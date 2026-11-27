@@ -44,7 +44,7 @@ class SyntheticStore(PreviewStore):
 
 
 def get_synthetic_store() -> SyntheticStore:
-    return SyntheticStore(get_preview_store().dsn)
+    return SyntheticStore(get_preview_store().dsn, max_brief_chars=700)
 
 
 app.dependency_overrides[get_preview_store] = get_synthetic_store

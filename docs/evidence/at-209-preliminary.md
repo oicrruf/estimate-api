@@ -44,6 +44,12 @@ The synthetic `POST /v1/projects/{projectId}/scope-review-preview` requires a 1â
 
 No database lock stays open during extraction. Revocation after the authorization read may still precede an external call; a paid service needs a coordinated protocol. This draft has no real provider or hosted migration and does not make an estimate commercially ready.
 
+## Source-only ADK and Relate candidate
+
+`demo.agent.scope_preview_adapter.LocalCameraPreviewAdapter` projects the existing camera runner's fixed Relate evaluation into a pending, noncommercial preview draft. Small unit tests seed a synthetic store and inject a fake model; they check both supported quantities, an ambiguous description and rejection before the fake model for an overlong description. No provider is installed in the product app.
+
+The existing disposable GoTrue/PostgreSQL HTTP proof selects a 700-character capacity for its synthetic test store. Its regression cases accept 700, reject 701 and 4000 after the authoritative editor check with no receipt or quota, and reject 4001 at the HTTP schema. They also preserve viewer/revoked denial, exact-key replay and quota behavior. The normal product store does not select a capacity; the default extractor remains unavailable. The HTTP proof uses a synthetic stub rather than the ADK adapter. A separate browser integration fixture and its temporary identities are excluded from this source draft. Real OAuth, provider selection, post-reservation revocation and hosted roles remain unverified deployment gates.
+
 ## Remaining gates
 
 AT-209 still requires the broader CRUD, idempotency, audit and OpenAPI scope in Linear before Done. Independent final review, exact CI, app contract coordination, real GitHub OAuth and hosted role/pooler verification remain outstanding. Keep the PR draft and do not treat this local proof as a deployment gate.

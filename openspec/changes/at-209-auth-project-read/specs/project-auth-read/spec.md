@@ -103,3 +103,17 @@ La API SHALL mantener deshabilitado por defecto el preview interactivo. Cuando e
 - **GIVEN** un actor autorizado y una cabecera `Idempotency-Key` compuesta solo por espacios
 - **WHEN** solicita el preview
 - **THEN** la API responde 422 antes de reservar y no llama al extractor.
+
+#### Scenario: Proyección sintética de ADK y Relate
+- **GIVEN** una fixture local de inventario compartido y un extractor falso inyectado
+- **WHEN** una cantidad de cámaras inequívoca pasa por el adaptador local
+- **THEN** proyecta solo cantidad, pregunta fija, evidencia y disponibilidad a un borrador pendiente, sin precio, oferta, métricas o texto del modelo.
+
+#### Scenario: Capacidad del adaptador antes de la cuota
+- **GIVEN** un adaptador sintético con máximo 700 y la ruta HTTP existente con máximo 4000
+- **WHEN** un propietario/editor envía 701 o 4000 caracteres
+- **THEN** la transacción revalida primero el rol, responde 422 y no crea ni cambia recibos, cuota o llamadas al extractor.
+- **WHEN** envía 4001 caracteres
+- **THEN** la validación de esquema HTTP responde 422 sin reservar.
+- **WHEN** un lector o usuario revocado envía 701 caracteres
+- **THEN** responde 403 o 404 sin revelar detalles del adaptador.
