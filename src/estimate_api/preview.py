@@ -1,5 +1,6 @@
 """Disabled-by-default local scope preview boundary; no provider is installed."""
 
+import hashlib
 import os
 from typing import Annotated, Literal, Protocol
 from uuid import UUID
@@ -7,7 +8,7 @@ from uuid import UUID
 import psycopg
 from fastapi import Depends, Header, HTTPException, status
 from psycopg.types.json import Jsonb
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from estimate_api.authorization import get_interactive_actor
 from estimate_api.projects import (
@@ -63,11 +64,23 @@ def get_preview_extractor() -> PreviewExtractor:
     raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Preview unavailable")
 
 
+def receipt_id(actor: UUID, project_id: UUID, command_key: str, brief: str) -> UUID:
+    """Bind a disposable receipt to exact request bytes without storing the brief."""
+    digest = hashlib.sha256(b"estimate-preview-receipt-v1\x00")
+    for value in (actor.bytes, project_id.bytes, command_key.encode(), brief.encode()):
+        digest.update(len(value).to_bytes(4, "big"))
+        digest.update(value)
+    return UUID(bytes=digest.digest()[:16])
+
+
 class PreviewStore:
     def __init__(self, dsn: str) -> None:
         self.dsn = dsn
 
-    def reserve(self, actor: UUID, project_id: UUID, command_key: str) -> PreviewResponse | None:
+    def reserve(
+        self, actor: UUID, project_id: UUID, command_key: str, brief: str
+    ) -> PreviewResponse | None:
+        expected_receipt_id = receipt_id(actor, project_id, command_key, brief)
         with psycopg.connect(self.dsn, autocommit=True, connect_timeout=3) as conn:
             with conn.transaction():
                 conn.execute("set local statement_timeout = '3s'")
@@ -94,13 +107,20 @@ class PreviewStore:
                     raise HTTPException(status.HTTP_403_FORBIDDEN, "Project editor required")
                 conn.execute("set local role none")
                 receipt = conn.execute(
-                    "select state, response_json from private.preview_reservations "
+                    "select id, state, response_json from private.preview_reservations "
                     "where actor_id = %s and project_id = %s and command_key = %s",
                     (actor, project_id, command_key),
                 ).fetchone()
-                if receipt and receipt[0] == "complete":
-                    return PreviewResponse.model_validate(receipt[1])
                 if receipt:
+                    if receipt[0] != expected_receipt_id:
+                        raise HTTPException(status.HTTP_409_CONFLICT, "Preview key reused")
+                    if receipt[1] == "complete":
+                        try:
+                            return PreviewResponse.model_validate(receipt[2])
+                        except ValidationError:
+                            raise HTTPException(
+                                status.HTTP_503_SERVICE_UNAVAILABLE, "Preview unavailable"
+                            ) from None
                     raise HTTPException(status.HTTP_409_CONFLICT, "Preview already reserved")
                 counts = conn.execute(
                     "select count(*) filter (where actor_id = %s), "
@@ -113,9 +133,9 @@ class PreviewStore:
                     raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Preview quota reached")
                 conn.execute(
                     "insert into private.preview_reservations"
-                    "(actor_id, project_id, command_key, created_at) "
-                    "values (%s, %s, %s, clock_timestamp())",
-                    (actor, project_id, command_key),
+                    "(id, actor_id, project_id, command_key, created_at) "
+                    "values (%s, %s, %s, %s, clock_timestamp())",
+                    (expected_receipt_id, actor, project_id, command_key),
                 )
         return None
 
@@ -163,6 +183,14 @@ def require_preview_project(
     return require_project_access(projectId, actor, repository)
 
 
+def require_command_key(
+    command_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=100)],
+) -> str:
+    if not command_key.strip():
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Idempotency-Key is required")
+    return command_key
+
+
 def preview_scope_review(
     projectId: UUID,
     request: PreviewRequest,
@@ -170,12 +198,12 @@ def preview_scope_review(
     actor: Annotated[UUID, Depends(get_interactive_actor)],
     store: Annotated[PreviewStore, Depends(get_preview_store)],
     extractor: Annotated[PreviewExtractor, Depends(get_preview_extractor)],
-    command_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=100)],
+    command_key: Annotated[str, Depends(require_command_key)],
 ) -> PreviewResponse:
     if project.id != projectId:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Project not found")
     try:
-        prior = store.reserve(actor, projectId, command_key)
+        prior = store.reserve(actor, projectId, command_key, request.brief)
     except psycopg.Error:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Preview unavailable") from None
     if prior is not None:

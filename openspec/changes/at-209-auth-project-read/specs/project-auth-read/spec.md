@@ -93,3 +93,13 @@ La API SHALL mantener deshabilitado por defecto el preview interactivo. Cuando e
 - **GIVEN** una reserva confirmada antes de invocar un extractor sintético
 - **WHEN** el extractor completa o falla y se repite la misma clave
 - **THEN** conserva el cupo y un recibo local; repite la respuesta completada o deniega el reintento pendiente/fallido, sin invocar otra vez el extractor.
+
+#### Scenario: Misma clave con brief diferente
+- **GIVEN** un recibo local confirmado para un actor, proyecto, clave y brief exacto
+- **WHEN** el actor repite la clave con un brief diferente
+- **THEN** responde 409, no reproduce la respuesta anterior, no consume otro cupo y no llama al extractor.
+
+#### Scenario: Clave HTTP en blanco
+- **GIVEN** un actor autorizado y una cabecera `Idempotency-Key` compuesta solo por espacios
+- **WHEN** solicita el preview
+- **THEN** la API responde 422 antes de reservar y no llama al extractor.

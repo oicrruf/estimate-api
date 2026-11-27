@@ -116,6 +116,8 @@ has its own seed, server, and query commands.
 - [AT-209 project authentication and reads](docs/evidence/at-209-preliminary.md):
   local JWT/JWKS, admission allowlist, project RLS, and synthetic HTTP checks.
   The preview test uses a disposable database and injected stub; it never calls a model.
+  Its idempotency key binds to the exact brief: a changed brief with the same key
+  returns 409, while a whitespace-only key returns 422 before reservation.
   The [AT-211 boundary note](docs/at-209-at-211-boundary.md) explains why a
   future paid operation must recheck authorization in its own transaction.
 - [Specialty routing (AT-261)](docs/at-261-specialty-routing.md): local evidence

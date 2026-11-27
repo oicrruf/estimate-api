@@ -119,6 +119,7 @@ def uvicorn_smoke(
         assert preview(unadmitted_token, "not-admitted")[0] == 403
         assert preview(member_token, "no-membership")[0] == 404
         assert preview(owner_token, "blank", brief="   ")[0] == 422
+        assert preview(owner_token, "   ")[0] == 422
         assert preview(owner_token, "too-long", brief="x" * 4001)[0] == 422
         assert calls() == 0
         with psycopg.connect(os.environ["ESTIMATE_DB_TEST_ADMIN_DSN"]) as conn:
@@ -208,6 +209,7 @@ def uvicorn_smoke(
             "commercialReady": False,
         }
         assert preview(owner_token, "first") == (200, body)
+        assert preview(owner_token, "first", brief="Una cámara PoE sintética")[0] == 409
         assert calls() == 1
         with psycopg.connect(os.environ["ESTIMATE_DB_TEST_ADMIN_DSN"]) as conn:
             assert conn.execute(
@@ -267,6 +269,9 @@ def uvicorn_smoke(
         )
         assert calls() == 9
         assert preview(extras[2][1], "stub-failure", third_project)[0] == 409
+        assert (
+            preview(extras[2][1], "stub-failure", third_project, "otro brief sintético")[0] == 409
+        )
         assert calls() == 9
         with psycopg.connect(os.environ["ESTIMATE_DB_TEST_ADMIN_DSN"]) as conn:
             assert conn.execute(
@@ -279,6 +284,12 @@ def uvicorn_smoke(
         assert preview(extras[2][1], "synthetic-finish-error", third_project)[0] == 503
         assert calls() == 10
         assert preview(extras[2][1], "synthetic-finish-error", third_project)[0] == 409
+        assert (
+            preview(extras[2][1], "synthetic-finish-error", third_project, "otro brief sintético")[
+                0
+            ]
+            == 409
+        )
         assert calls() == 10
         assert preview(extras[2][1], "after-two-failures", third_project)[0] == 429
         assert calls() == 10

@@ -14,3 +14,4 @@
 - [ ] Sincronizar/archivar OpenSpec en el commit final de AT-209, abrir PR a `develop` y no cerrar issue antes del merge.
 - [x] Ensayar el preview local HTTP completo con GoTrue/PostgreSQL descartables, cuotas 2/4/8, duplicado, revocación, carrera y extractor sintético; no montar proveedor real.
 - [x] Ensayar con dos conexiones degradación y revocación antes de reserva, y recibos ante resultado, fallo del stub y fallo de escritura final, sin repetir extractor.
+- [x] Vincular recibo de prueba a brief exacto sin cambiar esquema ni guardar el brief; rechazar clave HTTP en blanco y probar reintentos por HTTP.
