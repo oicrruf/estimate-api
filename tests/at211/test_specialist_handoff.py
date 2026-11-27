@@ -6,6 +6,13 @@ import pytest
 
 from estimate_api.chat.specialty_handoff import LocalEvidenceBinding, preview_specialist_handoff
 from estimate_api.domain.scope_capture import Certainty, Fact, ScopeIntake
+from estimate_api.domain.scope_capture.contract import (
+    AssetAvailability,
+    AssetValidation,
+    ClientAsset,
+    SupplyItem,
+    SupplyOwner,
+)
 from estimate_api.specialties.routing import CameraScope, RacewayScope, RoutingRequest
 
 
@@ -148,5 +155,53 @@ def test_same_id_cannot_certify_two_incompatible_fields() -> None:
             SCOPE,
             request,
             evidence_bindings=(binding("shared", "camera.count", 4),),
+            evidence_revision=1,
+        )
+
+
+@pytest.mark.parametrize(
+    "scope",
+    [
+        replace(
+            SCOPE,
+            client_assets=(
+                ClientAsset(
+                    "switch", AssetAvailability.AVAILABLE, AssetValidation.VALIDATED, "local-claim"
+                ),
+            ),
+        ),
+        replace(SCOPE, client_assets_absence_evidence="local-claim"),
+        replace(SCOPE, supplies_absence_evidence="local-claim"),
+        replace(SCOPE, supplies=(SupplyItem("switch", SupplyOwner.CONTRACTOR, True),)),
+    ],
+)
+def test_unsupported_scope_assertions_fail_closed(scope: ScopeIntake) -> None:
+    request = RoutingRequest("site-1", CameraScope("wifi", confirmed(3, "count-1")))
+    with pytest.raises(ValueError, match="unsupported scope assertion"):
+        preview_specialist_handoff(
+            scope,
+            request,
+            evidence_bindings=(binding("count-1", "camera.count", 3),),
+            evidence_revision=1,
+        )
+
+
+@pytest.mark.parametrize("revision", [True, 1.0, -1])
+def test_non_integer_or_negative_evidence_revision_rejected(revision: object) -> None:
+    request = RoutingRequest("site-1", CameraScope("wifi", confirmed(3, "count-1")))
+    with pytest.raises(ValueError, match="revision"):
+        preview_specialist_handoff(
+            SCOPE,
+            request,
+            evidence_bindings=(binding("count-1", "camera.count", 3),),
+            evidence_revision=revision,  # type: ignore[arg-type]
+        )
+    with pytest.raises(ValueError, match="revisions"):
+        preview_specialist_handoff(
+            SCOPE,
+            request,
+            evidence_bindings=(
+                binding("count-1", "camera.count", 3, revision=revision),  # type: ignore[arg-type]
+            ),
             evidence_revision=1,
         )

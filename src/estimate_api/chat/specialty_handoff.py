@@ -6,6 +6,7 @@ from dataclasses import dataclass, fields
 from typing import Any
 
 from estimate_api.domain.scope_capture import Fact, ScopeDraft, ScopeIntake, build_scope_draft
+from estimate_api.domain.scope_capture.contract import AssetValidation
 from estimate_api.specialties.routing import RoutingRequest, RoutingResult, route_specialties
 
 
@@ -47,8 +48,19 @@ def preview_specialist_handoff(
     previous: RoutingRequest | None = None,
 ) -> SpecialistHandoff:
     """Match local typed bindings; their source authenticity is caller-owned."""
-    if evidence_revision < 0:
-        raise ValueError("evidence revision must be nonnegative")
+    if type(evidence_revision) is not int or evidence_revision < 0:
+        raise ValueError("evidence revision must be a nonnegative integer")
+    if any(type(b.revision) is not int or b.revision < 0 for b in evidence_bindings):
+        raise ValueError("binding revisions must be nonnegative integers")
+    # AT-246 carries these assertions outside Fact, so this local preview
+    # cannot bind their value/project/revision. Preserve its questions instead.
+    if (
+        scope.client_assets_absence_evidence is not None
+        or scope.supplies_absence_evidence is not None
+        or any(asset.validation == AssetValidation.VALIDATED for asset in scope.client_assets)
+        or any(item.purchase_required for item in scope.supplies)
+    ):
+        raise ValueError("unsupported scope assertion requires a trusted evidence boundary")
     draft = build_scope_draft(scope)
     bindings = {binding.evidence_id: binding for binding in evidence_bindings}
     if len(bindings) != len(evidence_bindings) or any(not key.strip() for key in bindings):

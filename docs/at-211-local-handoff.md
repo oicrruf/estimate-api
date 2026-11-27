@@ -14,6 +14,14 @@ is truly current. A trusted caller must bind records from a verified evidence
 service before this seam could serve a real workflow. Never populate bindings
 from model output or use this preview to approve a BOM.
 
+AT-246 also carries validated client assets, evidence-backed absence of assets
+or supplies, and purchase flags outside `Fact`. The local handoff rejects those
+assertions until they have their own value/project/revision binding. Its
+`medium`, `linked_to_camera`, and `explicit_specialties` values are typed
+routing directives from the trusted local caller; they do not prove equipment
+compatibility, route ownership, or site conditions. Evidence revisions must be
+nonnegative integers, with booleans and floats rejected.
+
 PoE camera work requests switch model, power, and port evidence; confirmed
 analog DVR uplink avoids PoE assignments; Wi-Fi camera work requests existing
 wireless capacity review. Unknown capacity stays a question. None of these
