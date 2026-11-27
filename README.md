@@ -78,7 +78,7 @@ any preview remains pending review. For an offline test without a provider, run
 | [Synthetic guided BOM (AT-232)](demo/guided_bom/README.md) | Separate loopback server at `127.0.0.1:8002` with a read-only, fixed-scenario GET; local ADK and Relate, no model call or installation advice. |
 | [Private Luna CLI (AT-211)](demo/guided_bom/PRIVATE_AI.md) | Optional bounded structured extraction over synthetic text; requires an authorized private OpenAI key and exposes no HTTP endpoint. |
 | [AT-208 SQL migration and evidence](docs/evidence/at-208.md) | Domain schema and RLS tested with disposable local PostgreSQL and an official Supabase PostgreSQL image. The migration has not been applied to a hosted project, and there is no authenticated domain HTTP route. |
-| [AT-279 VPS deployment candidate](ci/at-279/README.md) | A Compose package and CI checks for a potential private demo. It has not been deployed to Coolify or a VPS. |
+| [AT-279 local Compose candidates](ci/at-279/README.md) | Portable and [Git-based handoff](ci/at-279/coolify-git-setup.md) candidates with synthetic CI checks. Neither is verified on Coolify or a VPS. |
 
 ## Local checks
 

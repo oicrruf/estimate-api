@@ -21,6 +21,26 @@ with urlopen(BASE + "/demo", timeout=10) as response:
     assert response.status == 200 and b"<app-root" in response.read()
 print("Angular /demo: 200")
 
+with urlopen(BASE + "/demo/review", timeout=10) as response:
+    assert response.status == 200 and b"<app-root" in response.read()
+review = read("/fixtures/at248-review.v1.json")
+assert review["wireVersion"] == "at248.synthetic-review.v1"
+assert review["synthetic"] is True
+# Split the public commit ID to avoid a high-entropy secret-scan false positive.
+assert review["sourceCommit"] == "".join(
+    ("fe944072", "7636c1b5", "c89d2f87", "6fa7448a", "4d4816a7")
+)
+cases = review["cases"]
+assert set(cases) == {"eight", "missing", "changed"}
+assert all(
+    case["status"] == "pending_specialist" and not case["commercialReady"] and not case["persisted"]
+    for case in cases.values()
+)
+assert cases["eight"]["lines"][0]["quantity"] == 8
+assert all(line["quantity"] is None for line in cases["missing"]["lines"])
+assert cases["changed"]["lines"][0]["quantity"] == 10
+print("Angular /demo/review: static synthetic fixture, pending and unapproved")
+
 for name, query, selection, status in (
     ("switch8", "scenario=switch", "SW-16", "COMPATIBLE"),
     ("switch12", "scenario=switch&poe_ports_min=12", None, "INCOMPATIBLE"),
