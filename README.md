@@ -106,6 +106,9 @@ has its own seed, server, and query commands.
 
 ## Capability guides
 
+- [Specialty routing (AT-261)](docs/at-261-specialty-routing.md): local evidence
+  assignments and questions across Cameras, Networks, and Raceway.
+
 - [Universal project contract (AT-264)](docs/at-264-contract.md) and
   [knowledge registry (AT-265)](docs/at-265-knowledge-registry.md): versioned schemas,
   declared coverage, and validation limits.
