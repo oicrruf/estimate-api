@@ -17,8 +17,18 @@ uv run --no-sync uvicorn estimate_api.app:app --host 127.0.0.1 --port 8000
 
 In another terminal, run `curl http://127.0.0.1:8000/health`. The expected response is
 `{"status":"ok"}`. This route shows that the process responds, not that a database,
-model, or other service is ready. FastAPI also serves its generated `/openapi.json` and documentation
-routes.
+model, or other service is ready. The canonical API also defines a structured,
+read-only intake preview and authenticated `GET /projects` and
+`GET /projects/{project_id}`. A local-only
+`POST /v1/projects/{projectId}/scope-review-preview` is disabled in the product app
+without an injected extractor; its synthetic HTTP proof is linked below. The
+reads require a configured Supabase Auth issuer, a backend-only database read
+connection, and an explicit
+UUID allowlist. The command above sets none of these, so the reads fail closed
+by default. See the
+[AT-209 local read guide](docs/evidence/at-209-preliminary.md) for the disposable
+GoTrue/PostgreSQL test, access rules, and current limits. FastAPI also serves its
+generated `/openapi.json` and documentation routes.
 
 For a local, deterministic ADK + Relate demonstration, run:
 
@@ -86,12 +96,12 @@ separate AT-237 local discovery bridge below is not mounted on this route.
 
 | Area | Current state and boundary |
 | --- | --- |
-| [Canonical OpenAPI](contracts/openapi.json) | OpenAPI 3.1, version `0.1.0`; includes `GET /health` and the structured intake preview. `estimate-app` should pin a known revision, compare it with the upstream artifact, and regenerate its client when it changes. CLI and preview changes do not automatically extend this contract. |
+| [Canonical OpenAPI](contracts/openapi.json) | OpenAPI 3.1, version `0.1.0`; `GET /health`, structured read-only intake preview, authenticated project list/detail reads, and a disabled-by-default local scope preview POST. `estimate-app` must pin the reviewed upstream revision and regenerate its client when the contract changes. |
 | [Local ADK + Relate CLI](demo/agent/README.md) | Reproducible evaluations with fictional product, offer, and inventory evidence; no model provider or production data. |
 | [Local HTTP preview](demo/PREVIEW_HTTP.md) | A separate server, defaulting to `127.0.0.1:8001`, for synthetic demo evaluations. It is not an authenticated or public API. |
 | [Synthetic guided BOM (AT-232)](demo/guided_bom/README.md) | Separate loopback server at `127.0.0.1:8002` with a read-only, fixed-scenario GET; local ADK and Relate, no model call or installation advice. |
 | [Private Luna CLI (AT-211)](demo/guided_bom/PRIVATE_AI.md) | Optional bounded structured extraction over synthetic text; requires an authorized private OpenAI key and exposes no HTTP endpoint. |
-| [AT-208 SQL migration and evidence](docs/evidence/at-208.md) | Domain schema and RLS tested with disposable local PostgreSQL and an official Supabase PostgreSQL image. The migration has not been applied to a hosted project, and there is no authenticated domain HTTP route. |
+| [AT-208 SQL migration and evidence](docs/evidence/at-208.md) | Domain schema and RLS tested with disposable local PostgreSQL and an official Supabase PostgreSQL image. The migration has not been applied to a hosted project; AT-209's authenticated project reads are a local candidate. |
 | [AT-279 local Compose candidates](ci/at-279/README.md) | Portable and [Git-based handoff](ci/at-279/coolify-git-setup.md) candidates with synthetic CI checks. Neither is verified on Coolify or a VPS. |
 
 ## Local checks
@@ -120,6 +130,13 @@ has its own seed, server, and query commands.
 
 ## Capability guides
 
+- [AT-209 project authentication and reads](docs/evidence/at-209-preliminary.md):
+  local JWT/JWKS, admission allowlist, project RLS, and synthetic HTTP checks.
+  The preview test uses a disposable database and injected stub; it never calls a model.
+  Its idempotency key binds to the exact brief: a changed brief with the same key
+  returns 409, while a whitespace-only key returns 422 before reservation.
+  The [AT-211 boundary note](docs/at-209-at-211-boundary.md) explains why a
+  future paid operation must recheck authorization in its own transaction.
 - [Specialty routing (AT-261)](docs/at-261-specialty-routing.md): local evidence
   assignments and questions across Cameras, Networks, and Raceway.
 - [Local specialist handoff (AT-211)](docs/at-211-local-handoff.md): typed scope
@@ -151,10 +168,10 @@ has its own seed, server, and query commands.
   [SQL evidence (AT-208)](docs/evidence/at-208.md): reproducible commands, tests,
   and explicit limits.
 
-[`.env.example`](.env.example) contains placeholders for future integrations, not
+[`.env.example`](.env.example) contains configuration placeholders, not
 credentials. The unauthenticated preview and AT-279 package are not public services.
-Auth/JWT integration, hosted connections, deployment checks, and professional approvals
-require separate work and evidence.
+GitHub OAuth, hosted connections, frontend contract coordination, deployment
+checks, and professional approvals require separate work and evidence.
 
 ## Keeping documentation current
 
