@@ -121,6 +121,10 @@ def uvicorn_smoke(
         assert preview(owner_token, "blank", brief="   ")[0] == 422
         assert preview(owner_token, "   ")[0] == 422
         assert preview(owner_token, "too-long", brief="x" * 4001)[0] == 422
+        for size in (701, 4000):
+            status_code, body = preview(owner_token, f"adapter-{size}", brief="x" * size)
+            assert status_code == 422
+            assert body == {"detail": "Brief exceeds selected adapter limit of 700 characters"}
         assert calls() == 0
         with psycopg.connect(os.environ["ESTIMATE_DB_TEST_ADMIN_DSN"]) as conn:
             assert conn.execute("select count(*) from private.preview_reservations").fetchone() == (
@@ -193,8 +197,9 @@ def uvicorn_smoke(
             404,
             "revoked-before-reserve",
         )
+        assert preview(member_token, "revoked-long", brief="x" * 701)[0] == 404
 
-        status_code, body = preview(owner_token, "first")
+        status_code, body = preview(owner_token, "first", brief="x" * 700)
         assert status_code == 200
         assert body == {
             "schemaVersion": "scope-review-preview.v1",
@@ -208,7 +213,7 @@ def uvicorn_smoke(
             "persisted": False,
             "commercialReady": False,
         }
-        assert preview(owner_token, "first") == (200, body)
+        assert preview(owner_token, "first", brief="x" * 700) == (200, body)
         assert preview(owner_token, "first", brief="Una cámara PoE sintética")[0] == 409
         assert calls() == 1
         with psycopg.connect(os.environ["ESTIMATE_DB_TEST_ADMIN_DSN"]) as conn:
@@ -233,6 +238,9 @@ def uvicorn_smoke(
                 (project, member),
             )
         assert preview(member_token, "viewer-denied")[0] == 403
+        status_code, viewer_body = preview(member_token, "viewer-long", brief="x" * 701)
+        assert status_code == 403
+        assert "adapter" not in json.dumps(viewer_body).lower()
         with psycopg.connect(os.environ["ESTIMATE_DB_TEST_ADMIN_DSN"], autocommit=True) as conn:
             conn.execute("select set_config('request.jwt.claim.sub', %s, false)", (str(owner),))
             conn.execute(

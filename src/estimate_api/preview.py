@@ -74,8 +74,11 @@ def receipt_id(actor: UUID, project_id: UUID, command_key: str, brief: str) -> U
 
 
 class PreviewStore:
-    def __init__(self, dsn: str) -> None:
+    def __init__(self, dsn: str, *, max_brief_chars: int | None = None) -> None:
+        if max_brief_chars is not None and max_brief_chars < 1:
+            raise ValueError("Preview adapter limit must be positive")
         self.dsn = dsn
+        self.max_brief_chars = max_brief_chars
 
     def reserve(
         self, actor: UUID, project_id: UUID, command_key: str, brief: str
@@ -105,6 +108,12 @@ class PreviewStore:
                     raise HTTPException(status.HTTP_404_NOT_FOUND, "Project not found")
                 if role[0] not in ("owner", "editor"):
                     raise HTTPException(status.HTTP_403_FORBIDDEN, "Project editor required")
+                if self.max_brief_chars is not None and len(brief) > self.max_brief_chars:
+                    raise HTTPException(
+                        status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        "Brief exceeds selected adapter limit of "
+                        f"{self.max_brief_chars} characters",
+                    )
                 conn.execute("set local role none")
                 receipt = conn.execute(
                     "select id, state, response_json from private.preview_reservations "

@@ -15,3 +15,5 @@
 - [x] Ensayar el preview local HTTP completo con GoTrue/PostgreSQL descartables, cuotas 2/4/8, duplicado, revocación, carrera y extractor sintético; no montar proveedor real.
 - [x] Ensayar con dos conexiones degradación y revocación antes de reserva, y recibos ante resultado, fallo del stub y fallo de escritura final, sin repetir extractor.
 - [x] Vincular recibo de prueba a brief exacto sin cambiar esquema ni guardar el brief; rechazar clave HTTP en blanco y probar reintentos por HTTP.
+- [x] Proyectar ADK/Relate con modelo falso y fixture sintética, sin exponer información comercial ni instalar un proveedor en el producto.
+- [x] Rechazar la entrada que exceda la capacidad seleccionada tras revalidar editor y antes de la cuota; conservar OpenAPI y verificar denegaciones con pruebas descartables.
